@@ -1,759 +1,180 @@
-u<!DOCTYPE html>
+<!doctype html>
 <html lang="sv">
 <head>
-  <link rel="manifest" href="manifest.webmanifest">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="NSK Lag">
-<link rel="apple-touch-icon" href="icon-192.png">
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NSK Lag</title>
-  <meta name="theme-color" content="#0b74ff" />
 
   <style>
-    :root{
-      --bg:#f2f4f7; --card:#fff; --accent:#0b74ff;
-      --muted:#666; --border:#d6d9df; --shadow:0 2px 10px rgba(0,0,0,.08);
-    }
-    body{font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;margin:12px;background:var(--bg);}
-    .card{background:var(--card);border-radius:14px;padding:14px;box-shadow:var(--shadow);margin-bottom:12px;}
-    h2,h3{margin:0 0 10px;}
-    .small{color:var(--muted);font-size:13px;margin-top:6px;line-height:1.35;}
-    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-    .btnrow{display:flex;gap:8px;flex-wrap:wrap;}
-    button,.btn{
-      appearance:none;border:none;background:var(--accent);color:#fff;font-weight:800;
-      border-radius:12px;padding:12px 14px;cursor:pointer;flex:1;min-width:140px;
-    }
-    button.ghost,.btn.ghost{background:#eef2ff;color:#1b2a4a;}
-    label{display:block;margin-top:10px;font-weight:800;}
-    input,select,textarea{
-      width:100%;box-sizing:border-box;padding:10px 12px;border-radius:12px;
-      border:1px solid var(--border);background:#fff;font-size:16px;
-    }
-    textarea{min-height:160px;}
-    .pillrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;}
-    .pill{
-      padding:8px 10px;border-radius:999px;border:1px solid var(--border);
-      background:#fff;font-weight:800;cursor:pointer;
-    }
-    .pill.active{background:var(--accent);border-color:var(--accent);color:#fff;}
-    table{width:100%;border-collapse:collapse;margin-top:10px;font-size:14px;}
-    th,td{border-bottom:1px solid #eef0f4;padding:8px 6px;text-align:left;vertical-align:top;}
-    th{color:#223;font-size:13px;}
-    .warn{background:#fff3cd;border:1px solid #ffeeba;color:#664d03;padding:10px 12px;border-radius:12px;margin-top:10px;}
-    .modal{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;padding:16px;z-index:50;}
-    .modal:target{display:flex;}
-    .modalbox{background:#fff;width:100%;max-width:760px;max-height:88vh;overflow:auto;border-radius:16px;padding:14px;}
-    .modalhead{display:flex;justify-content:space-between;align-items:center;gap:10px;}
-    a{color:inherit;}
-    a.btnlink{text-decoration:none;display:inline-block}
-    .checkgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px;}
-    .checkrow{display:flex;align-items:center;gap:10px;border:1px solid #eef0f4;border-radius:12px;padding:10px;}
-    .checkrow span{font-weight:800;}
-    @media print{
-      body{background:#fff;margin:0;}
-      .card{box-shadow:none;border:1px solid #eee;}
-      .btnrow,.pillrow,.small,#playersModal,#coachesModal{display:none !important;}
+    body { font-family: -apple-system, system-ui, Arial; margin: 14px; }
+    .card { border: 1px solid #ddd; border-radius: 14px; padding: 12px; margin: 12px 0; }
+    .row { display:flex; gap:10px; flex-wrap:wrap; }
+    .row > * { flex: 1 1 140px; }
+    label { display:block; font-size: 12px; color:#555; margin-bottom: 6px; }
+    select, input { width:100%; padding:10px; border-radius:10px; border:1px solid #ccc; }
+    .btnrow { display:flex; gap:10px; }
+    button { padding:12px 14px; border-radius:12px; border:0; background:#111; color:#fff; font-weight:600; }
+    button.ghost { background:#f2f2f2; color:#111; border:1px solid #ddd; }
+    .small { font-size: 12px; color:#666; }
+    .nsk-top { display:flex; align-items:center; gap:12px; margin-bottom: 12px; }
+    .nsk-logo { width:56px; height:56px; border-radius:14px; object-fit:cover; border:1px solid #ddd; }
+    h1 { margin:0; font-size: 22px; }
+    @media print {
+      button, .no-print { display:none !important; }
+      body { margin: 0; }
+      .card { border: none; }
     }
   </style>
+
+  <!-- PWA (valfritt) -->
+  <link rel="manifest" href="manifest.webmanifest">
 </head>
 
 <body>
-  <!-- SNYGG HEADER (NSK-logga inbyggd, kan inte försvinna) -->
-<div class="nsk-top">
-  <div class="nsk-top__inner">
-    <img class="nsk-logo" alt="NSK"
-      src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEgAAABICAYAAABV7bNHAAAlgUlEQVR42uWcd5hdZdX2f89up5/pmUlmJjNppDdSSKQkFAUBaUJsqUKhW1u1t3vK2m0t9yQd2n6p7r0k7b8b6mQqVQ2hQK0iQhCwQqQkJYyWQm2mQmZyZk3m+e+9+8+2tW1hYwWcX8d8zv3nPuec+5z3nOe9yQ5Xb4p2b5pWkA0N1r2mJXJQ5c8Cq2n4r2b+qgYk2y8m2l8mO8+oYpQmJj3yWfH8Y0l2mGZl1bR1mQe0xVg5oGm1m8mY2o3lGQj9g0qg1c0m1uV7p3cQGm2oQmC0n1wKQkGkQ2Qv8l3mQp0pVq5pQm1n0o3m9o0oKc2r6vC5w9kQ3d0aCj1lZyQm9v0m1i4gF8qU3qVYwG8m1mYqXx0o0W5q2m+H3xwQGx5y3l7o0n0m8n5m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8m3o6m8
-  <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
-  <img src="https://raw.githubusercontent.com/zprcsv92cy-cmyk/NSK-lag/main/icon-192.png"
-       style="width:55px;height:55px;border-radius:14px;">
-  <div>
-    <div style="font-size:22px;font-weight:700;">NSK Lag</div>
-    <div style="font-size:13px;color:#666;">Laguppställning & Byten</div>
-  </div>
-</div>
-  <script>
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js');
-    });
-  }
-</script>
 
-<div class="card">
-  <div style="display:flex;align-items:center;gap:10px;">
-  <img src="icon-192.png" alt="NSK" style="width:44px;height:44px;border-radius:12px;object-fit:cover;">
-  <div style="flex:1">
-    <h2 style="margin:0;">NSK Lag</h2>
-    <div class="small">Laguppställning • Byten • PDF</div>
-  </div>
-</div>
-  <div class="small">
-    Välj spelare via <b>Spelarregister</b> (checkboxar “Aktiva”) eller manuellt i rullistorna. Allt sparas per lag på din telefon.
-  </div>
-
-  <div class="pillrow" id="teamTabs"></div>
-
-  <div class="btnrow" style="margin-top:10px;">
-    <a class="btnlink" href="#playersModal"><div class="btn ghost">Spelarregister</div></a>
-    <a class="btnlink" href="#coachesModal"><div class="btn ghost">Tränarregister</div></a>
-    <button class="ghost" onclick="resetTeam()">Återställ detta lag</button>
-  </div>
-</div>
-
-<div class="card">
-  <h3>Matchinställningar</h3>
-
-  <div class="grid2">
+  <!-- SNYGG TOPP: logga + titel -->
+  <div class="nsk-top">
+    <img class="nsk-logo" src="./icon-192.png" alt="NSK">
     <div>
-      <label>Antal matcher</label>
-      <select id="matchCount">
-        <option>1</option><option>2</option><option>3</option><option selected>4</option>
-      </select>
-    </div>
-    <div>
-      <label>Spelare på plan</label>
-      <select id="playersOnField">
-        <option value="3">3</option>
-        <option value="4" selected>4</option>
-        <option value="5">5</option>
-      </select>
+      <h1>NSK Lag</h1>
+      <div class="small">Laguppställning • Byten • PDF</div>
     </div>
   </div>
 
-  <div class="grid2">
-    <div>
-      <label>Periodtid</label>
-      <select id="periodTime"></select>
-      <div class="small">Välj 8–20 minuter.</div>
-    </div>
-    <div>
-      <label>Bytestid (sek)</label>
-      <select id="swapTime">
-        <option value="30">30</option>
-        <option value="45">45</option>
-        <option value="60" selected>60</option>
-        <option value="75">75</option>
-        <option value="90">90</option>
-      </select>
-      <div class="small">30–90 sek.</div>
-    </div>
-  </div>
-
-  <div class="small" style="margin-top:8px;">
-    Beräknade byten per period: <b id="computedSwaps">0</b>
-  </div>
-
-  <div id="matches"></div>
-</div>
-
-<div class="card">
-  <h3>Uttagning</h3>
-
-  <div class="small">
-    Tips: Öppna <b>Spelarregister</b> och kryssa i “Aktiva spelare” så fylls Spelare 1–12 automatiskt.
-  </div>
-
-  <label>Spelare 1–12</label>
-  <div class="grid2" id="playerSelects"></div>
-
-  <label>Målvakt</label>
-  <select id="goalie"></select>
-
-  <label>Tränare</label>
-  <input id="coachesField" placeholder="Välj i Tränarregister" />
-
-  <div class="btnrow" style="margin-top:10px;">
-    <button onclick="renderLineup()">Skapa laguppställning</button>
-    <button onclick="exportPDF()">Dela PDF</button>
-    <button class="ghost" onclick="window.print()">Skriv ut</button>
-  </div>
-
-  <div id="warnings"></div>
-</div>
-
-<div class="card" id="lineupCard">
-  <h3>Laguppställning</h3>
-  <div class="small">Byten räknas ner från periodtid.</div>
-  <div id="lineup"></div>
-</div>
-
-<!-- Spelarregister -->
-<div id="playersModal" class="modal">
-  <div class="modalbox">
-    <div class="modalhead">
-      <h3 style="margin:0;">Spelarregister</h3>
-      <a class="btnlink" href="#"><div class="btn ghost" style="min-width:120px;">Stäng</div></a>
-    </div>
-
-    <div class="small">En spelare per rad. Du kan redigera listan.</div>
-    <textarea id="playersText"></textarea>
-
-    <h3 style="margin-top:14px;">Aktiva spelare (kryssa i)</h3>
-    <div class="small">De kryssade fylls automatiskt i Spelare 1–12 (i kryss-ordning).</div>
-    <div id="activeChecks" class="checkgrid"></div>
-
-    <div class="btnrow" style="margin-top:10px;">
-      <button onclick="savePlayers()">Spara</button>
-      <button class="ghost" onclick="selectAllActive(true)">Markera alla</button>
-      <button class="ghost" onclick="selectAllActive(false)">Avmarkera alla</button>
-      <a class="btnlink" href="#"><div class="btn ghost">Stäng</div></a>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Lag</label>
+        <select id="teamSelect">
+          <option value="1">Lag 1</option>
+          <option value="2">Lag 2</option>
+          <option value="3">Lag 3</option>
+        </select>
+      </div>
+      <div>
+        <label>Motståndare</label>
+        <input id="opponent" placeholder="Skriv motståndare">
+      </div>
+      <div>
+        <label>Plan</label>
+        <input id="arena" placeholder="Skriv plan">
+      </div>
     </div>
   </div>
-</div>
 
-<!-- Tränarregister -->
-<div id="coachesModal" class="modal">
-  <div class="modalbox">
-    <div class="modalhead">
-      <h3 style="margin:0;">Tränarregister</h3>
-      <a class="btnlink" href="#"><div class="btn ghost" style="min-width:120px;">Stäng</div></a>
+  <div class="card">
+    <div class="row">
+      <div>
+        <label>Spelare 1</label>
+        <select class="playerSel" id="p1"></select>
+      </div>
+      <div>
+        <label>Spelare 2</label>
+        <select class="playerSel" id="p2"></select>
+      </div>
+      <div>
+        <label>Spelare 3</label>
+        <select class="playerSel" id="p3"></select>
+      </div>
+      <div>
+        <label>Spelare 4</label>
+        <select class="playerSel" id="p4"></select>
+      </div>
     </div>
 
-    <div class="small">En tränare per rad. Kryssa i för att fylla tränarfältet.</div>
-    <textarea id="coachesText"></textarea>
-
-    <div id="coachChecks" style="margin-top:10px;"></div>
-
-    <div class="btnrow" style="margin-top:10px;">
-      <button onclick="saveCoaches()">Spara</button>
-      <a class="btnlink" href="#"><div class="btn ghost">Stäng</div></a>
+    <div class="row" style="margin-top:10px;">
+      <div>
+        <label>Målvakt</label>
+        <select id="goalie"></select>
+      </div>
+      <div>
+        <label>Tränare</label>
+        <select id="coach"></select>
+      </div>
     </div>
+
+    <div class="btnrow no-print" style="margin-top:12px;">
+      <button onclick="renderLineup()">Skapa laguppställning</button>
+      <button class="ghost" onclick="exportPDF()">Dela PDF</button>
+    </div>
+
+    <div id="exportHelp" class="small no-print" style="margin-top:8px;display:none;"></div>
   </div>
-</div>
+
+  <div class="card" id="output">
+    <b>Laguppställning</b>
+    <div class="small">Fyll i och tryck “Skapa laguppställning”.</div>
+  </div>
 
 <script>
-/* ======= Default data ======= */
-const DEFAULT_PLAYERS_ARR = [
-  "Agnes Danielsson","Albert Zillén","Albin Andersson","Aron Warensjö-Sommar","August Hasselberg",
-  "Benjamin Linderström","Charlie Carman","Emil Tranborg","Enzo Olsson","Gunnar Englund","Henry Gauffin",
-  "Linus Stolt","Melker Axbom","Måns Åkvist","Nelson Östergren","Nicky Selander","Nikola Kosoderc",
-  "Noé Bonnafous Sand","Oliver Engström","Oliver Zoumblios","Pelle Åstrand","Simon Misiörny",
-  "Sixten Bratt","Theo Ydrenius","Viggo Kronvall","Yuktha Reddy Semberi"
-];
-const DEFAULT_COACHES_ARR = [
-  "Olle Åstrand","Peter Hasselberg","William Åkvist","Joakim Lund",
-  "Fredrik Selander","Niklas Gauffin","Linus Öhman"
-];
+  // Exempeldata (byt gärna mot din riktiga lista senare)
+  const PLAYERS = [
+    "Alex Andersson","Benjamin Berg","Carl Carlsson","David Dahl",
+    "Elias Eriksson","Filip Friberg","Gustav Gran","Hugo Holm"
+  ].sort((a,b)=>a.localeCompare(b,'sv'));
 
-const DEFAULT_PLAYERS = DEFAULT_PLAYERS_ARR.join("\n");
-const DEFAULT_COACHES = DEFAULT_COACHES_ARR.join("\n");
+  const COACHES = ["Peter","Olle","Fredrik","Tommy"].sort((a,b)=>a.localeCompare(b,'sv'));
 
-/* ======= Teams ======= */
-const TEAM_KEYS = ["lag1","lag2","lag3"];
-let currentTeam = localStorage.getItem("nsk_current_team") || "lag1";
-function key(s){ return "nsk_" + currentTeam + "_" + s; }
-
-/* ======= Master registers ======= */
-function getMasterPlayers(){ return (localStorage.getItem("nsk_master_players") || DEFAULT_PLAYERS).trim(); }
-function getMasterCoaches(){ return (localStorage.getItem("nsk_master_coaches") || DEFAULT_COACHES).trim(); }
-function setMasterPlayers(v){ localStorage.setItem("nsk_master_players", v); }
-function setMasterCoaches(v){ localStorage.setItem("nsk_master_coaches", v); }
-
-/* ======= Active players per team ======= */
-function getActiveList(){
-  try { return JSON.parse(localStorage.getItem(key("activePlayers")) || "[]"); }
-  catch(e){ return []; }
-}
-function setActiveList(list){ localStorage.setItem(key("activePlayers"), JSON.stringify(list)); }
-
-/* ======= UI builders ======= */
-function setupTabs(){
-  const el = document.getElementById("teamTabs");
-  el.innerHTML = "";
-  TEAM_KEYS.forEach((t,idx)=>{
-    const b = document.createElement("div");
-    b.className = "pill" + (t===currentTeam ? " active" : "");
-    b.textContent = "Lag " + (idx+1);
-    b.onclick = ()=>{
-      currentTeam = t;
-      localStorage.setItem("nsk_current_team", t);
-      setupTabs();
-      loadTeam();
-    };
-    el.appendChild(b);
-  });
-}
-
-function buildPeriodOptions(){
-  const sel = document.getElementById("periodTime");
-  sel.innerHTML = "";
-  for(let m=8;m<=20;m++){
-    const o = document.createElement("option");
-    o.textContent = String(m).padStart(2,"0") + ":00";
-    sel.appendChild(o);
-  }
-  sel.value = "15:00";
-}
-
-function buildPlayerSelects(){
-  const wrap = document.getElementById("playerSelects");
-  wrap.innerHTML = "";
-  for(let i=1;i<=12;i++){
-    const box = document.createElement("div");
-    const lab = document.createElement("label");
-    lab.style.marginTop = "0";
-    lab.textContent = "Spelare " + i;
-    const sel = document.createElement("select");
-    sel.id = "p" + i;
-    box.appendChild(lab);
-    box.appendChild(sel);
-    wrap.appendChild(box);
-  }
-}
-
-function fillDropdown(el, list){
-  const cur = el.value;
-  el.innerHTML = "";
-  const o0 = document.createElement("option");
-  o0.value = ""; o0.textContent = "Välj";
-  el.appendChild(o0);
-  list.forEach(name=>{
-    const o = document.createElement("option");
-    o.value = name; o.textContent = name;
-    el.appendChild(o);
-  });
-  if(cur && list.includes(cur)) el.value = cur;
-}
-
-function refreshDropdowns(){
-  const list = getMasterPlayers().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  for(let i=1;i<=12;i++) fillDropdown(document.getElementById("p"+i), list);
-  fillDropdown(document.getElementById("goalie"), list);
-
-  // per match goalie dropdowns
-  const n = parseInt(document.getElementById("matchCount").value,10);
-  for(let i=1;i<=n;i++){
-    const g = document.getElementById("goalie"+i);
-    if(g) fillDropdown(g, list);
-  }
-
-  renderActiveChecks();
-}
-
-/* iPhone-säker dubblettlogik: vi disable:ar INTE options (det kan låsa select).
-   Istället: om du väljer dubblett → senaste valet nollställs + varning. */
-function handleDuplicateSelect(){
-  const warnBox = document.getElementById("warnings");
-  if(warnBox) warnBox.innerHTML = "";
-
-  const seen = new Set();
-  for(let i=1;i<=12;i++){
-    const el = document.getElementById("p"+i);
-    if(!el) continue;
-    const v = (el.value || "").trim();
-    if(!v) continue;
-
-    if(seen.has(v)){
-      el.value = "";
-      const w = document.createElement("div");
-      w.className = "warn";
-      w.textContent = `Spelaren "${v}" är redan vald. Välj en annan.`;
-      warnBox.appendChild(w);
-      return;
+  function fillSelect(sel, items, placeholder="Välj..."){
+    sel.innerHTML = "";
+    const opt0 = document.createElement("option");
+    opt0.value = "";
+    opt0.textContent = placeholder;
+    sel.appendChild(opt0);
+    for (const name of items){
+      const o = document.createElement("option");
+      o.value = name;
+      o.textContent = name;
+      sel.appendChild(o);
     }
-    seen.add(v);
   }
-}
 
-function buildMatches(){
-  const n = parseInt(document.getElementById("matchCount").value,10);
-  const wrap = document.getElementById("matches");
-  wrap.innerHTML = "";
+  function init(){
+    // spelare 1-4 + målvakt
+    for (const id of ["p1","p2","p3","p4","goalie"]){
+      fillSelect(document.getElementById(id), PLAYERS);
+    }
+    fillSelect(document.getElementById("coach"), COACHES);
+  }
 
-  const list = getMasterPlayers().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+  function renderLineup(){
+    const team = document.getElementById("teamSelect").value;
+    const opponent = document.getElementById("opponent").value || "—";
+    const arena = document.getElementById("arena").value || "—";
 
-  for(let i=1;i<=n;i++){
-    const d = document.createElement("div");
-    d.className = "card";
-    d.style.marginTop = "12px";
-    d.innerHTML = `
-      <h3 style="margin-top:0;">Match ${i}</h3>
-      <div class="grid2">
-        <div>
-          <label>Motståndare</label>
-          <input id="opp${i}" placeholder="Motståndare">
-        </div>
-        <div>
-          <label>Plan</label>
-          <select id="plan${i}">
-            <option value="">Välj</option>
-            <option>1</option><option>2</option><option>3</option><option>4</option>
-          </select>
-        </div>
-      </div>
-      <div class="grid2">
-        <div>
-          <label>Starttid (HH:MM)</label>
-          <input id="start${i}" placeholder="t.ex. 10:30" inputmode="numeric">
-        </div>
-        <div>
-          <label>Målvakt</label>
-          <select id="goalie${i}"></select>
-        </div>
-      </div>
-      <div class="small">Målvakt väljs från spelarregistret.</div>
+    const chosen = ["p1","p2","p3","p4"].map(id=>document.getElementById(id).value).filter(Boolean);
+    const goalie = document.getElementById("goalie").value || "—";
+    const coach = document.getElementById("coach").value || "—";
+
+    const out = document.getElementById("output");
+    out.innerHTML = `
+      <div><b>Lag ${team}</b></div>
+      <div class="small">Motståndare: <b>${escapeHtml(opponent)}</b> • Plan: <b>${escapeHtml(arena)}</b></div>
+      <hr>
+      <div><b>Spelare</b></div>
+      <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
+      <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
+      <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
     `;
-    wrap.appendChild(d);
-    fillDropdown(document.getElementById("goalie"+i), list);
-  }
-}
-
-function calcComputedSwaps(){
-  const pt = document.getElementById("periodTime").value;
-  const st = parseInt(document.getElementById("swapTime").value,10) || 0;
-  const [mm,ss] = pt.split(":").map(x=>parseInt(x,10)||0);
-  const total = mm*60+ss;
-  const swaps = (total>0 && st>0) ? Math.floor(total/st) : 0;
-  document.getElementById("computedSwaps").textContent = String(swaps);
-}
-
-/* ======= Players modal ======= */
-function renderActiveChecks(){
-  const box = document.getElementById("activeChecks");
-  if(!box) return;
-
-  const list = getMasterPlayers().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const active = new Set(getActiveList());
-
-  box.innerHTML = "";
-  list.forEach(name=>{
-    const row = document.createElement("div");
-    row.className = "checkrow";
-
-    const cb = document.createElement("input");
-    cb.type = "checkbox";
-    cb.checked = active.has(name);
-
-    const sp = document.createElement("span");
-    sp.textContent = name;
-
-    cb.addEventListener("change", ()=>{
-      const now = new Set(getActiveList());
-      if(cb.checked) now.add(name); else now.delete(name);
-      setActiveList(Array.from(now));
-      autofillFromActive();
-      saveTeam();
-    });
-
-    row.appendChild(cb);
-    row.appendChild(sp);
-    box.appendChild(row);
-  });
-}
-
-function selectAllActive(on){
-  const list = getMasterPlayers().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  setActiveList(on ? list : []);
-  renderActiveChecks();
-  autofillFromActive();
-  saveTeam();
-}
-
-function autofillFromActive(){
-  const active = getActiveList();
-  for(let i=1;i<=12;i++){
-    const el = document.getElementById("p"+i);
-    if(el) el.value = active[i-1] || "";
-  }
-  handleDuplicateSelect();
-  renderLineup();
-}
-
-function savePlayers(){
-  setMasterPlayers(document.getElementById("playersText").value || "");
-
-  // städa aktiva så de bara innehåller befintliga namn
-  const setp = new Set(getMasterPlayers().split(/\r?\n/).map(x=>x.trim()).filter(Boolean));
-  setActiveList(getActiveList().filter(x=>setp.has(x)));
-
-  refreshDropdowns();
-  buildMatches();
-  autofillFromActive();
-  saveTeam();
-  location.hash = "";
-}
-
-/* ======= Coaches modal ======= */
-function renderCoachChecks(){
-  const box = document.getElementById("coachChecks");
-  const list = getMasterCoaches().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
-  const selected = new Set((document.getElementById("coachesField").value||"").split(",").map(x=>x.trim()).filter(Boolean));
-
-  box.innerHTML = "";
-  list.forEach(name=>{
-    const row = document.createElement("label");
-    row.style.display="flex";
-    row.style.alignItems="center";
-    row.style.gap="10px";
-    row.style.margin="8px 0";
-
-    const cb = document.createElement("input");
-    cb.type="checkbox";
-    cb.checked = selected.has(name);
-
-    const sp = document.createElement("span");
-    sp.textContent = name;
-
-    cb.addEventListener("change", ()=>{
-      const chosen = [];
-      const checks = box.querySelectorAll("input[type=checkbox]");
-      checks.forEach((c,idx)=>{ if(c.checked) chosen.push(list[idx]); });
-      document.getElementById("coachesField").value = chosen.join(", ");
-      saveTeam();
-    });
-
-    row.appendChild(cb);
-    row.appendChild(sp);
-    box.appendChild(row);
-  });
-}
-
-function saveCoaches(){
-  setMasterCoaches(document.getElementById("coachesText").value || "");
-  renderCoachChecks();
-  saveTeam();
-  location.hash = "";
-}
-
-/* ======= Save/Load per team ======= */
-function readTeam(){
-  const matchCount = document.getElementById("matchCount").value;
-  const n = parseInt(matchCount,10);
-
-  return {
-    matchCount,
-    playersOnField: document.getElementById("playersOnField").value,
-    periodTime: document.getElementById("periodTime").value,
-    swapTime: document.getElementById("swapTime").value,
-    players: Array.from({length:12}, (_,i)=>document.getElementById("p"+(i+1)).value),
-    goalie: document.getElementById("goalie").value,
-    coaches: document.getElementById("coachesField").value,
-    matches: Array.from({length:n}, (_,i)=>({
-      opp: document.getElementById("opp"+(i+1))?.value || "",
-      plan: document.getElementById("plan"+(i+1))?.value || "",
-      start: document.getElementById("start"+(i+1))?.value || "",
-      goalie: document.getElementById("goalie"+(i+1))?.value || ""
-    }))
-  };
-}
-
-function writeTeam(data){
-  document.getElementById("matchCount").value = data.matchCount || "4";
-  document.getElementById("playersOnField").value = data.playersOnField || "4";
-  document.getElementById("periodTime").value = data.periodTime || "15:00";
-  document.getElementById("swapTime").value = data.swapTime || "60";
-
-  buildMatches();
-  refreshDropdowns();
-
-  (data.players||[]).forEach((v,idx)=>{
-    const el = document.getElementById("p"+(idx+1));
-    if(el) el.value = v || "";
-  });
-
-  document.getElementById("goalie").value = data.goalie || "";
-  document.getElementById("coachesField").value = data.coaches || "";
-
-  (data.matches||[]).forEach((m,idx)=>{
-    const i = idx+1;
-    const opp = document.getElementById("opp"+i); if(opp) opp.value = m.opp || "";
-    const plan = document.getElementById("plan"+i); if(plan) plan.value = m.plan || "";
-    const start = document.getElementById("start"+i); if(start) start.value = m.start || "";
-    const g = document.getElementById("goalie"+i); if(g) g.value = m.goalie || "";
-  });
-
-  handleDuplicateSelect();
-  calcComputedSwaps();
-  renderCoachChecks();
-}
-
-function saveTeam(){
-  try{ localStorage.setItem(key("data"), JSON.stringify(readTeam())); }
-  catch(e){}
-}
-
-function loadTeam(){
-  // seed registers
-  if(!localStorage.getItem("nsk_master_players")) setMasterPlayers(DEFAULT_PLAYERS);
-  if(!localStorage.getItem("nsk_master_coaches")) setMasterCoaches(DEFAULT_COACHES);
-
-  document.getElementById("playersText").value = getMasterPlayers();
-  document.getElementById("coachesText").value = getMasterCoaches();
-
-  const raw = localStorage.getItem(key("data"));
-  if(raw){
-    try{
-      writeTeam(JSON.parse(raw));
-      calcComputedSwaps();
-      renderLineup();
-      return;
-    }catch(e){}
   }
 
-  // default
-  writeTeam({matchCount:"4",playersOnField:"4",periodTime:"15:00",swapTime:"60",players:[],goalie:"",coaches:"",matches:[]});
-  if(!localStorage.getItem(key("activePlayers"))) setActiveList([]);
-  renderActiveChecks();
-  renderLineup();
-}
-
-function resetTeam(){
-  if(confirm("Återställ detta lag?")){
-    localStorage.removeItem(key("data"));
-    localStorage.removeItem(key("activePlayers"));
-    loadTeam();
-  }
-}
-
-/* ======= Lineup / swaps ======= */
-function mmss(sec){
-  sec = Math.max(0, Math.floor(sec));
-  const m = Math.floor(sec/60);
-  const s = sec % 60;
-  return String(m).padStart(2,'0') + ":" + String(s).padStart(2,'0');
-}
-
-function renderLineup(){
-  saveTeam();
-
-  const warn = document.getElementById("warnings");
-  warn.innerHTML = "";
-
-  const pt = document.getElementById("periodTime").value;
-  const swap = parseInt(document.getElementById("swapTime").value,10) || 0;
-  const onField = parseInt(document.getElementById("playersOnField").value,10) || 4;
-
-  const [mm,ss] = pt.split(":").map(x=>parseInt(x,10)||0);
-  const total = mm*60 + ss;
-  const swaps = (total>0 && swap>0) ? Math.floor(total/swap) : 0;
-
-  const selected = [];
-  for(let i=1;i<=12;i++){
-    const v = document.getElementById("p"+i).value;
-    if(v) selected.push(v);
-  }
-  const goalie = document.getElementById("goalie").value;
-  const pool = selected.filter(p=>p && p !== goalie);
-
-  if(pool.length < onField){
-    const w = document.createElement("div");
-    w.className = "warn";
-    w.textContent = `Du har valt ${pool.length} utespelare, men ${onField} krävs på plan.`;
-    warn.appendChild(w);
-  }
-  if(swaps === 0){
-    const w = document.createElement("div");
-    w.className = "warn";
-    w.textContent = "Kontrollera periodtid och bytestid.";
-    warn.appendChild(w);
-  }
-
-  // Fair rotation: round-robin över pool
-  let idx = 0;
-  const rows = [];
-  for(let i=1;i<=swaps;i++){
-    const timeLeft = total - (i-1)*swap;
-    const lineup = [];
-    for(let k=0;k<onField;k++){
-      lineup.push(pool.length ? pool[idx++ % pool.length] : "");
-    }
-    rows.push({nr:i, time:mmss(timeLeft), players:lineup});
-  }
-
-  const head = ["Byte","Tid kvar"].concat(Array.from({length:onField},(_,i)=>"Spelare "+(i+1)));
-  let out = "<table><thead><tr>" + head.map(h=>"<th>"+h+"</th>").join("") + "</tr></thead><tbody>";
-  rows.forEach(r=>{
-    out += "<tr><td>"+r.nr+"</td><td>"+r.time+"</td>" + r.players.map(p=>"<td>"+(p||"")+"</td>").join("") + "</tr>";
-  });
-  out += "</tbody></table>";
-  document.getElementById("lineup").innerHTML = out;
-}
-
-/* ======= Events ======= */
-function bind(){
-  document.getElementById("matchCount").addEventListener("change", ()=>{
-    buildMatches();
-    refreshDropdowns();
-    saveTeam();
-  });
-  document.getElementById("playersOnField").addEventListener("change", ()=>{ calcComputedSwaps(); saveTeam(); renderLineup(); });
-  document.getElementById("periodTime").addEventListener("change", ()=>{ calcComputedSwaps(); saveTeam(); renderLineup(); });
-  document.getElementById("swapTime").addEventListener("change", ()=>{ calcComputedSwaps(); saveTeam(); renderLineup(); });
-  document.getElementById("coachesField").addEventListener("input", saveTeam);
-
-  for(let i=1;i<=12;i++){
-    document.getElementById("p"+i).addEventListener("change", ()=>{
-      handleDuplicateSelect();
-      saveTeam();
-      renderLineup();
-    });
-  }
-  document.getElementById("goalie").addEventListener("change", ()=>{ saveTeam(); renderLineup(); });
-
-  // close modals by clicking background
-  ["playersModal","coachesModal"].forEach(id=>{
-    document.getElementById(id).addEventListener("click", (e)=>{ if(e.target.id===id) location.hash=""; });
-  });
-}
-
-/* ======= Init ======= */
-(function init(){
-  setupTabs();
-  buildPeriodOptions();
-  buildPlayerSelects();
-  bind();
-  loadTeam();
-
-  // Keep computed swaps updated
-  calcComputedSwaps();
-})();
-function exportPDF(){
-
-  const help = document.getElementById("exportHelp");
-
-  if (help){
+  function exportPDF(){
+    const help = document.getElementById("exportHelp");
     help.style.display = "block";
     help.innerHTML =
-      "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → dela PDF.<br>" +
+      "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>" +
       "📄 Android: Välj <b>Spara som PDF</b>.";
+
+    window.print();
   }
 
-  const url = location.href.split("#")[0];
-
-  if (navigator.share){
-    navigator.share({
-      title: "NSK Lag",
-      text: "Laguppställning",
-      url
-    }).catch(()=>{});
+  function escapeHtml(s){
+    return String(s).replace(/[&<>"']/g, m => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+    }[m]));
   }
 
-  window.print();
-}
-function exportPDF(){
-
-  const help = document.getElementById("exportHelp");
-
-  if (help){
-    help.style.display = "block";
-    help.innerHTML =
-      "📄 iPhone: Tryck Skriv ut → nyp ut på förhandsvisningen → dela PDF.<br>" +
-      "📄 Android: Välj Spara som PDF.";
-  }
-
-  if (navigator.share){
-    navigator.share({
-      title: "NSK Lag",
-      text: "Laguppställning",
-      url: location.href
-    }).catch(()=>{});
-  }
-
-  window.print();
-}
+  init();
 </script>
 
 </body>
