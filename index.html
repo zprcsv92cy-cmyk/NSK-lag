@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+u<!DOCTYPE html>
 <html lang="sv">
 <head>
   <link rel="manifest" href="manifest.webmanifest">
@@ -696,6 +696,29 @@ function bind(){
   // Keep computed swaps updated
   calcComputedSwaps();
 })();
+function exportPDF(){
+
+  const help = document.getElementById("exportHelp");
+
+  if (help){
+    help.style.display = "block";
+    help.innerHTML =
+      "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → dela PDF.<br>" +
+      "📄 Android: Välj <b>Spara som PDF</b>.";
+  }
+
+  const url = location.href.split("#")[0];
+
+  if (navigator.share){
+    navigator.share({
+      title: "NSK Lag",
+      text: "Laguppställning",
+      url
+    }).catch(()=>{});
+  }
+
+  window.print();
+}
 </script>
 
 </body>
