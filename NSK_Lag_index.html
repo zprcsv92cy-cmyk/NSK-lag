@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NSK Lag</title>
+<style>
+body{font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;margin:12px;background:#f2f4f7}
+.card{background:#fff;border-radius:14px;padding:14px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:12px}
+button{padding:12px;border-radius:10px;border:none;background:#0b74ff;color:#fff;font-weight:600;width:100%;margin-top:8px}
+.btn{display:block;text-decoration:none;text-align:center;padding:12px;border-radius:10px;background:#0b74ff;color:#fff;font-weight:600;width:100%;margin-top:8px}
+.modal:target{display:flex;}
+select{width:100%;padding:10px;border-radius:8px;margin-top:6px;border:1px solid #ccc}
+label{display:block;margin-top:8px;font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.modal{position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;padding:16px;box-sizing:border-box}
+.modal-content{background:#fff;padding:16px;border-radius:12px;width:100%;max-width:520px;max-height:90vh;overflow:auto}
+textarea{width:100%;height:260px;border-radius:10px;border:1px solid #ccc;padding:10px;box-sizing:border-box}
+.small{color:#666;font-size:13px;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="card">
+<h2 style="margin:0 0 6px;">NSK Lag</h2>
+<a class="btn" href="#playersModal" onclick="openModal('playersModal');return false;">Spelarregister</a>
+<a class="btn" href="#coachesModal" onclick="openModal('coachesModal');return false;">Tränarregister</a>
+</div>
+
+<div class="card">
+<h3 style="margin-top:0;">Laguppställning</h3>
+<div class="grid">
+<div><label>Spelare 1</label><select id="p1"></select></div><div><label>Spelare 2</label><select id="p2"></select></div><div><label>Spelare 3</label><select id="p3"></select></div><div><label>Spelare 4</label><select id="p4"></select></div><div><label>Spelare 5</label><select id="p5"></select></div><div><label>Spelare 6</label><select id="p6"></select></div><div><label>Spelare 7</label><select id="p7"></select></div><div><label>Spelare 8</label><select id="p8"></select></div><div><label>Spelare 9</label><select id="p9"></select></div><div><label>Spelare 10</label><select id="p10"></select></div><div><label>Spelare 11</label><select id="p11"></select></div><div><label>Spelare 12</label><select id="p12"></select></div>
+</div>
+<label>Målvakt</label>
+<select id="goalie"></select>
+<div class="small">Tips: spelarna i registret är förifyllda. Ändra vid behov och tryck Spara.</div>
+</div>
+
+<div id="playersModal" class="modal" onclick="if(event.target.id==='playersModal') closeModal('playersModal')">
+  <div class="modal-content">
+    <h3 style="margin-top:0;">Spelarregister</h3>
+    <div class="small">En spelare per rad (totalt 26 förifyllda)</div>
+    <textarea id="playersText">Danielsson
+Zillén
+Albin Andersson
+Aron Warensjö-Sommar
+August Hasselberg
+Benjamin Linderström
+Charlie Carman
+Emil Tranborg
+Enzo Olsson
+Gunnar Englund
+Henry Gauffin
+Linus Stolt
+Melker Axbom
+Måns Åkvist
+Nelson Östergren
+Nicky Selander
+Nikola Kosoderc
+Noé Bonnafous Sand
+Oliver Engström
+Oliver Zoumblios
+Pelle Åstrand
+Simon Misiörny
+Sixten Bratt
+Theo Ydrenius
+Viggo Kronvall
+Yuktha reddy Semberi
+</textarea>
+    <button onclick="savePlayers()">Spara</button>
+    <a class="btn" href="#" onclick="closeModal('playersModal');return false;">Stäng</a>
+  </div>
+</div>
+
+<div id="coachesModal" class="modal" onclick="if(event.target.id==='coachesModal') closeModal('coachesModal')">
+  <div class="modal-content">
+    <h3 style="margin-top:0;">Tränarregister</h3>
+    <div class="small">En tränare per rad</div>
+    <textarea id="coachesText">Olle Åstrand
+Peter Hasselberg
+William Åkvist
+Joakim Lund
+Fredrik Selander
+Niklas Gauffin
+Linus Öhman
+</textarea>
+    <button onclick="saveCoaches()">Spara</button>
+    <a class="btn" href="#" onclick="closeModal('coachesModal');return false;">Stäng</a>
+  </div>
+</div>
+
+<script>
+function openModal(id){document.getElementById(id).style.display='flex';}
+function closeModal(id){const el=document.getElementById(id); if(el) el.style.display='none'; if(location.hash==='#'+id) location.hash='';}
+
+function getPlayersText() {
+  return (localStorage.getItem('players') || document.getElementById('playersText').value || '').trim();
+}
+
+function getPlayers() {
+  return getPlayersText().split(/\r?\n/).map(x=>x.trim()).filter(Boolean);
+}
+
+function fillSelect(id, list){
+  const el = document.getElementById(id);
+  if(!el) return;
+  const current = el.value;
+  el.innerHTML = '<option value="">Välj</option>' + list.map(p=>`<option value="${p}">${p}</option>`).join("");
+  if(current && list.includes(current)) el.value = current;
+}
+
+function refreshAllPlayerDropdowns(){
+  const list = getPlayers();
+  for(let i=1;i<=12;i++) fillSelect("p"+i, list);
+  fillSelect("goalie", list);
+  enforceUniquePlayers();
+}
+
+function enforceUniquePlayers(){
+  const sels = [];
+  for(let i=1;i<=12;i++){ const el=document.getElementById("p"+i); if(el) sels.push(el); }
+  const chosen = new Set(sels.map(s=>s.value).filter(Boolean));
+  sels.forEach(sel=>{
+    const current = sel.value;
+    Array.from(sel.options).forEach(opt=>{
+      if(!opt.value) return;
+      opt.disabled = (opt.value !== current) && chosen.has(opt.value);
+    });
+  });
+}
+
+function savePlayers(){
+  localStorage.setItem('players', document.getElementById('playersText').value);
+  refreshAllPlayerDropdowns();
+  closeModal('playersModal');
+}
+
+function saveCoaches(){
+  localStorage.setItem('coaches', document.getElementById('coachesText').value);
+  closeModal('coachesModal');
+}
+
+// First-run prefill if empty
+(function initPrefill(){
+  if(!localStorage.getItem('players')) localStorage.setItem('players', document.getElementById('playersText').value);
+  if(!localStorage.getItem('coaches')) localStorage.setItem('coaches', document.getElementById('coachesText').value);
+  document.getElementById('playersText').value = localStorage.getItem('players') || document.getElementById('playersText').value;
+  document.getElementById('coachesText').value = localStorage.getItem('coaches') || document.getElementById('coachesText').value;
+})();
+
+refreshAllPlayerDropdowns();
+for(let i=1;i<=12;i++){ const el=document.getElementById("p"+i); if(el) el.addEventListener("change", enforceUniquePlayers); }
+</script>
+
+</body>
+</html>
