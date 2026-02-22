@@ -4,26 +4,96 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>NSK Lag</title>
+
 <style>
-body{font-family:-apple-system,system-ui;margin:12px;background:#f2f4f7}
-.card{background:#fff;border-radius:12px;padding:12px;margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
-button{padding:10px;border-radius:8px;border:none;background:#0b74ff;color:#fff;width:100%;margin-top:8px}
-select{width:100%;padding:8px;margin-top:6px}
+body{
+  font-family:-apple-system,system-ui;
+  margin:12px;
+  background:#f2f4f7;
+}
+
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:12px;
+  box-shadow:0 2px 6px rgba(0,0,0,.1);
+}
+
+select,button{
+  width:100%;
+  padding:10px;
+  margin-top:6px;
+  border-radius:8px;
+  border:1px solid #ccc;
+}
+
+button{
+  background:#0b74ff;
+  color:#fff;
+  border:none;
+}
 </style>
 </head>
+
 <body>
 
 <div class="card">
 <h2>NSK Lag</h2>
-<p>Testversion — fungerar direkt i GitHub Pages</p>
+<p>Testversion — välj spelare</p>
 </div>
 
 <div class="card">
-<h3>Laguppställning</h3>
-<label>Spelare 1</label><select><option>Välj</option></select>
-<label>Spelare 2</label><select><option>Välj</option></select>
-<label>Målvakt</label><select><option>Välj</option></select>
+<h3>Spelare</h3>
+
+<select id="p1"></select>
+<select id="p2"></select>
+<select id="p3"></select>
+<select id="p4"></select>
+
 </div>
+
+<script>
+
+const players = [
+"Agnes Danielsson",
+"Albert Zillén",
+"Albin Andersson",
+"Aron Warensjö-Sommar",
+"August Hasselberg",
+"Benjamin Linderström",
+"Charlie Carman",
+"Emil Tranborg",
+"Enzo Olsson",
+"Gunnar Englund",
+"Henry Gauffin",
+"Linus Stolt",
+"Melker Axbom",
+"Nelson Östergren",
+"Nicky Selander",
+"Nikola Kosoderc",
+"Noé Bonnafous Sand",
+"Oliver Engström",
+"Oliver Zoumblios",
+"Simon Misionry",
+"Sixten Bratt",
+"Theo Ydrenius",
+"Viggo Kronvall",
+"Yuktha Reddy Semberi",
+"Måns Åkvist",
+"Pelle Åstrand"
+];
+
+function fill(id){
+  const el = document.getElementById(id);
+  el.innerHTML =
+    "<option>Välj</option>" +
+    players.map(p => "<option>"+p+"</option>").join("");
+}
+
+["p1","p2","p3","p4"].forEach(fill);
+
+</script>
 
 </body>
 </html>
