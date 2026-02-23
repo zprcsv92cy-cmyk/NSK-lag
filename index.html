@@ -90,6 +90,7 @@
     th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; vertical-align:top; }
     th{ font-size:12px; color:var(--muted); font-weight:700; }
     .nowrap{ white-space:nowrap; }
+    .hidden{ display:none !important; }
 
     /* Modal */
     #registerModal{
@@ -227,7 +228,7 @@
 
   <!-- LAGUPPSTÄLLNING -->
   <div class="card no-print">
-    <div class="row">
+    <div class="row" id="playerRow">
       <div>
         <label>Spelare 1</label>
         <select class="playerSel" id="p1"></select>
@@ -240,7 +241,7 @@
         <label>Spelare 3</label>
         <select class="playerSel" id="p3"></select>
       </div>
-      <div>
+      <div id="p4Wrap">
         <label>Spelare 4</label>
         <select class="playerSel" id="p4"></select>
       </div>
@@ -396,7 +397,7 @@
   // - Perioder per match: 1
   // - Periodtid: 15 min
   // - Bytestid: 90 sek
-  // - Spelare på plan: 3 (NY default)
+  // - Spelare på plan: 3 (default)
   // ----------------------------
   function initSettingsDropdowns(){
     // Perioder per match: 1-3, default 1
@@ -421,7 +422,7 @@
     }
     period.value = "15";
 
-    // Bytestid: 30-180 (för att 90 finns), default 90
+    // Bytestid: 30-180, default 90
     const shift = document.getElementById("shiftSec");
     shift.innerHTML = "";
     for (let s=30; s<=180; s+=5){
@@ -513,6 +514,7 @@
   }
 
   function getFormState(){
+    const onCourt = document.getElementById("onCourt").value || "3";
     return {
       matchDate: document.getElementById("matchDate").value || "",
       matchTime: document.getElementById("matchTime").value || "",
@@ -522,12 +524,13 @@
       periodsCount: document.getElementById("periodsCount").value || "1",
       periodMin: document.getElementById("periodMin").value || "15",
       shiftSec: document.getElementById("shiftSec").value || "90",
-      onCourt: document.getElementById("onCourt").value || "3",
+      onCourt: onCourt,
 
       p1: document.getElementById("p1").value || "",
       p2: document.getElementById("p2").value || "",
       p3: document.getElementById("p3").value || "",
-      p4: document.getElementById("p4").value || "",
+      // p4 sparas bara om onCourt != 3, annars tom
+      p4: (onCourt === "3") ? "" : (document.getElementById("p4").value || ""),
       goalie: document.getElementById("goalie").value || "",
       coach: document.getElementById("coach").value || ""
     };
@@ -550,6 +553,8 @@
     document.getElementById("p4").value = s.p4 || "";
     document.getElementById("goalie").value = s.goalie || "";
     document.getElementById("coach").value = s.coach || "";
+
+    syncPlayersUI(); // säkerställ att p4 döljs vid 3
   }
 
   function saveState(){
@@ -578,11 +583,35 @@
   }
 
   // ----------------------------
+  // UI: dölj/visa Spelare 4 beroende på onCourt
+  // ----------------------------
+  function syncPlayersUI(){
+    const onCourt = document.getElementById("onCourt").value || "3";
+    const wrap = document.getElementById("p4Wrap");
+    if (!wrap) return;
+
+    if (onCourt === "3"){
+      wrap.classList.add("hidden");
+      // rensa p4 om vi går ner till 3
+      const p4 = document.getElementById("p4");
+      if (p4 && p4.value){
+        p4.value = "";
+      }
+    } else {
+      wrap.classList.remove("hidden");
+    }
+  }
+
+  // ----------------------------
   // Validation
   // ----------------------------
   function validate(){
     const s = getFormState();
-    const players = [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
+    const onCourt = s.onCourt || "3";
+    const players = (onCourt === "3")
+      ? [s.p1,s.p2,s.p3].filter(Boolean)
+      : [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
+
     const set = new Set(players.map(x=>x.toLowerCase()));
     if (set.size !== players.length) return "Samma spelare är vald flera gånger.";
     if (s.goalie && set.has(s.goalie.toLowerCase())) return "Målvakt kan inte vara utespelare.";
@@ -591,6 +620,7 @@
 
   // ----------------------------
   // Bytesschema (nedräkning från periodMin:00)
+  // (INGA spelare + INGEN periodkolumn)
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -625,8 +655,12 @@
       const arena= st.arena || "—";
       const coach= st.coach || "—";
       const goalie= st.goalie || "—";
+      const onCourt = st.onCourt || "3";
 
-      const players = [st.p1, st.p2, st.p3, st.p4].filter(Boolean);
+      const players = (onCourt === "3")
+        ? [st.p1, st.p2, st.p3].filter(Boolean)
+        : [st.p1, st.p2, st.p3, st.p4].filter(Boolean);
+
       const playersText = players.length ? players.join(", ") : "—";
 
       rows.push(`
@@ -686,7 +720,11 @@
     const matchNo = document.getElementById("matchNo").value || "1";
     const teamNo = document.getElementById("teamSelect").value || "1";
 
-    const chosen = [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
+    const onCourt = s.onCourt || "3";
+    const chosen = (onCourt === "3")
+      ? [s.p1,s.p2,s.p3].filter(Boolean)
+      : [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
+
     const goalie = s.goalie || "—";
     const coach = s.coach || "—";
     const opponent = s.opponent || "—";
@@ -697,10 +735,8 @@
     const periodsCount = Math.min(3, Math.max(1, parseInt(s.periodsCount, 10) || 1));
     const periodMin = parseInt(s.periodMin, 10) || 15;
     const shiftSec = parseInt(s.shiftSec, 10) || 90;
-    const onCourt = parseInt(s.onCourt, 10) || 3;
 
     const shiftTimes = buildShiftTimes(periodMin, shiftSec);
-
     const matchCount = loadMatchCount();
 
     const out = document.getElementById("output");
@@ -717,7 +753,7 @@
       </div>
 
       <div class="small" style="margin-top:6px;">
-        Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b> • På plan: <b>${onCourt}</b>
+        Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b> • På plan: <b>${escapeHtml(onCourt)}</b>
       </div>
 
       <hr>
@@ -733,22 +769,12 @@
         <div style="flex: 1 1 360px;">
           <div><b>Bytesschema</b></div>
           <table>
-            <thead><tr><th>Period</th><th>#</th><th>Tid kvar</th></tr></thead>
+            <thead><tr><th>#</th><th>Tid kvar</th></tr></thead>
             <tbody>
-              ${
-                Array.from({length: periodsCount}, (_,p)=>p+1).map(p =>
-                  shiftTimes.map((t,i)=>`
-                    <tr>
-                      <td>${p}</td>
-                      <td>${i+1}</td>
-                      <td>${escapeHtml(t)}</td>
-                    </tr>
-                  `).join("")
-                ).join("")
-              }
+              ${shiftTimes.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t)}</td></tr>`).join("")}
             </tbody>
           </table>
-          <div class="small" style="margin-top:6px;">(Nedräkning från periodtid för varje period)</div>
+          <div class="small" style="margin-top:6px;">(Nedräkning från periodtid)</div>
         </div>
       </div>
 
@@ -921,6 +947,8 @@
     fillMatchCountDropdown();
     applyMatchCount();
 
+    syncPlayersUI();
+
     // autospara på alla fält (teamSelect + matchNo + matchCount byter stateKey/lista)
     const ids = [
       "matchDate","matchTime","opponent","arena",
@@ -929,7 +957,13 @@
     ];
     ids.forEach(id=>{
       const el = document.getElementById(id);
-      el.addEventListener("change", ()=>{ saveState(); renderAll(); });
+      el.addEventListener("change", ()=>{
+        if (id === "onCourt"){
+          syncPlayersUI();
+        }
+        saveState();
+        renderAll();
+      });
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
@@ -946,12 +980,14 @@
     document.getElementById("teamSelect").addEventListener("change", ()=>{
       applyMatchCount();
       loadState();
+      syncPlayersUI();
       renderAll();
     });
 
     // byt match => state för valt lag
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
+      syncPlayersUI();
       renderAll();
     });
 
@@ -962,6 +998,7 @@
 
     // load initial
     loadState();
+    syncPlayersUI();
     renderAll();
   }
 
