@@ -309,7 +309,7 @@
       <div class="card" style="margin-top:12px;">
         <b>Backup / Flytta till annan telefon</b>
         <div class="small" style="margin-top:6px;">
-          Export/Import av register + alla lag/matcher. Detta är bästa sättet att “få in” era uppgifter från Excel.
+          Export/Import av register + alla lag/matcher.
         </div>
         <div class="btnrow" style="margin-top:10px;">
           <button class="ghost" onclick="exportJSON()">Exportera JSON</button>
@@ -366,6 +366,17 @@
   }
   function safeParseJSON(raw, fallback){
     try { return JSON.parse(raw); } catch { return fallback; }
+  }
+
+  // Förnamn + första bokstaven i efternamn (t.ex. "August H")
+  function shortName(full){
+    const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
+    if (!parts.length) return "";
+    if (parts.length === 1) return parts[0];
+    const first = parts[0];
+    const last = parts[parts.length - 1];
+    const initial = last ? last[0].toUpperCase() : "";
+    return initial ? `${first} ${initial}` : first;
   }
 
   // ----------------------------
@@ -433,10 +444,10 @@
     }
     shift.value = "90";
 
-    // Spelare på plan: 3-5, default 3
+    // Spelare på plan: 3 eller 4 (UI har max 4 spelare), default 3
     const onCourt = document.getElementById("onCourt");
     onCourt.innerHTML = "";
-    [3,4,5].forEach(n=>{
+    [3,4].forEach(n=>{
       const o = document.createElement("option");
       o.value = String(n);
       o.textContent = String(n);
@@ -529,7 +540,6 @@
       p1: document.getElementById("p1").value || "",
       p2: document.getElementById("p2").value || "",
       p3: document.getElementById("p3").value || "",
-      // p4 sparas bara om onCourt != 3, annars tom
       p4: (onCourt === "3") ? "" : (document.getElementById("p4").value || ""),
       goalie: document.getElementById("goalie").value || "",
       coach: document.getElementById("coach").value || ""
@@ -554,7 +564,7 @@
     document.getElementById("goalie").value = s.goalie || "";
     document.getElementById("coach").value = s.coach || "";
 
-    syncPlayersUI(); // säkerställ att p4 döljs vid 3
+    syncPlayersUI();
   }
 
   function saveState(){
@@ -592,7 +602,6 @@
 
     if (onCourt === "3"){
       wrap.classList.add("hidden");
-      // rensa p4 om vi går ner till 3
       const p4 = document.getElementById("p4");
       if (p4 && p4.value){
         p4.value = "";
@@ -619,8 +628,7 @@
   }
 
   // ----------------------------
-  // Bytesschema (nedräkning från periodMin:00)
-  // (INGA spelare + INGEN periodkolumn)
+  // Bytesschema (nedräkning från periodMin:00) + VISAR spelare
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -725,6 +733,8 @@
       ? [s.p1,s.p2,s.p3].filter(Boolean)
       : [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
 
+    const chosenShort = chosen.map(shortName).filter(Boolean).join(", ") || "—";
+
     const goalie = s.goalie || "—";
     const coach = s.coach || "—";
     const opponent = s.opponent || "—";
@@ -766,15 +776,23 @@
           <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
         </div>
 
-        <div style="flex: 1 1 360px;">
+        <div style="flex: 1 1 420px;">
           <div><b>Bytesschema</b></div>
           <table>
-            <thead><tr><th>#</th><th>Tid kvar</th></tr></thead>
+            <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
             <tbody>
-              ${shiftTimes.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t)}</td></tr>`).join("")}
+              ${shiftTimes.map((t,i)=>`
+                <tr>
+                  <td>${i+1}</td>
+                  <td class="nowrap">${escapeHtml(t)}</td>
+                  <td>${escapeHtml(chosenShort)}</td>
+                </tr>
+              `).join("")}
             </tbody>
           </table>
-          <div class="small" style="margin-top:6px;">(Nedräkning från periodtid)</div>
+          <div class="small" style="margin-top:6px;">
+            Spelare visas som <b>Förnamn + initial</b> (t.ex. “August H”).
+          </div>
         </div>
       </div>
 
@@ -949,7 +967,6 @@
 
     syncPlayersUI();
 
-    // autospara på alla fält (teamSelect + matchNo + matchCount byter stateKey/lista)
     const ids = [
       "matchDate","matchTime","opponent","arena",
       "periodsCount","periodMin","shiftSec","onCourt",
@@ -967,7 +984,6 @@
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
-    // Antal matcher per lag
     document.getElementById("matchCount").addEventListener("change", ()=>{
       const n = parseInt(document.getElementById("matchCount").value || "4", 10);
       saveMatchCount(n);
@@ -976,7 +992,6 @@
       renderAll();
     });
 
-    // byt lag => matchCount + state för vald match
     document.getElementById("teamSelect").addEventListener("change", ()=>{
       applyMatchCount();
       loadState();
@@ -984,19 +999,16 @@
       renderAll();
     });
 
-    // byt match => state för valt lag
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       syncPlayersUI();
       renderAll();
     });
 
-    // modal close on outside click
     document.getElementById("registerModal").addEventListener("click", (e)=>{
       if (e.target.id === "registerModal") closeRegister();
     });
 
-    // load initial
     loadState();
     syncPlayersUI();
     renderAll();
