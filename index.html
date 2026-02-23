@@ -91,6 +91,7 @@
     th{ font-size:12px; color:var(--muted); font-weight:700; }
     .nowrap{ white-space:nowrap; }
     .hidden{ display:none !important; }
+    .matchBlock{ break-inside: avoid; page-break-inside: avoid; }
 
     /* Modal */
     #registerModal{
@@ -649,155 +650,108 @@
     return [...new Set(times)];
   }
 
-  // ----------------------------
-  // Render helpers: Översikt alla matcher
-  // ----------------------------
-  function renderOverviewAllMatches(teamNo, matchCount){
-    const rows = [];
-    for (let m=1; m<=matchCount; m++){
-      const st = loadStateFor(teamNo, m);
+  function formatInfoLine(st){
+    const date = st.matchDate || "—";
+    const time = st.matchTime || "—";
+    const opp  = st.opponent || "—";
+    const arena= st.arena || "—";
+    return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
+            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>`;
+  }
 
-      const date = st.matchDate || "—";
-      const time = st.matchTime || "—";
-      const opp  = st.opponent || "—";
-      const arena= st.arena || "—";
-      const coach= st.coach || "—";
-      const goalie= st.goalie || "—";
-      const onCourt = st.onCourt || "3";
+  function chosenPlayersFromState(st){
+    const onCourt = st.onCourt || "3";
+    const chosen = (onCourt === "3")
+      ? [st.p1, st.p2, st.p3].filter(Boolean)
+      : [st.p1, st.p2, st.p3, st.p4].filter(Boolean);
+    return { chosen, onCourt };
+  }
 
-      const players = (onCourt === "3")
-        ? [st.p1, st.p2, st.p3].filter(Boolean)
-        : [st.p1, st.p2, st.p3, st.p4].filter(Boolean);
+  function renderMatchBlock(teamNo, matchNo, st){
+    const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
+    const periodMin = parseInt(st.periodMin, 10) || 15;
+    const shiftSec = parseInt(st.shiftSec, 10) || 90;
 
-      const playersText = players.length ? players.join(", ") : "—";
+    const {chosen, onCourt} = chosenPlayersFromState(st);
+    const chosenShort = chosen.map(shortName).filter(Boolean).join(", ") || "—";
+    const goalie = st.goalie || "—";
+    const coach = st.coach || "—";
 
-      rows.push(`
-        <tr>
-          <td class="nowrap"><b>Match ${m}</b></td>
-          <td class="nowrap">${escapeHtml(date)} ${escapeHtml(time)}</td>
-          <td>${escapeHtml(opp)}</td>
-          <td>${escapeHtml(arena)}</td>
-          <td>${escapeHtml(playersText)}</td>
-          <td>${escapeHtml(goalie)}</td>
-          <td>${escapeHtml(coach)}</td>
-        </tr>
-      `);
-    }
+    const shiftTimes = buildShiftTimes(periodMin, shiftSec);
 
     return `
-      <hr>
-      <div style="margin-top:6px;"><b>Laguppställning – alla matcher</b></div>
-      <div class="small" style="margin-top:4px;">
-        Visar laguppställning för Lag ${escapeHtml(teamNo)} för match 1–${escapeHtml(matchCount)}.
+      <div class="print-card matchBlock">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+          <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
+          <div class="small">${formatInfoLine(st)}</div>
+        </div>
+
+        <div class="small" style="margin-top:6px;">
+          Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b> • På plan: <b>${escapeHtml(onCourt)}</b>
+        </div>
+
+        <hr>
+
+        <div style="display:flex; gap:18px; flex-wrap:wrap;">
+          <div style="flex: 1 1 260px;">
+            <div><b>Laguppställning</b></div>
+            <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
+            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
+            <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
+          </div>
+
+          <div style="flex: 1 1 420px;">
+            <div><b>Bytesschema</b></div>
+            <table>
+              <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+              <tbody>
+                ${shiftTimes.map((t,i)=>`
+                  <tr>
+                    <td>${i+1}</td>
+                    <td class="nowrap">${escapeHtml(t)}</td>
+                    <td>${escapeHtml(chosenShort)}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+            <div class="small" style="margin-top:6px;">
+              Spelare visas som <b>Förnamn + initial</b> (t.ex. “August H”).
+            </div>
+          </div>
+        </div>
       </div>
-      <table style="margin-top:8px;">
-        <thead>
-          <tr>
-            <th>Match</th>
-            <th>Datum/Tid</th>
-            <th>Motståndare</th>
-            <th>Plan</th>
-            <th>Utespelare</th>
-            <th>Målvakt</th>
-            <th>Tränare</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rows.join("")}
-        </tbody>
-      </table>
     `;
   }
 
   // ----------------------------
-  // Render matchblad
+  // Render ALLA matcher (1..matchCount) för valt lag
   // ----------------------------
   function renderAll(){
+    // Validera bara den match som just nu är vald (så du får fel direkt där du jobbar)
     const err = validate();
     const msg = document.getElementById("msg");
     if (err){
       msg.innerHTML = `<span class="error">✖ ${escapeHtml(err)}</span>`;
-      document.getElementById("output").innerHTML =
-        `<b>Fel</b><div class="small">${escapeHtml(err)}</div>`;
-      return;
     } else {
       msg.innerHTML = `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
     }
 
-    const s = getFormState();
-    const matchNo = document.getElementById("matchNo").value || "1";
     const teamNo = document.getElementById("teamSelect").value || "1";
-
-    const onCourt = s.onCourt || "3";
-    const chosen = (onCourt === "3")
-      ? [s.p1,s.p2,s.p3].filter(Boolean)
-      : [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
-
-    const chosenShort = chosen.map(shortName).filter(Boolean).join(", ") || "—";
-
-    const goalie = s.goalie || "—";
-    const coach = s.coach || "—";
-    const opponent = s.opponent || "—";
-    const arena = s.arena || "—";
-    const date = s.matchDate ? s.matchDate : "—";
-    const time = s.matchTime ? s.matchTime : "—";
-
-    const periodsCount = Math.min(3, Math.max(1, parseInt(s.periodsCount, 10) || 1));
-    const periodMin = parseInt(s.periodMin, 10) || 15;
-    const shiftSec = parseInt(s.shiftSec, 10) || 90;
-
-    const shiftTimes = buildShiftTimes(periodMin, shiftSec);
     const matchCount = loadMatchCount();
 
+    let html = "";
+    for (let m=1; m<=matchCount; m++){
+      const st = loadStateFor(teamNo, m);
+      // säkra defaults om tom state
+      if (!st.periodMin) st.periodMin = "15";
+      if (!st.shiftSec) st.shiftSec = "90";
+      if (!st.periodsCount) st.periodsCount = "1";
+      if (!st.onCourt) st.onCourt = "3";
+      html += renderMatchBlock(teamNo, m, st);
+    }
+
     const out = document.getElementById("output");
-    out.innerHTML = `
-      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
-        <div class="small">
-          Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b>
-        </div>
-      </div>
-
-      <div class="small" style="margin-top:6px;">
-        Motståndare: <b>${escapeHtml(opponent)}</b> • Plan: <b>${escapeHtml(arena)}</b>
-      </div>
-
-      <div class="small" style="margin-top:6px;">
-        Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b> • På plan: <b>${escapeHtml(onCourt)}</b>
-      </div>
-
-      <hr>
-
-      <div style="display:flex; gap:18px; flex-wrap:wrap;">
-        <div style="flex: 1 1 260px;">
-          <div><b>Laguppställning (denna match)</b></div>
-          <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
-          <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
-          <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
-        </div>
-
-        <div style="flex: 1 1 420px;">
-          <div><b>Bytesschema</b></div>
-          <table>
-            <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
-            <tbody>
-              ${shiftTimes.map((t,i)=>`
-                <tr>
-                  <td>${i+1}</td>
-                  <td class="nowrap">${escapeHtml(t)}</td>
-                  <td>${escapeHtml(chosenShort)}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-          <div class="small" style="margin-top:6px;">
-            Spelare visas som <b>Förnamn + initial</b> (t.ex. “August H”).
-          </div>
-        </div>
-      </div>
-
-      ${renderOverviewAllMatches(teamNo, matchCount)}
-    `;
+    out.innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
   }
 
   function exportPDF(){
