@@ -195,7 +195,7 @@
       </div>
       <div>
         <label>Plan</label>
-        <input id="arena" placeholder="Skriv plan">
+        <select id="arena"></select>
       </div>
     </div>
 
@@ -203,6 +203,10 @@
       <div>
         <label>Antal i laget</label>
         <select id="teamSize"></select>
+      </div>
+      <div>
+        <label>Antal på plan</label>
+        <select id="onCourt"></select>
       </div>
       <div>
         <label>Perioder per match</label>
@@ -483,8 +487,9 @@
       matchDate: "",
       matchTime: "",
       opponent: "",
-      arena: "",
+      arena: "1",
       teamSize: "10",
+      onCourt: "3",
       periodsCount: "1",
       periodMin: "15",
       shiftSec: "90",
@@ -504,9 +509,10 @@
       matchDate: document.getElementById("matchDate").value || "",
       matchTime: document.getElementById("matchTime").value || "",
       opponent: document.getElementById("opponent").value || "",
-      arena: document.getElementById("arena").value || "",
+      arena: document.getElementById("arena").value || "1",
 
       teamSize: teamSize,
+      onCourt: document.getElementById("onCourt").value || "3",
       periodsCount: document.getElementById("periodsCount").value || "1",
       periodMin: document.getElementById("periodMin").value || "15",
       shiftSec: document.getElementById("shiftSec").value || "90",
@@ -521,9 +527,10 @@
     document.getElementById("matchDate").value = d.matchDate || "";
     document.getElementById("matchTime").value = d.matchTime || "";
     document.getElementById("opponent").value = d.opponent || "";
-    document.getElementById("arena").value = d.arena || "";
+    document.getElementById("arena").value = d.arena || "1";
 
     document.getElementById("teamSize").value = d.teamSize || "10";
+    document.getElementById("onCourt").value = d.onCourt || "3";
     document.getElementById("periodsCount").value = d.periodsCount || "1";
     document.getElementById("periodMin").value = d.periodMin || "15";
     document.getElementById("shiftSec").value = d.shiftSec || "90";
@@ -590,8 +597,6 @@
       }
 
       sel.value = vals[i-1] || "";
-
-      // autosave
       sel.addEventListener("change", ()=>{ saveState(); renderAll(); });
 
       wrap.appendChild(lab);
@@ -613,7 +618,8 @@
   }
 
   // ----------------------------
-  // Bytesschema (nedräkning från periodMin:00) + spelare i kortformat
+  // Bytesschema (nedräkning från periodMin:00)
+  // - Tar bort byte vid 00:00 (00:00 ska inte listas)
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -626,26 +632,26 @@
     const periodSeconds = Math.floor(periodMin * 60);
     const step = Math.max(1, Math.floor(shiftSec));
     const times = [];
-    for (let t = periodSeconds; t >= 0; t -= step){
+    // börja på full tid, men gå bara ner tills > 0
+    for (let t = periodSeconds; t > 0; t -= step){
       times.push(formatMMSS(t));
-      if (t === 0) break;
-      if (t - step < 0) times.push("00:00");
     }
     return [...new Set(times)];
   }
 
-  function chosenShortFromState(st){
+  function chosenShortFromState(st, onCourt){
     const chosen = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-    return chosen.map(shortName).filter(Boolean).join(", ") || "—";
+    const n = Math.min(Math.max(1, parseInt(onCourt,10) || 3), 5);
+    return chosen.slice(0, n).map(shortName).filter(Boolean).join(", ") || "—";
   }
 
   function formatInfoLine(st){
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
-    const arena= st.arena || "—";
+    const arenaLabel = `Plan ${st.arena || "—"}`;
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
-            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>`;
+            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arenaLabel)}</b>`;
   }
 
   function renderMatchBlock(teamNo, matchNo, st){
@@ -658,8 +664,9 @@
     const coaches = loadTeamCoaches(); // per lag
     const coachText = coaches.length ? coaches.join(", ") : "—";
 
+    const onCourt = st.onCourt || "3";
+    const onPlanText = chosenShortFromState(st, onCourt);
     const shiftTimes = buildShiftTimes(periodMin, shiftSec);
-    const onPlanText = chosenShortFromState(st);
 
     return `
       <div class="print-card matchBlock">
@@ -669,7 +676,8 @@
         </div>
 
         <div class="small" style="margin-top:6px;">
-          Antal i laget: <b>${escapeHtml(st.teamSize || "—")}</b> • Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b>
+          Antal i laget: <b>${escapeHtml(st.teamSize || "—")}</b> • Antal på plan: <b>${escapeHtml(onCourt)}</b>
+          • Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b>
         </div>
 
         <hr>
@@ -711,11 +719,9 @@
   function renderAll(){
     const err = validateCurrentMatch();
     const msg = document.getElementById("msg");
-    if (err){
-      msg.innerHTML = `<span class="error">✖ ${escapeHtml(err)}</span>`;
-    } else {
-      msg.innerHTML = `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
-    }
+    msg.innerHTML = err
+      ? `<span class="error">✖ ${escapeHtml(err)}</span>`
+      : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
 
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchCount = loadMatchCount();
@@ -740,7 +746,7 @@
   }
 
   // ----------------------------
-  // Register modal
+  // Register modal (inkl. redigera namn)
   // ----------------------------
   function openRegister(){
     document.getElementById("registerModal").style.display = "block";
@@ -749,6 +755,7 @@
   function closeRegister(){
     document.getElementById("registerModal").style.display = "none";
   }
+
   function renderRegisterLists(){
     const {players, coaches} = loadRegister();
 
@@ -756,7 +763,10 @@
     pl.innerHTML = players.map((n,i)=>`
       <div class="listItem">
         <div>${escapeHtml(n)}</div>
-        <button class="ghost" onclick="removePlayer(${i})">Ta bort</button>
+        <div style="display:flex; gap:8px;">
+          <button class="ghost" onclick="editPlayer(${i})">Redigera</button>
+          <button class="ghost" onclick="removePlayer(${i})">Ta bort</button>
+        </div>
       </div>
     `).join("") || "<div class='small'>Inga spelare i registret.</div>";
 
@@ -764,10 +774,14 @@
     cl.innerHTML = coaches.map((n,i)=>`
       <div class="listItem">
         <div>${escapeHtml(n)}</div>
-        <button class="ghost" onclick="removeCoach(${i})">Ta bort</button>
+        <div style="display:flex; gap:8px;">
+          <button class="ghost" onclick="editCoach(${i})">Redigera</button>
+          <button class="ghost" onclick="removeCoach(${i})">Ta bort</button>
+        </div>
       </div>
     `).join("") || "<div class='small'>Inga tränare i registret.</div>";
   }
+
   function addPlayer(){
     const inp = document.getElementById("newPlayer");
     const name = (inp.value||"").trim();
@@ -778,7 +792,9 @@
     inp.value = "";
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
+    renderAll();
   }
+
   function addCoach(){
     const inp = document.getElementById("newCoach");
     const name = (inp.value||"").trim();
@@ -789,20 +805,64 @@
     inp.value = "";
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
+    renderAll();
   }
+
   function removePlayer(idx){
     const {players, coaches} = loadRegister();
     players.splice(idx, 1);
     saveRegister(players, coaches);
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
+    renderAll();
   }
+
   function removeCoach(idx){
     const {players, coaches} = loadRegister();
     coaches.splice(idx, 1);
     saveRegister(players, coaches);
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
+    renderAll();
+  }
+
+  function editPlayer(idx){
+    const {players, coaches} = loadRegister();
+    const current = players[idx];
+    const next = prompt("Redigera spelare:", current || "");
+    if (next == null) return;
+    const name = String(next).trim();
+    if (!name) return;
+    players[idx] = name;
+    saveRegister(players, coaches);
+    renderRegisterLists();
+    refreshAllDropdownsAndPlayers();
+    renderAll();
+  }
+
+  function editCoach(idx){
+    const {players, coaches} = loadRegister();
+    const current = coaches[idx];
+    const next = prompt("Redigera tränare:", current || "");
+    if (next == null) return;
+    const name = String(next).trim();
+    if (!name) return;
+
+    // uppdatera coach-listan
+    coaches[idx] = name;
+
+    // om coach var vald i team-coaches: byt ut där också
+    const oldLower = String(current || "").toLowerCase();
+    const selected = loadTeamCoaches();
+    const updated = selected.map(x => (String(x).toLowerCase() === oldLower ? name : x));
+
+    saveRegister(players, coaches);
+    saveTeamCoaches(updated);
+
+    renderRegisterLists();
+    refreshAllDropdownsAndPlayers();
+    applyTeamCoachesToUI();
+    renderAll();
   }
 
   function refreshAllDropdownsAndPlayers(){
@@ -818,7 +878,6 @@
     const coachSel = document.getElementById("coach");
     const currentTeamCoaches = loadTeamCoaches();
     fillMultiSelect(coachSel, coaches);
-    // återställ val
     const chosen = new Set(currentTeamCoaches.map(x=>String(x).toLowerCase()));
     for (const opt of coachSel.options){
       opt.selected = chosen.has(String(opt.value).toLowerCase());
@@ -829,7 +888,9 @@
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
 
+  // ----------------------------
   // Backup
+  // ----------------------------
   function exportJSON(){
     const payload = {
       players: loadRegister().players,
@@ -839,7 +900,6 @@
       states: {}
     };
 
-    // matchCount per lag + team coaches per lag
     for (let t=1; t<=3; t++){
       const kCount = `nsk_matchCount_team_${t}`;
       if (localStorage.getItem(kCount) != null){
@@ -923,9 +983,20 @@
   }
 
   // ----------------------------
-  // Settings dropdowns
+  // Init dropdowns
   // ----------------------------
   function initSettingsDropdowns(){
+    // Plan 1-4
+    const arena = document.getElementById("arena");
+    arena.innerHTML = "";
+    for (let i=1; i<=4; i++){
+      const o = document.createElement("option");
+      o.value = String(i);
+      o.textContent = `Plan ${i}`;
+      arena.appendChild(o);
+    }
+    arena.value = "1";
+
     // teamSize 1-25
     const teamSize = document.getElementById("teamSize");
     teamSize.innerHTML = "";
@@ -936,6 +1007,17 @@
       teamSize.appendChild(o);
     }
     teamSize.value = "10";
+
+    // onCourt 3-5 (default 3)
+    const onCourt = document.getElementById("onCourt");
+    onCourt.innerHTML = "";
+    [3,4,5].forEach(n=>{
+      const o = document.createElement("option");
+      o.value = String(n);
+      o.textContent = String(n);
+      onCourt.appendChild(o);
+    });
+    onCourt.value = "3";
 
     // Perioder 1-3 default 1
     const periodsCount = document.getElementById("periodsCount");
@@ -982,17 +1064,13 @@
     applyMatchCount();
 
     refreshAllDropdownsAndPlayers();
-
-    // load match state
     loadState();
-
-    // team coaches (per team)
     applyTeamCoachesToUI();
 
     // autosave match meta + settings
     const ids = [
       "matchDate","matchTime","opponent","arena",
-      "periodsCount","periodMin","shiftSec",
+      "onCourt","periodsCount","periodMin","shiftSec",
       "goalie"
     ];
     ids.forEach(id=>{
@@ -1006,7 +1084,6 @@
       const newN = parseInt(document.getElementById("teamSize").value || "10", 10);
       const st = getFormState();
       st.teamSize = String(newN);
-      // re-render with current first N values
       renderPlayerSelectors(newN, st.players || []);
       saveState();
       renderAll();
