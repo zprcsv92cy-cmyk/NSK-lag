@@ -87,8 +87,9 @@
     ol{ margin: 8px 0 8px 20px; padding:0; }
     li{ margin: 4px 0; }
     table{ width:100%; border-collapse:collapse; }
-    th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; }
+    th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; vertical-align:top; }
     th{ font-size:12px; color:var(--muted); font-weight:700; }
+    .nowrap{ white-space:nowrap; }
 
     /* Modal */
     #registerModal{
@@ -141,6 +142,7 @@
       .nsk-top{ margin:0 0 8px; }
       .nsk-logo{ width:48px; height:48px; }
       table{ break-inside: avoid; }
+      tr{ break-inside: avoid; }
     }
   </style>
 </head>
@@ -394,6 +396,7 @@
   // - Perioder per match: 1
   // - Periodtid: 15 min
   // - Bytestid: 90 sek
+  // - Spelare på plan: 3 (NY default)
   // ----------------------------
   function initSettingsDropdowns(){
     // Perioder per match: 1-3, default 1
@@ -429,7 +432,7 @@
     }
     shift.value = "90";
 
-    // Spelare på plan: 3-5, default 5
+    // Spelare på plan: 3-5, default 3
     const onCourt = document.getElementById("onCourt");
     onCourt.innerHTML = "";
     [3,4,5].forEach(n=>{
@@ -438,7 +441,7 @@
       o.textContent = String(n);
       onCourt.appendChild(o);
     });
-    onCourt.value = "5";
+    onCourt.value = "3";
   }
 
   function refreshDropdowns(){
@@ -503,9 +506,9 @@
   // ----------------------------
   // State per (lag + match)
   // ----------------------------
-  function stateKey(){
-    const team = document.getElementById("teamSelect").value;
-    const matchNo = document.getElementById("matchNo").value;
+  function stateKey(teamOverride=null, matchOverride=null){
+    const team = teamOverride ?? document.getElementById("teamSelect").value;
+    const matchNo = matchOverride ?? document.getElementById("matchNo").value;
     return `nsk_state_team_${team}_match_${matchNo}`;
   }
 
@@ -519,7 +522,7 @@
       periodsCount: document.getElementById("periodsCount").value || "1",
       periodMin: document.getElementById("periodMin").value || "15",
       shiftSec: document.getElementById("shiftSec").value || "90",
-      onCourt: document.getElementById("onCourt").value || "5",
+      onCourt: document.getElementById("onCourt").value || "3",
 
       p1: document.getElementById("p1").value || "",
       p2: document.getElementById("p2").value || "",
@@ -539,7 +542,7 @@
     document.getElementById("periodsCount").value = s.periodsCount || "1";
     document.getElementById("periodMin").value = s.periodMin || "15";
     document.getElementById("shiftSec").value = s.shiftSec || "90";
-    document.getElementById("onCourt").value = s.onCourt || "5";
+    document.getElementById("onCourt").value = s.onCourt || "3";
 
     document.getElementById("p1").value = s.p1 || "";
     document.getElementById("p2").value = s.p2 || "";
@@ -567,6 +570,11 @@
     loadState();
     document.getElementById("output").innerHTML =
       "<b>Matchblad</b><div class='small'>Rensat. Fyll i och skapa igen.</div>";
+  }
+
+  function loadStateFor(team, matchNo){
+    const raw = localStorage.getItem(stateKey(String(team), String(matchNo)));
+    return raw ? safeParseJSON(raw, {}) : {};
   }
 
   // ----------------------------
@@ -604,6 +612,62 @@
   }
 
   // ----------------------------
+  // Render helpers: Översikt alla matcher
+  // ----------------------------
+  function renderOverviewAllMatches(teamNo, matchCount){
+    const rows = [];
+    for (let m=1; m<=matchCount; m++){
+      const st = loadStateFor(teamNo, m);
+
+      const date = st.matchDate || "—";
+      const time = st.matchTime || "—";
+      const opp  = st.opponent || "—";
+      const arena= st.arena || "—";
+      const coach= st.coach || "—";
+      const goalie= st.goalie || "—";
+
+      const players = [st.p1, st.p2, st.p3, st.p4].filter(Boolean);
+      const playersText = players.length ? players.join(", ") : "—";
+
+      rows.push(`
+        <tr>
+          <td class="nowrap"><b>Match ${m}</b></td>
+          <td class="nowrap">${escapeHtml(date)} ${escapeHtml(time)}</td>
+          <td>${escapeHtml(opp)}</td>
+          <td>${escapeHtml(arena)}</td>
+          <td>${escapeHtml(playersText)}</td>
+          <td>${escapeHtml(goalie)}</td>
+          <td>${escapeHtml(coach)}</td>
+        </tr>
+      `);
+    }
+
+    return `
+      <hr>
+      <div style="margin-top:6px;"><b>Laguppställning – alla matcher</b></div>
+      <div class="small" style="margin-top:4px;">
+        Visar laguppställning för Lag ${escapeHtml(teamNo)} för match 1–${escapeHtml(matchCount)}.
+      </div>
+      <table style="margin-top:8px;">
+        <thead>
+          <tr>
+            <th>Match</th>
+            <th>Datum/Tid</th>
+            <th>Motståndare</th>
+            <th>Plan</th>
+            <th>Utespelare</th>
+            <th>Målvakt</th>
+            <th>Tränare</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows.join("")}
+        </tbody>
+      </table>
+    `;
+  }
+
+  // ----------------------------
   // Render matchblad
   // ----------------------------
   function renderAll(){
@@ -633,9 +697,11 @@
     const periodsCount = Math.min(3, Math.max(1, parseInt(s.periodsCount, 10) || 1));
     const periodMin = parseInt(s.periodMin, 10) || 15;
     const shiftSec = parseInt(s.shiftSec, 10) || 90;
-    const onCourt = parseInt(s.onCourt, 10) || 5;
+    const onCourt = parseInt(s.onCourt, 10) || 3;
 
     const shiftTimes = buildShiftTimes(periodMin, shiftSec);
+
+    const matchCount = loadMatchCount();
 
     const out = document.getElementById("output");
     out.innerHTML = `
@@ -658,7 +724,7 @@
 
       <div style="display:flex; gap:18px; flex-wrap:wrap;">
         <div style="flex: 1 1 260px;">
-          <div><b>Laguppställning</b></div>
+          <div><b>Laguppställning (denna match)</b></div>
           <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
           <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
           <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
@@ -685,6 +751,8 @@
           <div class="small" style="margin-top:6px;">(Nedräkning från periodtid för varje period)</div>
         </div>
       </div>
+
+      ${renderOverviewAllMatches(teamNo, matchCount)}
     `;
   }
 
@@ -769,11 +837,10 @@
     const payload = {
       players: loadRegister().players,
       coaches: loadRegister().coaches,
-      matchCounts: {}, // per lag
-      states: {} // alla lag/match states
+      matchCounts: {},
+      states: {}
     };
 
-    // matchCount per lag (1-3)
     for (let t=1; t<=3; t++){
       const k = `nsk_matchCount_team_${t}`;
       if (localStorage.getItem(k) != null){
