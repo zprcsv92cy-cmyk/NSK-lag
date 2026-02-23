@@ -158,7 +158,7 @@
   <div class="card no-print">
     <b>Spelare (denna match)</b>
     <div id="playersContainer" class="row" style="margin-top:10px;"></div>
-    <div class="hint">Antal spelare styrs av “Antal i laget”.</div>
+    <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
 
     <div class="row" style="margin-top:10px;">
       <div>
@@ -493,7 +493,6 @@
       const sel = document.createElement("select");
       sel.id = `p${i}`;
 
-      // placeholder + items
       sel.innerHTML = "";
       const opt0 = document.createElement("option");
       opt0.value = "";
@@ -531,7 +530,7 @@
 
   // ----------------------------
   // Bytesschema times (utan 00:00)
-  // - Vi räknar total matchtid = periodMin * periodsCount
+  // Total matchtid = periodMin * periodsCount
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -539,81 +538,218 @@
     const ss = String(s%60).padStart(2,"0");
     return `${mm}:${ss}`;
   }
-
   function buildShiftTimes(totalMinutes, shiftSec){
     const totalSeconds = Math.floor(totalMinutes * 60);
     const step = Math.max(1, Math.floor(shiftSec));
-
     const times = [];
     for (let t = totalSeconds; t > 0; t -= step){
       times.push(formatMMSS(t));
     }
-    return [...new Set(times)]; // redan utan 00:00
+    return [...new Set(times)]; // ingen 00:00
   }
 
   // ----------------------------
-  // FAIR ROTATION:
-  // Alla spelar "så lika som möjligt" över ALLA matcher för laget.
-  // Vi använder "stints" (antal rader i bytesschema * antal på plan).
-  // Varje rad = en stint. Vi väljer alltid de spelare som hittills spelat minst.
+  // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
+  //
+  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
+  // - Vi försöker:
+  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
+  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
+  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
+  //
+  // Teknik:
+  // - Varje rad i bytesschema = en "stint" för de som är på plan.
+  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
+  //   (från en kandidat-pool) och väljer bästa score.
   // ----------------------------
-  function makeLineupsForMatch(st, globalCounts, shiftTimes){
-    const roster = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-    const k = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
+  function rosterFromState(st){
+    // Ordningen här är "ranking": index 0 bäst
+    const raw = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
 
-    const safeK = Math.min(k, roster.length || k);
+    // ta bort dubbletter men behåll första (bäst)
+    const out = [];
+    const seen = new Set();
+    for (const n of raw){
+      const k = n.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(n);
+    }
+    return out;
+  }
+
+  function makeRatings(roster){
+    // högre rating = bättre (spelare 1 högst)
+    const r = {};
+    const n = roster.length;
+    for (let i=0; i<n; i++){
+      r[roster[i].toLowerCase()] = (n - i); // t.ex. 10..1
+    }
+    return r;
+  }
+
+  function countOverlap(a, b){
+    const setA = new Set((a||[]).map(x=>x.toLowerCase()));
+    let o = 0;
+    for (const x of (b||[])){
+      if (setA.has(x.toLowerCase())) o++;
+    }
+    return o;
+  }
+
+  function pickBestLineup(candidates, k){
+    // candidates: Array<{lineup, score, delta}>
+    candidates.sort((x,y)=>{
+      if (y.score !== x.score) return y.score - x.score;
+      // tie-break: mindre byte
+      if (x.delta !== y.delta) return x.delta - y.delta;
+      return 0;
+    });
+    return candidates.length ? candidates[0].lineup : [];
+  }
+
+  function makeLineupsForMatch(st, globalCounts, shiftTimes){
+    const roster = rosterFromState(st);
+    const kWanted = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
+    const k = Math.min(kWanted, roster.length || kWanted);
+
+    const ratings = makeRatings(roster);
+
+    // init counts för roster
+    for (const n of roster){
+      const key = n.toLowerCase();
+      if (globalCounts[key] == null) globalCounts[key] = 0;
+    }
+
+    // om ingen roster
+    if (!roster.length){
+      return shiftTimes.map(()=>[]);
+    }
+
+    // Viktning (tweakbara)
+    const W_FAIR = 8;         // jämn speltid
+    const W_STR  = 3;         // styrka
+    const W_CONT = 6;         // undvik stora förändringar
+    const PENALTY_DOUBLE = 120; // straff för delta >= 2 (dubbla byten)
+
+    let prev = null;
     const lineups = [];
 
-    // Deterministisk "rotation" i ties: baserat på match+plan/inställningar
-    const seed =
-      (parseInt(st.teamSize,10)||0) +
-      (parseInt(st.periodsCount,10)||0) * 7 +
-      (parseInt(st.periodMin,10)||0) * 3 +
-      (parseInt(st.shiftSec,10)||0);
-
     for (let i=0; i<shiftTimes.length; i++){
-      if (!roster.length){
-        lineups.push([]);
-        continue;
-      }
-
-      // sortera efter minst spelade; vid lika: rotera ordningen
-      const rotated = roster.slice();
-      const offset = (seed + i) % rotated.length;
-      const tieOrder = rotated.slice(offset).concat(rotated.slice(0, offset));
-
-      tieOrder.sort((a,b)=>{
-        const ca = globalCounts[a.toLowerCase()] || 0;
-        const cb = globalCounts[b.toLowerCase()] || 0;
-        if (ca !== cb) return ca - cb;
-        // om exakt lika: behåll tieOrder's relativa ordning (stabil sort saknas ibland)
-        // så vi gör en fallback jämförelse via index i tieOrderOriginal
-        return 0;
+      // Kandidat-pool: spelare som har spelat minst + starka spelare + prev
+      const countsArr = roster.map(n => ({n, c: globalCounts[n.toLowerCase()]||0, r: ratings[n.toLowerCase()]||0}));
+      countsArr.sort((a,b)=>{
+        if (a.c !== b.c) return a.c - b.c;        // minst spelade först
+        return b.r - a.r;                         // vid lika: starkare först
       });
 
-      // Eftersom sort kan vara ostabil: gör egen stabil "min-count" plockning
-      const selected = [];
-      const remaining = tieOrder.slice();
-      while (selected.length < safeK && remaining.length){
-        let bestIdx = 0;
-        let bestC = globalCounts[remaining[0].toLowerCase()] || 0;
-        for (let j=1; j<remaining.length; j++){
-          const c = globalCounts[remaining[j].toLowerCase()] || 0;
-          if (c < bestC){
-            bestC = c;
-            bestIdx = j;
+      const poolSet = new Set();
+      const pool = [];
+
+      // minst spelade
+      for (const obj of countsArr.slice(0, Math.min(12, roster.length))){
+        const key = obj.n.toLowerCase();
+        if (!poolSet.has(key)){
+          poolSet.add(key); pool.push(obj.n);
+        }
+      }
+      // topp starka (för att vinna)
+      const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
+      for (const obj of strongArr.slice(0, Math.min(8, roster.length))){
+        const key = obj.n.toLowerCase();
+        if (!poolSet.has(key)){
+          poolSet.add(key); pool.push(obj.n);
+        }
+      }
+      // previous lineup
+      if (prev && prev.length){
+        for (const n of prev){
+          const key = n.toLowerCase();
+          if (!poolSet.has(key)){
+            poolSet.add(key); pool.push(n);
           }
         }
-        selected.push(remaining.splice(bestIdx,1)[0]);
       }
 
-      // uppdatera counts (en "stint" per rad)
-      for (const name of selected){
-        const key = name.toLowerCase();
+      // om pool för liten
+      if (pool.length < k){
+        for (const n of roster){
+          const key = n.toLowerCase();
+          if (!poolSet.has(key)){
+            poolSet.add(key); pool.push(n);
+          }
+          if (pool.length >= k) break;
+        }
+      }
+
+      // begränsa poolstorlek för att enumerera kombinationer
+      const M = Math.min(pool.length, 12);
+      const P = pool.slice(0, M);
+
+      // Enumerera kombinationer av storlek k från P
+      const candidates = [];
+      const idxs = [];
+      function rec(start, left){
+        if (left === 0){
+          const lineup = idxs.map(j => P[j]);
+
+          const minC = Math.min(...roster.map(n=>globalCounts[n.toLowerCase()]||0));
+          let fairPenalty = 0;
+          let strength = 0;
+          for (const n of lineup){
+            const key = n.toLowerCase();
+            fairPenalty += (globalCounts[key] || 0) - minC;
+            strength += (ratings[key] || 0);
+          }
+          const fairScore = -fairPenalty;
+
+          const overlap = prev ? countOverlap(prev, lineup) : 0;
+          const delta = prev ? (k - overlap) : k; // första raden = "fullt byte"
+          const contScore = overlap;              // mer overlap = bättre
+
+          // Extra straff för "dubbla byten" (delta >=2) om roster > k
+          const rosterGtK = roster.length > k;
+          const doublePenalty = (rosterGtK && prev && delta >= 2) ? -PENALTY_DOUBLE * (delta - 1) : 0;
+
+          // Slut-score
+          const score =
+            W_FAIR * fairScore +
+            W_STR  * strength +
+            W_CONT * contScore +
+            doublePenalty;
+
+          candidates.push({lineup, score, delta});
+          return;
+        }
+        for (let j=start; j<=M-left; j++){
+          idxs.push(j);
+          rec(j+1, left-1);
+          idxs.pop();
+        }
+      }
+      rec(0, k);
+
+      // Om vi har prev och roster > k: försök först hitta alternativ med delta <= 1
+      let best = null;
+      if (prev && roster.length > k){
+        const filtered = candidates.filter(x => x.delta <= 1);
+        if (filtered.length){
+          best = pickBestLineup(filtered, k);
+        } else {
+          best = pickBestLineup(candidates, k);
+        }
+      } else {
+        best = pickBestLineup(candidates, k);
+      }
+
+      // uppdatera counts
+      for (const n of best){
+        const key = n.toLowerCase();
         globalCounts[key] = (globalCounts[key] || 0) + 1;
       }
 
-      lineups.push(selected);
+      lineups.push(best);
+      prev = best;
     }
 
     return lineups;
@@ -637,7 +773,7 @@
     const periodMin = parseInt(st.periodMin, 10) || 15;
     const shiftSec = parseInt(st.shiftSec, 10) || 90;
 
-    const chosen = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
+    const chosen = rosterFromState(st);
     const goalie = st.goalie || "—";
 
     const coaches = loadTeamCoaches();
@@ -661,14 +797,14 @@
 
         <div style="display:flex; gap:18px; flex-wrap:wrap;">
           <div style="flex: 1 1 260px;">
-            <div><b>Laguppställning</b></div>
+            <div><b>Laguppställning (ranking)</b></div>
             <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
             <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
             <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
           </div>
 
-          <div style="flex: 1 1 460px;">
-            <div><b>Bytesschema (jämn speltid)</b></div>
+          <div style="flex: 1 1 520px;">
+            <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
             <table>
               <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
               <tbody>
@@ -682,7 +818,8 @@
               </tbody>
             </table>
             <div class="small" style="margin-top:6px;">
-              Spelare visas som <b>Förnamn + initial</b>. Rotation görs för att alla ska spela så lika som möjligt över valda matcher.
+              Målet är att <b>undvika dubbla byten</b> (helst 1 åt gången) och samtidigt hålla <b>så jämn speltid som möjligt</b>.
+              Ranking (Spelare 1 bäst) vägs in för att få <b>starka byten</b>.
             </div>
           </div>
         </div>
@@ -703,7 +840,7 @@
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchCount = loadMatchCount();
 
-    // globalCounts: håller koll på hur många "stints" varje spelare fått över hela lagets matcher
+    // globalCounts: hur många "stints" varje spelare fått över ALLA matcher
     const globalCounts = {};
 
     let html = "";
