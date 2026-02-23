@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>NSK Lag</title>
 
-  <!-- (Valfritt) PWA-filer om du vill: lägg manifest.webmanifest + sw.js i samma mapp -->
-  <link rel="manifest" href="manifest.webmanifest">
-
   <style>
     :root{
       --bg:#ffffff;
@@ -89,6 +86,9 @@
     hr{ border:0; border-top:1px solid var(--line); margin:10px 0; }
     ol{ margin: 8px 0 8px 20px; padding:0; }
     li{ margin: 4px 0; }
+    table{ width:100%; border-collapse:collapse; }
+    th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; }
+    th{ font-size:12px; color:var(--muted); font-weight:700; }
 
     /* Modal */
     #registerModal{
@@ -102,7 +102,7 @@
       background:#fff;
       border-radius:var(--radius);
       padding:12px;
-      max-width:860px;
+      max-width:980px;
       margin:0 auto;
       max-height:90vh;
       overflow:auto;
@@ -125,14 +125,19 @@
     }
     .listItem:last-child{ border-bottom:0; }
     .twoCols{ display:flex; gap:12px; flex-wrap:wrap; }
-    .twoCols > .card{ flex: 1 1 320px; }
+    .twoCols > .card{ flex: 1 1 360px; }
 
     /* Print/PDF */
     @media print{
       .no-print{ display:none !important; }
       body{ margin:0; }
       .card{ border:none; margin:0; padding:0; }
-      .print-card{ border:1px solid var(--line) !important; padding:12px !important; margin: 10px 0 !important; border-radius: 12px !important; }
+      .print-card{
+        border:1px solid var(--line) !important;
+        padding:12px !important;
+        margin: 10px 0 !important;
+        border-radius: 12px !important;
+      }
       .nsk-top{ margin:0 0 8px; }
       .nsk-logo{ width:48px; height:48px; }
     }
@@ -144,10 +149,11 @@
     <img class="nsk-logo" src="./icon-192.png" alt="NSK">
     <div>
       <h1>NSK Lag</h1>
-      <div class="small">Laguppställning • Register • PDF</div>
+      <div class="small">Matchinfo • Laguppställning • Byten • PDF</div>
     </div>
   </div>
 
+  <!-- TOPP: LAG + MATCHINFO -->
   <div class="card no-print">
     <div class="row">
       <div>
@@ -158,6 +164,29 @@
           <option value="3">Lag 3</option>
         </select>
       </div>
+
+      <div>
+        <label>Match</label>
+        <select id="matchNo">
+          <option value="1">Match 1</option>
+          <option value="2">Match 2</option>
+          <option value="3">Match 3</option>
+          <option value="4">Match 4</option>
+        </select>
+      </div>
+
+      <div>
+        <label>Datum</label>
+        <input id="matchDate" type="date">
+      </div>
+
+      <div>
+        <label>Starttid</label>
+        <input id="matchTime" type="time">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:10px;">
       <div>
         <label>Motståndare</label>
         <input id="opponent" placeholder="Skriv motståndare">
@@ -167,12 +196,29 @@
         <input id="arena" placeholder="Skriv plan">
       </div>
     </div>
+
+    <div class="row" style="margin-top:10px;">
+      <div>
+        <label>Periodtid (min)</label>
+        <select id="periodMin"></select>
+      </div>
+      <div>
+        <label>Bytestid (sek)</label>
+        <select id="shiftSec"></select>
+      </div>
+      <div>
+        <label>Spelare på plan</label>
+        <select id="onCourt"></select>
+      </div>
+    </div>
+
     <div style="margin-top:10px;" class="small">
-      Tips: Allt sparas automatiskt per lag i telefonen.
+      Allt sparas automatiskt per lag + match.
       <span id="saveState" class="pill" style="margin-left:8px;">Redo</span>
     </div>
   </div>
 
+  <!-- LAGUPPSTÄLLNING -->
   <div class="card no-print">
     <div class="row">
       <div>
@@ -207,25 +253,26 @@
     <div id="msg" class="small" style="margin-top:10px;"></div>
 
     <div class="btnrow no-print" style="margin-top:12px;">
-      <button onclick="renderLineup()">Skapa laguppställning</button>
+      <button onclick="renderAll()">Skapa matchblad</button>
       <button class="ghost" onclick="exportPDF()">Dela PDF</button>
       <button class="ghost" onclick="openRegister()">Register</button>
-      <button class="ghost" onclick="clearTeam()">Rensa lag</button>
+      <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
 
     <div id="exportHelp" class="small no-print" style="margin-top:8px;display:none;"></div>
   </div>
 
+  <!-- OUTPUT / MATCHBLAD (PRINT-VÄNLIGT) -->
   <div class="card print-card" id="output">
-    <b>Laguppställning</b>
-    <div class="small">Fyll i och tryck “Skapa laguppställning”.</div>
+    <b>Matchblad</b>
+    <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
   </div>
 
   <!-- REGISTER MODAL -->
   <div id="registerModal" class="no-print">
     <div class="modalPanel">
       <div class="modalHeader">
-        <b>Register</b>
+        <b>Register (motsvarar ”NSK team 18” i Excel)</b>
         <button class="ghost" onclick="closeRegister()">Stäng</button>
       </div>
 
@@ -237,9 +284,7 @@
             <button onclick="addPlayer()">Lägg till</button>
           </div>
           <div id="playerList" style="margin-top:10px;"></div>
-          <div class="small" style="margin-top:8px;">
-            Sorteras A–Ö. Sparas i telefonen.
-          </div>
+          <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
         </div>
 
         <div class="card" style="margin:0;">
@@ -249,15 +294,15 @@
             <button onclick="addCoach()">Lägg till</button>
           </div>
           <div id="coachList" style="margin-top:10px;"></div>
-          <div class="small" style="margin-top:8px;">
-            Sorteras A–Ö. Sparas i telefonen.
-          </div>
+          <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
         </div>
       </div>
 
       <div class="card" style="margin-top:12px;">
-        <b>Export / Import</b>
-        <div class="small" style="margin-top:6px;">Flytta allt till en annan telefon eller skapa backup.</div>
+        <b>Backup / Flytta till annan telefon</b>
+        <div class="small" style="margin-top:6px;">
+          Export/Import av register + alla lag/matcher. Detta är bästa sättet att “få in” era uppgifter från Excel.
+        </div>
         <div class="btnrow" style="margin-top:10px;">
           <button class="ghost" onclick="exportJSON()">Exportera JSON</button>
           <label style="margin:0; flex: 1 1 260px;">
@@ -280,7 +325,6 @@
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
   }
-
   function uniq(arr){
     const out = [];
     const seen = new Set();
@@ -294,14 +338,12 @@
     }
     return out;
   }
-
   function fillSelect(sel, items, placeholder="Välj..."){
     sel.innerHTML = "";
     const opt0 = document.createElement("option");
     opt0.value = "";
     opt0.textContent = placeholder;
     sel.appendChild(opt0);
-
     for (const name of items){
       const o = document.createElement("option");
       o.value = name;
@@ -309,19 +351,17 @@
       sel.appendChild(o);
     }
   }
-
   function setPill(text){
     const pill = document.getElementById("saveState");
     if (!pill) return;
     pill.textContent = text;
   }
-
   function safeParseJSON(raw, fallback){
     try { return JSON.parse(raw); } catch { return fallback; }
   }
 
   // ----------------------------
-  // Default register data (byt gärna / eller redigera i Register)
+  // Default register data (redigeras i Register)
   // ----------------------------
   const DEFAULT_PLAYERS = [
     "Alex Andersson","Benjamin Berg","Carl Carlsson","David Dahl",
@@ -332,50 +372,86 @@
   function loadRegister(){
     const p = localStorage.getItem("nsk_players");
     const c = localStorage.getItem("nsk_coaches");
-
     let players = p ? safeParseJSON(p, DEFAULT_PLAYERS.slice()) : DEFAULT_PLAYERS.slice();
     let coaches = c ? safeParseJSON(c, DEFAULT_COACHES.slice()) : DEFAULT_COACHES.slice();
-
     players = uniq(players).sort((a,b)=>a.localeCompare(b,'sv'));
     coaches = uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'));
     return {players, coaches};
   }
-
   function saveRegister(players, coaches){
     localStorage.setItem("nsk_players", JSON.stringify(uniq(players).sort((a,b)=>a.localeCompare(b,'sv'))));
     localStorage.setItem("nsk_coaches", JSON.stringify(uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'))));
   }
 
+  // ----------------------------
+  // Settings dropdowns (period 8-20, shift 30-90, on-court 3-5)
+  // ----------------------------
+  function initSettingsDropdowns(){
+    const period = document.getElementById("periodMin");
+    period.innerHTML = "";
+    for (let m=8; m<=20; m++){
+      const o = document.createElement("option");
+      o.value = String(m);
+      o.textContent = String(m);
+      period.appendChild(o);
+    }
+    period.value = "15";
+
+    const shift = document.getElementById("shiftSec");
+    shift.innerHTML = "";
+    for (let s=30; s<=90; s+=5){
+      const o = document.createElement("option");
+      o.value = String(s);
+      o.textContent = String(s);
+      shift.appendChild(o);
+    }
+    shift.value = "45";
+
+    const onCourt = document.getElementById("onCourt");
+    onCourt.innerHTML = "";
+    [3,4,5].forEach(n=>{
+      const o = document.createElement("option");
+      o.value = String(n);
+      o.textContent = String(n);
+      onCourt.appendChild(o);
+    });
+    onCourt.value = "5";
+  }
+
   function refreshDropdowns(){
     const {players, coaches} = loadRegister();
-
     for (const id of ["p1","p2","p3","p4","goalie"]){
       const sel = document.getElementById(id);
-      if (!sel) continue;
       const current = sel.value;
       fillSelect(sel, players, "Välj...");
       sel.value = current;
     }
-
     const coachSel = document.getElementById("coach");
-    if (coachSel){
-      const current = coachSel.value;
-      fillSelect(coachSel, coaches, "Välj...");
-      coachSel.value = current;
-    }
+    const currCoach = coachSel.value;
+    fillSelect(coachSel, coaches, "Välj...");
+    coachSel.value = currCoach;
   }
 
   // ----------------------------
-  // Team state per lag (Lag 1/2/3 sparas separat)
+  // State per (lag + match)
   // ----------------------------
-  function teamKey(){
-    return "nsklag_team_" + document.getElementById("teamSelect").value;
+  function stateKey(){
+    const team = document.getElementById("teamSelect").value;
+    const matchNo = document.getElementById("matchNo").value;
+    return `nsk_state_team_${team}_match_${matchNo}`;
   }
 
   function getFormState(){
     return {
+      matchNo: document.getElementById("matchNo").value || "1",
+      matchDate: document.getElementById("matchDate").value || "",
+      matchTime: document.getElementById("matchTime").value || "",
       opponent: document.getElementById("opponent").value || "",
       arena: document.getElementById("arena").value || "",
+      periodMin: document.getElementById("periodMin").value || "15",
+      shiftSec: document.getElementById("shiftSec").value || "45",
+      onCourt: document.getElementById("onCourt").value || "5",
+
       p1: document.getElementById("p1").value || "",
       p2: document.getElementById("p2").value || "",
       p3: document.getElementById("p3").value || "",
@@ -386,8 +462,14 @@
   }
 
   function setFormState(s){
+    document.getElementById("matchDate").value = s.matchDate || "";
+    document.getElementById("matchTime").value = s.matchTime || "";
     document.getElementById("opponent").value = s.opponent || "";
     document.getElementById("arena").value = s.arena || "";
+    document.getElementById("periodMin").value = s.periodMin || "15";
+    document.getElementById("shiftSec").value = s.shiftSec || "45";
+    document.getElementById("onCourt").value = s.onCourt || "5";
+
     document.getElementById("p1").value = s.p1 || "";
     document.getElementById("p2").value = s.p2 || "";
     document.getElementById("p3").value = s.p3 || "";
@@ -396,30 +478,30 @@
     document.getElementById("coach").value = s.coach || "";
   }
 
-  function saveTeamState(){
-    localStorage.setItem(teamKey(), JSON.stringify(getFormState()));
+  function saveState(){
+    localStorage.setItem(stateKey(), JSON.stringify(getFormState()));
     setPill("Sparat");
     window.clearTimeout(window.__savePillTimer);
     window.__savePillTimer = window.setTimeout(()=>setPill("Redo"), 700);
   }
 
-  function loadTeamState(){
-    const raw = localStorage.getItem(teamKey());
+  function loadState(){
+    const raw = localStorage.getItem(stateKey());
     setFormState(raw ? safeParseJSON(raw, {}) : {});
     document.getElementById("msg").innerHTML = "";
   }
 
-  function clearTeam(){
-    localStorage.removeItem(teamKey());
-    loadTeamState();
+  function clearTeamMatch(){
+    localStorage.removeItem(stateKey());
+    loadState();
     document.getElementById("output").innerHTML =
-      "<b>Laguppställning</b><div class='small'>Rensat. Fyll i och skapa igen.</div>";
+      "<b>Matchblad</b><div class='small'>Rensat. Fyll i och skapa igen.</div>";
   }
 
   // ----------------------------
   // Validation
   // ----------------------------
-  function validateTeam(){
+  function validate(){
     const s = getFormState();
     const players = [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
     const set = new Set(players.map(x=>x.toLowerCase()));
@@ -429,39 +511,98 @@
   }
 
   // ----------------------------
-  // Output
+  // Bytesschema (nedräkning från periodMin:00)
   // ----------------------------
-  function renderLineup(){
-    saveTeamState();
-    const err = validateTeam();
+  function formatMMSS(totalSeconds){
+    const s = Math.max(0, Math.floor(totalSeconds));
+    const mm = String(Math.floor(s/60)).padStart(2,"0");
+    const ss = String(s%60).padStart(2,"0");
+    return `${mm}:${ss}`;
+  }
+
+  function buildShiftTimes(periodMin, shiftSec){
+    const periodSeconds = Math.floor(periodMin * 60);
+    const step = Math.max(1, Math.floor(shiftSec));
+    const times = [];
+    for (let t = periodSeconds; t >= 0; t -= step){
+      times.push(formatMMSS(t));
+      if (t === 0) break;
+      if (t - step < 0) times.push("00:00");
+    }
+    // unika om vi råkade lägga 00:00 två gånger
+    return [...new Set(times)];
+  }
+
+  // ----------------------------
+  // Render matchblad
+  // ----------------------------
+  function renderAll(){
+    saveState();
+
+    const err = validate();
     const msg = document.getElementById("msg");
     if (err){
-      msg.innerHTML = "<span class='error'>✖ " + escapeHtml(err) + "</span>";
+      msg.innerHTML = `<span class="error">✖ ${escapeHtml(err)}</span>`;
       document.getElementById("output").innerHTML =
-        "<b>Fel</b><div class='small'>" + escapeHtml(err) + "</div>";
+        `<b>Fel</b><div class="small">${escapeHtml(err)}</div>`;
       return;
     } else {
-      msg.innerHTML = "<span class='ok'>✔ OK</span> <span class='small'>Inga dubbletter.</span>";
+      msg.innerHTML = `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
     }
 
-    const team = document.getElementById("teamSelect").value;
-    const opponent = document.getElementById("opponent").value || "—";
-    const arena = document.getElementById("arena").value || "—";
+    const s = getFormState();
 
-    const chosen = ["p1","p2","p3","p4"].map(id=>document.getElementById(id).value).filter(Boolean);
-    const goalie = document.getElementById("goalie").value || "—";
-    const coach = document.getElementById("coach").value || "—";
+    const chosen = [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
+    const goalie = s.goalie || "—";
+    const coach = s.coach || "—";
+    const opponent = s.opponent || "—";
+    const arena = s.arena || "—";
+    const date = s.matchDate ? s.matchDate : "—";
+    const time = s.matchTime ? s.matchTime : "—";
 
-    document.getElementById("output").innerHTML = `
+    const periodMin = parseInt(s.periodMin, 10) || 15;
+    const shiftSec = parseInt(s.shiftSec, 10) || 45;
+    const onCourt = parseInt(s.onCourt, 10) || 5;
+    const shiftTimes = buildShiftTimes(periodMin, shiftSec);
+
+    const out = document.getElementById("output");
+    out.innerHTML = `
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div><b>Lag ${escapeHtml(team)}</b></div>
-        <div class="small">Motståndare: <b>${escapeHtml(opponent)}</b> • Plan: <b>${escapeHtml(arena)}</b></div>
+        <div><b>Match ${escapeHtml(s.matchNo)} • Lag ${escapeHtml(document.getElementById("teamSelect").value)}</b></div>
+        <div class="small">
+          Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b>
+        </div>
       </div>
+
+      <div class="small" style="margin-top:6px;">
+        Motståndare: <b>${escapeHtml(opponent)}</b> • Plan: <b>${escapeHtml(arena)}</b>
+      </div>
+
+      <div class="small" style="margin-top:6px;">
+        Period: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b> • På plan: <b>${onCourt}</b>
+      </div>
+
       <hr>
-      <div><b>Spelare</b></div>
-      <ol>${chosen.map(n=>"<li>"+escapeHtml(n)+"</li>").join("") || "<li>—</li>"}</ol>
-      <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
-      <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
+
+      <div style="display:flex; gap:18px; flex-wrap:wrap;">
+        <div style="flex: 1 1 260px;">
+          <div><b>Laguppställning</b></div>
+          <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
+          <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
+          <div><b>Tränare:</b> ${escapeHtml(coach)}</div>
+        </div>
+
+        <div style="flex: 1 1 320px;">
+          <div><b>Bytesschema</b></div>
+          <table>
+            <thead><tr><th>#</th><th>Tid kvar</th></tr></thead>
+            <tbody>
+              ${shiftTimes.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t)}</td></tr>`).join("")}
+            </tbody>
+          </table>
+          <div class="small" style="margin-top:6px;">(Nedräkning från periodtid)</div>
+        </div>
+      </div>
     `;
   }
 
@@ -471,7 +612,7 @@
     help.innerHTML =
       "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>" +
       "📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
-    renderLineup();
+    renderAll();
     window.print();
   }
 
@@ -485,7 +626,6 @@
   function closeRegister(){
     document.getElementById("registerModal").style.display = "none";
   }
-
   function renderRegisterLists(){
     const {players, coaches} = loadRegister();
 
@@ -505,12 +645,10 @@
       </div>
     `).join("") || "<div class='small'>Inga tränare i registret.</div>";
   }
-
   function addPlayer(){
     const inp = document.getElementById("newPlayer");
     const name = (inp.value||"").trim();
     if (!name) return;
-
     const {players, coaches} = loadRegister();
     players.push(name);
     saveRegister(players, coaches);
@@ -518,12 +656,10 @@
     renderRegisterLists();
     refreshDropdowns();
   }
-
   function addCoach(){
     const inp = document.getElementById("newCoach");
     const name = (inp.value||"").trim();
     if (!name) return;
-
     const {players, coaches} = loadRegister();
     coaches.push(name);
     saveRegister(players, coaches);
@@ -531,7 +667,6 @@
     renderRegisterLists();
     refreshDropdowns();
   }
-
   function removePlayer(idx){
     const {players, coaches} = loadRegister();
     players.splice(idx, 1);
@@ -539,7 +674,6 @@
     renderRegisterLists();
     refreshDropdowns();
   }
-
   function removeCoach(idx){
     const {players, coaches} = loadRegister();
     coaches.splice(idx, 1);
@@ -548,17 +682,20 @@
     refreshDropdowns();
   }
 
-  // Export / Import
+  // Backup
   function exportJSON(){
     const payload = {
       players: loadRegister().players,
       coaches: loadRegister().coaches,
-      teams: {
-        "1": safeParseJSON(localStorage.getItem("nsklag_team_1")||"{}", {}),
-        "2": safeParseJSON(localStorage.getItem("nsklag_team_2")||"{}", {}),
-        "3": safeParseJSON(localStorage.getItem("nsklag_team_3")||"{}", {})
-      }
+      states: {} // alla sparade nycklar som börjar med nsk_state_
     };
+
+    for (let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.startsWith("nsk_state_")){
+        payload.states[k] = safeParseJSON(localStorage.getItem(k) || "{}", {});
+      }
+    }
 
     const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
     const url = URL.createObjectURL(blob);
@@ -578,23 +715,25 @@
     fileInput.addEventListener("change", async ()=>{
       const f = fileInput.files && fileInput.files[0];
       if (!f) return;
-
       try{
         const txt = await f.text();
         const data = JSON.parse(txt);
 
-        const players = Array.isArray(data.players) ? data.players : [];
-        const coaches = Array.isArray(data.coaches) ? data.coaches : [];
-        saveRegister(players, coaches);
+        if (Array.isArray(data.players) || Array.isArray(data.coaches)){
+          saveRegister(Array.isArray(data.players)?data.players:[], Array.isArray(data.coaches)?data.coaches:[]);
+        }
 
-        if (data.teams && typeof data.teams === "object"){
-          ["1","2","3"].forEach(k=>{
-            if (data.teams[k]) localStorage.setItem("nsklag_team_"+k, JSON.stringify(data.teams[k]));
-          });
+        if (data.states && typeof data.states === "object"){
+          for (const [k,v] of Object.entries(data.states)){
+            if (k.startsWith("nsk_state_")){
+              localStorage.setItem(k, JSON.stringify(v));
+            }
+          }
         }
 
         refreshDropdowns();
-        loadTeamState();
+        loadState();
+        renderAll();
         document.getElementById("importMsg").innerHTML = "<span class='ok'>✔ Import klar</span>";
       } catch(e){
         document.getElementById("importMsg").innerHTML = "<span class='error'>✖ Import misslyckades</span>";
@@ -605,30 +744,44 @@
   }
 
   // ----------------------------
-  // Init
+  // Init + events
   // ----------------------------
   function init(){
+    initSettingsDropdowns();
     refreshDropdowns();
-    loadTeamState();
     wireImport();
 
-    ["opponent","arena","p1","p2","p3","p4","goalie","coach"].forEach(id=>{
+    // autospara på alla fält
+    const ids = [
+      "matchNo","matchDate","matchTime","opponent","arena","periodMin","shiftSec","onCourt",
+      "p1","p2","p3","p4","goalie","coach"
+    ];
+    ids.forEach(id=>{
       const el = document.getElementById(id);
-      if (!el) return;
-      el.addEventListener("change", saveTeamState);
-      el.addEventListener("input", saveTeamState);
+      el.addEventListener("change", ()=>{ saveState(); renderAll(); });
+      el.addEventListener("input", ()=>{ saveState(); });
     });
 
+    // byt lag => ladda state för vald match
     document.getElementById("teamSelect").addEventListener("change", ()=>{
-      loadTeamState();
-      renderLineup();
+      loadState();
+      renderAll();
     });
 
+    // byt match => ladda state för valt lag
+    document.getElementById("matchNo").addEventListener("change", ()=>{
+      loadState();
+      renderAll();
+    });
+
+    // modal close on outside click
     document.getElementById("registerModal").addEventListener("click", (e)=>{
       if (e.target.id === "registerModal") closeRegister();
     });
 
-    renderLineup();
+    // load initial
+    loadState();
+    renderAll();
   }
 
   window.addEventListener("load", init);
