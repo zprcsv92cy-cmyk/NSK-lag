@@ -175,6 +175,51 @@
   }
 
   init();
+  function teamKey(){
+  const team = document.getElementById("teamSelect").value;
+  return "nsklag_team_" + team;
+}
+
+function getFormState(){
+  return {
+    opponent: document.getElementById("opponent").value || "",
+    arena: document.getElementById("arena").value || "",
+    p1: document.getElementById("p1").value || "",
+    p2: document.getElementById("p2").value || "",
+    p3: document.getElementById("p3").value || "",
+    p4: document.getElementById("p4").value || "",
+    goalie: document.getElementById("goalie").value || "",
+    coach: document.getElementById("coach").value || ""
+  };
+}
+
+function setFormState(s){
+  document.getElementById("opponent").value = s.opponent || "";
+  document.getElementById("arena").value = s.arena || "";
+  document.getElementById("p1").value = s.p1 || "";
+  document.getElementById("p2").value = s.p2 || "";
+  document.getElementById("p3").value = s.p3 || "";
+  document.getElementById("p4").value = s.p4 || "";
+  document.getElementById("goalie").value = s.goalie || "";
+  document.getElementById("coach").value = s.coach || "";
+}
+
+function saveTeamState(){
+  localStorage.setItem(teamKey(), JSON.stringify(getFormState()));
+}
+
+function loadTeamState(){
+  const raw = localStorage.getItem(teamKey());
+  if (!raw) {
+    setFormState({}); // tomt för nytt lag
+    return;
+  }
+  try {
+    setFormState(JSON.parse(raw));
+  } catch {
+    setFormState({});
+  }
+}
 </script>
 
 </body>
