@@ -21,63 +21,22 @@
       --radius:14px;
     }
     *{ box-sizing:border-box; }
-    body{
-      margin:14px;
-      font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial;
-      color:var(--text);
-      background:var(--bg);
-    }
+    body{ margin:14px; font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial; color:var(--text); background:var(--bg); }
     .nsk-top{ display:flex; align-items:center; gap:12px; margin: 6px 0 12px; }
-    .nsk-logo{
-      width:56px; height:56px; border-radius:var(--radius);
-      object-fit:cover; border:1px solid var(--line);
-      background:#fff;
-    }
+    .nsk-logo{ width:56px; height:56px; border-radius:var(--radius); object-fit:cover; border:1px solid var(--line); background:#fff; }
     h1{ margin:0; font-size:22px; }
     .small{ font-size:12px; color:var(--muted); }
-    .card{
-      border:1px solid var(--line);
-      border-radius:var(--radius);
-      padding:12px;
-      margin:12px 0;
-      background:var(--card);
-    }
+    .card{ border:1px solid var(--line); border-radius:var(--radius); padding:12px; margin:12px 0; background:var(--card); }
     label{ display:block; font-size:12px; color:var(--muted); margin: 0 0 6px; }
-    select, input{
-      width:100%;
-      padding:10px;
-      border-radius:12px;
-      border:1px solid #ccc;
-      background:#fff;
-      color:var(--text);
-      outline:none;
-    }
+    select, input{ width:100%; padding:10px; border-radius:12px; border:1px solid #ccc; background:#fff; color:var(--text); outline:none; }
     input::placeholder{ color:#9a9a9a; }
     .row{ display:flex; gap:10px; flex-wrap:wrap; }
     .row > *{ flex: 1 1 160px; }
     .btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
-    button{
-      padding:12px 14px;
-      border-radius:12px;
-      border:0;
-      background:var(--btn);
-      color:var(--btnText);
-      font-weight:700;
-      cursor:pointer;
-      -webkit-tap-highlight-color: transparent;
-    }
+    button{ padding:12px 14px; border-radius:12px; border:0; background:var(--btn); color:var(--btnText); font-weight:700; cursor:pointer; -webkit-tap-highlight-color: transparent; }
     button:active{ transform: translateY(1px); }
-    button.ghost{
-      background:var(--ghost);
-      color:var(--ghostText);
-      border:1px solid var(--line);
-      font-weight:700;
-    }
-    .pill{
-      display:inline-block; padding:6px 10px; border-radius:999px;
-      background:#f6f6f6; border:1px solid var(--line);
-      font-size:12px; color:var(--muted);
-    }
+    button.ghost{ background:var(--ghost); color:var(--ghostText); border:1px solid var(--line); font-weight:700; }
+    .pill{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f6f6f6; border:1px solid var(--line); font-size:12px; color:var(--muted); }
     .error{ color:var(--danger); font-weight:700; }
     .ok{ color:var(--ok); font-weight:700; }
     hr{ border:0; border-top:1px solid var(--line); margin:10px 0; }
@@ -91,38 +50,10 @@
     .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
 
     /* Modal */
-    #registerModal{
-      display:none;
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.52);
-      padding:14px;
-      z-index:9999;
-    }
-    .modalPanel{
-      background:#fff;
-      border-radius:var(--radius);
-      padding:12px;
-      max-width:980px;
-      margin:0 auto;
-      max-height:90vh;
-      overflow:auto;
-      border:1px solid var(--line);
-    }
-    .modalHeader{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      margin-bottom:8px;
-    }
-    .listItem{
-      display:flex;
-      justify-content:space-between;
-      align-items:center;
-      gap:10px;
-      border-bottom:1px solid #eee;
-      padding:8px 0;
-    }
+    #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
+    .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
+    .modalHeader{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
+    .listItem{ display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:8px 0; }
     .listItem:last-child{ border-bottom:0; }
     .twoCols{ display:flex; gap:12px; flex-wrap:wrap; }
     .twoCols > .card{ flex: 1 1 360px; }
@@ -132,12 +63,7 @@
       .no-print{ display:none !important; }
       body{ margin:0; }
       .card{ border:none; margin:0; padding:0; }
-      .print-card{
-        border:1px solid var(--line) !important;
-        padding:12px !important;
-        margin: 10px 0 !important;
-        border-radius: 12px !important;
-      }
+      .print-card{ border:1px solid var(--line) !important; padding:12px !important; margin: 10px 0 !important; border-radius: 12px !important; }
       .nsk-top{ margin:0 0 8px; }
       .nsk-logo{ width:48px; height:48px; }
       table{ break-inside: avoid; }
@@ -342,6 +268,9 @@
   function safeParseJSON(raw, fallback){
     try { return JSON.parse(raw); } catch { return fallback; }
   }
+  function selectedValues(selectEl){
+    return Array.from(selectEl.selectedOptions || []).map(o => o.value).filter(Boolean);
+  }
 
   // Förnamn + första bokstaven i efternamn (t.ex. "August H")
   function shortName(full){
@@ -354,12 +283,8 @@
     return initial ? `${first} ${initial}` : first;
   }
 
-  function selectedValues(selectEl){
-    return Array.from(selectEl.selectedOptions || []).map(o => o.value).filter(Boolean);
-  }
-
   // ----------------------------
-  // Default register data (redigeras i Register)
+  // Default register data
   // ----------------------------
   const DEFAULT_PLAYERS = [
     "Alex Andersson","Benjamin Berg","Carl Carlsson","David Dahl",
@@ -380,7 +305,6 @@
     localStorage.setItem("nsk_players", JSON.stringify(uniq(players).sort((a,b)=>a.localeCompare(b,'sv'))));
     localStorage.setItem("nsk_coaches", JSON.stringify(uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'))));
   }
-
   function fillSelect(el, items, placeholder="Välj..."){
     el.innerHTML = "";
     const opt0 = document.createElement("option");
@@ -394,7 +318,6 @@
       el.appendChild(o);
     }
   }
-
   function fillMultiSelect(el, items){
     el.innerHTML = "";
     for (const name of items){
@@ -414,12 +337,10 @@
   }
   function loadMatchCount(){
     const raw = localStorage.getItem(matchCountKey());
-    const n = raw ? parseInt(raw, 10) : 4; // default 4
+    const n = raw ? parseInt(raw, 10) : 4;
     return (Number.isFinite(n) && n >= 1 && n <= 30) ? n : 4;
   }
-  function saveMatchCount(n){
-    localStorage.setItem(matchCountKey(), String(n));
-  }
+  function saveMatchCount(n){ localStorage.setItem(matchCountKey(), String(n)); }
   function fillMatchCountDropdown(){
     const sel = document.getElementById("matchCount");
     sel.innerHTML = "";
@@ -432,12 +353,10 @@
   }
   function applyMatchCount(){
     const count = loadMatchCount();
-    const matchCountSel = document.getElementById("matchCount");
-    matchCountSel.value = String(count);
+    document.getElementById("matchCount").value = String(count);
 
     const matchNoSel = document.getElementById("matchNo");
     const current = parseInt(matchNoSel.value || "1", 10);
-
     matchNoSel.innerHTML = "";
     for (let i=1; i<=count; i++){
       const o = document.createElement("option");
@@ -445,13 +364,11 @@
       o.textContent = `Match ${i}`;
       matchNoSel.appendChild(o);
     }
-
-    const clamped = Math.min(Math.max(current || 1, 1), count);
-    matchNoSel.value = String(clamped);
+    matchNoSel.value = String(Math.min(Math.max(current || 1, 1), count));
   }
 
   // ----------------------------
-  // Coach per TEAM (samma för alla matcher i laget)
+  // Coach per TEAM
   // ----------------------------
   function teamCoachKey(teamOverride=null){
     const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
@@ -481,7 +398,6 @@
     const matchNo = matchOverride ?? (document.getElementById("matchNo").value || "1");
     return `nsk_state_team_${team}_match_${matchNo}`;
   }
-
   function defaultsState(){
     return {
       matchDate: "",
@@ -510,13 +426,11 @@
       matchTime: document.getElementById("matchTime").value || "",
       opponent: document.getElementById("opponent").value || "",
       arena: document.getElementById("arena").value || "1",
-
       teamSize: teamSize,
       onCourt: document.getElementById("onCourt").value || "3",
       periodsCount: document.getElementById("periodsCount").value || "1",
       periodMin: document.getElementById("periodMin").value || "15",
       shiftSec: document.getElementById("shiftSec").value || "90",
-
       players: players,
       goalie: document.getElementById("goalie").value || ""
     };
@@ -528,7 +442,6 @@
     document.getElementById("matchTime").value = d.matchTime || "";
     document.getElementById("opponent").value = d.opponent || "";
     document.getElementById("arena").value = d.arena || "1";
-
     document.getElementById("teamSize").value = d.teamSize || "10";
     document.getElementById("onCourt").value = d.onCourt || "3";
     document.getElementById("periodsCount").value = d.periodsCount || "1";
@@ -545,19 +458,16 @@
     window.clearTimeout(window.__savePillTimer);
     window.__savePillTimer = window.setTimeout(()=>setPill("Redo"), 700);
   }
-
   function loadState(){
     const raw = localStorage.getItem(stateKey());
     setFormState(raw ? safeParseJSON(raw, {}) : {});
     document.getElementById("msg").innerHTML = "";
   }
-
   function clearTeamMatch(){
     localStorage.removeItem(stateKey());
     loadState();
     renderAll();
   }
-
   function loadStateFor(teamNo, matchNo){
     const raw = localStorage.getItem(stateKey(String(teamNo), String(matchNo)));
     const st = raw ? safeParseJSON(raw, {}) : {};
@@ -614,12 +524,14 @@
     const set = new Set(chosen.map(x=>x.toLowerCase()));
     if (set.size !== chosen.length) return "Samma spelare är vald flera gånger.";
     if (s.goalie && set.has(s.goalie.toLowerCase())) return "Målvakt kan inte vara utespelare.";
+    const onCourt = Math.min(5, Math.max(3, parseInt(s.onCourt,10) || 3));
+    if (chosen.length && chosen.length < onCourt) return `För få spelare valda. Antal på plan är ${onCourt}.`;
     return "";
   }
 
   // ----------------------------
-  // Bytesschema (nedräkning från periodMin:00)
-  // - Tar bort byte vid 00:00 (00:00 ska inte listas)
+  // Bytesschema times (utan 00:00)
+  // - Vi räknar total matchtid = periodMin * periodsCount
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -628,21 +540,87 @@
     return `${mm}:${ss}`;
   }
 
-  function buildShiftTimes(periodMin, shiftSec){
-    const periodSeconds = Math.floor(periodMin * 60);
+  function buildShiftTimes(totalMinutes, shiftSec){
+    const totalSeconds = Math.floor(totalMinutes * 60);
     const step = Math.max(1, Math.floor(shiftSec));
+
     const times = [];
-    // börja på full tid, men gå bara ner tills > 0
-    for (let t = periodSeconds; t > 0; t -= step){
+    for (let t = totalSeconds; t > 0; t -= step){
       times.push(formatMMSS(t));
     }
-    return [...new Set(times)];
+    return [...new Set(times)]; // redan utan 00:00
   }
 
-  function chosenShortFromState(st, onCourt){
-    const chosen = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-    const n = Math.min(Math.max(1, parseInt(onCourt,10) || 3), 5);
-    return chosen.slice(0, n).map(shortName).filter(Boolean).join(", ") || "—";
+  // ----------------------------
+  // FAIR ROTATION:
+  // Alla spelar "så lika som möjligt" över ALLA matcher för laget.
+  // Vi använder "stints" (antal rader i bytesschema * antal på plan).
+  // Varje rad = en stint. Vi väljer alltid de spelare som hittills spelat minst.
+  // ----------------------------
+  function makeLineupsForMatch(st, globalCounts, shiftTimes){
+    const roster = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
+    const k = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
+
+    const safeK = Math.min(k, roster.length || k);
+    const lineups = [];
+
+    // Deterministisk "rotation" i ties: baserat på match+plan/inställningar
+    const seed =
+      (parseInt(st.teamSize,10)||0) +
+      (parseInt(st.periodsCount,10)||0) * 7 +
+      (parseInt(st.periodMin,10)||0) * 3 +
+      (parseInt(st.shiftSec,10)||0);
+
+    for (let i=0; i<shiftTimes.length; i++){
+      if (!roster.length){
+        lineups.push([]);
+        continue;
+      }
+
+      // sortera efter minst spelade; vid lika: rotera ordningen
+      const rotated = roster.slice();
+      const offset = (seed + i) % rotated.length;
+      const tieOrder = rotated.slice(offset).concat(rotated.slice(0, offset));
+
+      tieOrder.sort((a,b)=>{
+        const ca = globalCounts[a.toLowerCase()] || 0;
+        const cb = globalCounts[b.toLowerCase()] || 0;
+        if (ca !== cb) return ca - cb;
+        // om exakt lika: behåll tieOrder's relativa ordning (stabil sort saknas ibland)
+        // så vi gör en fallback jämförelse via index i tieOrderOriginal
+        return 0;
+      });
+
+      // Eftersom sort kan vara ostabil: gör egen stabil "min-count" plockning
+      const selected = [];
+      const remaining = tieOrder.slice();
+      while (selected.length < safeK && remaining.length){
+        let bestIdx = 0;
+        let bestC = globalCounts[remaining[0].toLowerCase()] || 0;
+        for (let j=1; j<remaining.length; j++){
+          const c = globalCounts[remaining[j].toLowerCase()] || 0;
+          if (c < bestC){
+            bestC = c;
+            bestIdx = j;
+          }
+        }
+        selected.push(remaining.splice(bestIdx,1)[0]);
+      }
+
+      // uppdatera counts (en "stint" per rad)
+      for (const name of selected){
+        const key = name.toLowerCase();
+        globalCounts[key] = (globalCounts[key] || 0) + 1;
+      }
+
+      lineups.push(selected);
+    }
+
+    return lineups;
+  }
+
+  function lineupToShortText(names){
+    return (names || []).map(shortName).filter(Boolean).join(", ") || "—";
   }
 
   function formatInfoLine(st){
@@ -654,19 +632,18 @@
             Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arenaLabel)}</b>`;
   }
 
-  function renderMatchBlock(teamNo, matchNo, st){
+  function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
     const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
     const periodMin = parseInt(st.periodMin, 10) || 15;
     const shiftSec = parseInt(st.shiftSec, 10) || 90;
 
     const chosen = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
     const goalie = st.goalie || "—";
-    const coaches = loadTeamCoaches(); // per lag
+
+    const coaches = loadTeamCoaches();
     const coachText = coaches.length ? coaches.join(", ") : "—";
 
     const onCourt = st.onCourt || "3";
-    const onPlanText = chosenShortFromState(st, onCourt);
-    const shiftTimes = buildShiftTimes(periodMin, shiftSec);
 
     return `
       <div class="print-card matchBlock">
@@ -690,8 +667,8 @@
             <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
           </div>
 
-          <div style="flex: 1 1 420px;">
-            <div><b>Bytesschema</b></div>
+          <div style="flex: 1 1 460px;">
+            <div><b>Bytesschema (jämn speltid)</b></div>
             <table>
               <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
               <tbody>
@@ -699,13 +676,13 @@
                   <tr>
                     <td>${i+1}</td>
                     <td class="nowrap">${escapeHtml(t)}</td>
-                    <td>${escapeHtml(onPlanText)}</td>
+                    <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
                   </tr>
                 `).join("")}
               </tbody>
             </table>
             <div class="small" style="margin-top:6px;">
-              Spelare visas som <b>Förnamn + initial</b> (t.ex. “August H”).
+              Spelare visas som <b>Förnamn + initial</b>. Rotation görs för att alla ska spela så lika som möjligt över valda matcher.
             </div>
           </div>
         </div>
@@ -726,10 +703,23 @@
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchCount = loadMatchCount();
 
+    // globalCounts: håller koll på hur många "stints" varje spelare fått över hela lagets matcher
+    const globalCounts = {};
+
     let html = "";
     for (let m=1; m<=matchCount; m++){
       const st = loadStateFor(teamNo, m);
-      html += renderMatchBlock(teamNo, m, st);
+
+      const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
+      const periodMin = parseInt(st.periodMin, 10) || 15;
+      const shiftSec = parseInt(st.shiftSec, 10) || 90;
+
+      const totalMinutes = periodMin * periodsCount;
+      const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
+
+      const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
+
+      html += renderMatchBlock(teamNo, m, st, shiftTimes, lineups);
     }
 
     document.getElementById("output").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
@@ -848,10 +838,9 @@
     const name = String(next).trim();
     if (!name) return;
 
-    // uppdatera coach-listan
     coaches[idx] = name;
 
-    // om coach var vald i team-coaches: byt ut där också
+    // uppdatera team-val om den här coachen var vald
     const oldLower = String(current || "").toLowerCase();
     const selected = loadTeamCoaches();
     const updated = selected.map(x => (String(x).toLowerCase() === oldLower ? name : x));
@@ -883,7 +872,7 @@
       opt.selected = chosen.has(String(opt.value).toLowerCase());
     }
 
-    // players dynamic container - försök behålla val
+    // players container (behåll val)
     const st = getFormState();
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
@@ -896,7 +885,7 @@
       players: loadRegister().players,
       coaches: loadRegister().coaches,
       matchCounts: {},
-      teamCoaches: {}, // per lag
+      teamCoaches: {},
       states: {}
     };
 
@@ -943,28 +932,19 @@
         if (Array.isArray(data.players) || Array.isArray(data.coaches)){
           saveRegister(Array.isArray(data.players)?data.players:[], Array.isArray(data.coaches)?data.coaches:[]);
         }
-
         if (data.matchCounts && typeof data.matchCounts === "object"){
           for (const [k,v] of Object.entries(data.matchCounts)){
-            if (k.startsWith("nsk_matchCount_team_")){
-              localStorage.setItem(k, String(v));
-            }
+            if (k.startsWith("nsk_matchCount_team_")) localStorage.setItem(k, String(v));
           }
         }
-
         if (data.teamCoaches && typeof data.teamCoaches === "object"){
           for (const [k,v] of Object.entries(data.teamCoaches)){
-            if (k.startsWith("nsk_team_coaches_team_")){
-              localStorage.setItem(k, JSON.stringify(Array.isArray(v)?v:[]));
-            }
+            if (k.startsWith("nsk_team_coaches_team_")) localStorage.setItem(k, JSON.stringify(Array.isArray(v)?v:[]));
           }
         }
-
         if (data.states && typeof data.states === "object"){
           for (const [k,v] of Object.entries(data.states)){
-            if (k.startsWith("nsk_state_")){
-              localStorage.setItem(k, JSON.stringify(v));
-            }
+            if (k.startsWith("nsk_state_")) localStorage.setItem(k, JSON.stringify(v));
           }
         }
 
@@ -997,7 +977,7 @@
     }
     arena.value = "1";
 
-    // teamSize 1-25
+    // teamSize 1-25 (default 10)
     const teamSize = document.getElementById("teamSize");
     teamSize.innerHTML = "";
     for (let i=1; i<=25; i++){
@@ -1104,7 +1084,7 @@
       renderAll();
     });
 
-    // byt lag => matchCount + team coaches + match state
+    // byt lag
     document.getElementById("teamSelect").addEventListener("change", ()=>{
       applyMatchCount();
       refreshAllDropdownsAndPlayers();
@@ -1113,7 +1093,7 @@
       renderAll();
     });
 
-    // byt match => match state
+    // byt match
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       renderAll();
