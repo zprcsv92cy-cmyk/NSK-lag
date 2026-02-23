@@ -442,8 +442,8 @@
   }
 
   function getFormState(){
+    // FIX #1: matchNo lagras inte i state (matchvalet styr stateKey)
     return {
-      matchNo: document.getElementById("matchNo").value || "1",
       matchDate: document.getElementById("matchDate").value || "",
       matchTime: document.getElementById("matchTime").value || "",
       opponent: document.getElementById("opponent").value || "",
@@ -529,7 +529,6 @@
       if (t === 0) break;
       if (t - step < 0) times.push("00:00");
     }
-    // unika om vi råkade lägga 00:00 två gånger
     return [...new Set(times)];
   }
 
@@ -537,8 +536,7 @@
   // Render matchblad
   // ----------------------------
   function renderAll(){
-    saveState();
-
+    // FIX #2: renderAll sparar inte längre (sparning sker via events)
     const err = validate();
     const msg = document.getElementById("msg");
     if (err){
@@ -551,6 +549,8 @@
     }
 
     const s = getFormState();
+    const matchNo = document.getElementById("matchNo").value || "1";
+    const teamNo = document.getElementById("teamSelect").value || "1";
 
     const chosen = [s.p1,s.p2,s.p3,s.p4].filter(Boolean);
     const goalie = s.goalie || "—";
@@ -568,7 +568,7 @@
     const out = document.getElementById("output");
     out.innerHTML = `
       <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-        <div><b>Match ${escapeHtml(s.matchNo)} • Lag ${escapeHtml(document.getElementById("teamSelect").value)}</b></div>
+        <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
         <div class="small">
           Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b>
         </div>
@@ -687,7 +687,7 @@
     const payload = {
       players: loadRegister().players,
       coaches: loadRegister().coaches,
-      states: {} // alla sparade nycklar som börjar med nsk_state_
+      states: {}
     };
 
     for (let i=0; i<localStorage.length; i++){
@@ -751,9 +751,9 @@
     refreshDropdowns();
     wireImport();
 
-    // autospara på alla fält
+    // autospara på alla fält (förutom teamSelect + matchNo som byter stateKey)
     const ids = [
-      "matchNo","matchDate","matchTime","opponent","arena","periodMin","shiftSec","onCourt",
+      "matchDate","matchTime","opponent","arena","periodMin","shiftSec","onCourt",
       "p1","p2","p3","p4","goalie","coach"
     ];
     ids.forEach(id=>{
