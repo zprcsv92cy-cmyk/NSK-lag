@@ -173,7 +173,22 @@
       "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
     }[m]));
   }
+// ladda rätt lag direkt vid start
+loadTeamState();
 
+// spara vid ändring i alla fält
+["opponent","arena","p1","p2","p3","p4","goalie","coach"].forEach(id=>{
+  document.getElementById(id).addEventListener("change", saveTeamState);
+  document.getElementById(id).addEventListener("input", saveTeamState);
+});
+
+// när man byter lag: spara nuvarande och ladda nya lagets data
+document.getElementById("teamSelect").addEventListener("change", ()=>{
+  // spara innan byte (säkerhets skull)
+  // (OBS: teamSelect har redan ändrats här, så vi sparar inte gamla laget)
+  // därför: spara alltid när fält ändras (ovan) räcker.
+  loadTeamState();
+});
   init();
   function teamKey(){
   const team = document.getElementById("teamSelect").value;
