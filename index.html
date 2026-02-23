@@ -138,6 +138,7 @@
   }
 
   function renderLineup(){
+    saveTeamState();
     const team = document.getElementById("teamSelect").value;
     const opponent = document.getElementById("opponent").value || "—";
     const arena = document.getElementById("arena").value || "—";
