@@ -69,6 +69,30 @@
       table{ break-inside: avoid; }
       tr{ break-inside: avoid; }
     }
+  
+    /* --- Checkbart bytesschema --- */
+    .shiftTable tbody tr{ transition: background .15s ease, opacity .15s ease; }
+    .shiftTable tbody tr:nth-child(odd){ background:#fafafa; }
+    .shiftDone{ background:#eaf7ea !important; }
+    .shiftDone td{ opacity:.75; }
+    .shiftDone .shiftNames{ text-decoration: line-through; }
+
+    .doneCell{
+      width: 70px;
+      text-align:center;
+      vertical-align: middle;
+    }
+    .doneBox{
+      width:22px; height:22px;
+      transform: translateY(1px);
+    }
+
+    .shiftControls{
+      display:flex; gap:10px; flex-wrap:wrap;
+      align-items:center; justify-content:flex-end;
+      margin: 8px 0 0;
+    }
+
   </style>
 </head>
 
@@ -494,6 +518,40 @@
   }
 
   // ----------------------------
+  // Bytesschema: bocka av "klart" per rad (sparas per lag+match)
+  // ----------------------------
+  function shiftDoneKey(teamOverride=null, matchOverride=null){
+    return stateKey(teamOverride, matchOverride) + "_shiftDone";
+  }
+  function loadShiftDone(teamNo, matchNo){
+    const raw = localStorage.getItem(shiftDoneKey(String(teamNo), String(matchNo)));
+    const arr = raw ? safeParseJSON(raw, []) : [];
+    return Array.isArray(arr) ? arr.map(Boolean) : [];
+  }
+  function saveShiftDone(teamNo, matchNo, arr){
+    localStorage.setItem(shiftDoneKey(String(teamNo), String(matchNo)), JSON.stringify(arr.map(Boolean)));
+  }
+  function onShiftDoneToggle(teamNo, matchNo, idx, checked){
+    const arr = loadShiftDone(teamNo, matchNo);
+    while (arr.length <= idx) arr.push(false);
+    arr[idx] = !!checked;
+    saveShiftDone(teamNo, matchNo, arr);
+    // uppdatera radens styling direkt
+    const row = document.querySelector(`[data-shift-row="${teamNo}-${matchNo}-${idx}"]`);
+    if (row){
+      row.classList.toggle("shiftDone", !!checked);
+      const box = row.querySelector("input[type='checkbox']");
+      if (box) box.checked = !!checked;
+    }
+  }
+  function resetShiftDone(teamNo, matchNo){
+    localStorage.removeItem(shiftDoneKey(String(teamNo), String(matchNo)));
+    // rerender för att nollställa UI
+    renderAll();
+  }
+
+
+  // ----------------------------
   // Dynamic player selectors (Spelare 1..N)
   // ----------------------------
   function renderPlayerSelectors(n, values){
@@ -569,6 +627,17 @@
 
   // ----------------------------
   // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
+  //
+  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
+  // - Vi försöker:
+  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
+  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
+  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
+  //
+  // Teknik:
+  // - Varje rad i bytesschema = en "stint" för de som är på plan.
+  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
+  //   (från en kandidat-pool) och väljer bästa score.
   // ----------------------------
   function rosterFromState(st){
     // Ordningen här är "ranking": index 0 bäst
@@ -788,6 +857,7 @@
     const coachText = coaches.length ? coaches.join(", ") : "—";
 
     const onCourt = st.onCourt || "3";
+    const shiftDone = loadShiftDone(teamNo, matchNo);
 
     return `
       <div class="print-card matchBlock">
@@ -812,15 +882,25 @@
           </div>
 
           <div style="flex: 1 1 520px;">
-            <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
-            <table>
-              <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+              <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
+              <div class="small no-print">
+                <button class="ghost" type="button" onclick="resetShiftDone('${escapeHtml(teamNo)}','${escapeHtml(matchNo)}')">Nollställ bockar</button>
+              </div>
+            </div>
+            <table class="shiftTable">
+              <thead><tr><th class="doneCell no-print">Klar</th><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
               <tbody>
                 ${shiftTimes.map((t,i)=>`
-                  <tr>
+                  <tr data-shift-row="${escapeHtml(teamNo)}-${escapeHtml(matchNo)}-${i}" class="${(shiftDone[i] ? 'shiftDone' : '')}">
+                    <td class="doneCell no-print">
+                      <input class="doneBox" type="checkbox"
+                        ${shiftDone[i] ? 'checked' : ''}
+                        onchange="onShiftDoneToggle('${escapeHtml(teamNo)}','${escapeHtml(matchNo)}',${i}, this.checked)">
+                    </td>
                     <td>${i+1}</td>
                     <td class="nowrap">${escapeHtml(t)}</td>
-                    <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
+                    <td class="shiftNames">${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
                   </tr>
                 `).join("")}
               </tbody>
@@ -1022,68 +1102,70 @@
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
 
-  // ----------------------------
-  // Statistik målvakter (GLOBAL)
-  // ----------------------------
-  function computeGoalieStats(){
-    const stats = {}; // name -> count
+  
+// ----------------------------
+// Statistik målvakter (korrekt: räknar matcher från sparad state)
+// ----------------------------
+function computeGoalieStats(team){
+  const stats = {}; // name -> count
+  const prefix = `nsk_state_team_${team}_match_`;
+  for (let i=0; i<localStorage.length; i++){
+    const k = localStorage.key(i);
+    if (!k || !k.startsWith(prefix)) continue;
+    try{
+      const st = JSON.parse(localStorage.getItem(k) || "{}");
+      const g = (st.goalie || "").trim();
+      if (!g) continue;
+      stats[g] = (stats[g] || 0) + 1;
+    }catch(e){}
+  }
+  return stats;
+}
 
-    for (let i=0; i<localStorage.length; i++){
-      const k = localStorage.key(i);
-      if (!k || !k.startsWith("nsk_state_")) continue;
+function renderGoalieStats(){
+  const team = document.getElementById("teamSelect")?.value || "1";
+  const list = document.getElementById("goalieStatsList");
+  const hint = document.getElementById("goalieStatsHint");
+  if (!list) return;
 
-      try{
-        const st = JSON.parse(localStorage.getItem(k) || "{}");
-        const g = (st.goalie || "").trim();
-        if (!g) continue;
-        stats[g] = (stats[g] || 0) + 1;
-      }catch(e){}
-    }
-    return stats;
+  const stats = computeGoalieStats();
+  const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
+
+  if (!names.length){
+    list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher totalt).</div>";
+    if (hint) hint.innerHTML = "";
+    return;
   }
 
-  function renderGoalieStats(){
-    const list = document.getElementById("goalieStatsList");
-    const hint = document.getElementById("goalieStatsHint");
-    if (!list) return;
+  list.innerHTML = `
+    <table>
+      <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
+      <tbody>
+        ${names.map(n=>`
+          <tr>
+            <td>${escapeHtml(n)}</td>
+            <td class="nowrap"><b>${stats[n]}</b></td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
 
-    const stats = computeGoalieStats();
-    const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
+  if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
+}
 
-    if (!names.length){
-      list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher).</div>";
-      if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
-      return;
-    }
+function openGoalieStats(){
+  const modal = document.getElementById("goalieStatsModal");
+  if (!modal) return;
+  modal.style.display = "block";
+  renderGoalieStats();
+}
+function closeGoalieStats(){
+  const modal = document.getElementById("goalieStatsModal");
+  if (modal) modal.style.display = "none";
+}
 
-    list.innerHTML = `
-      <table>
-        <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
-        <tbody>
-          ${names.map(n=>`
-            <tr>
-              <td>${escapeHtml(n)}</td>
-              <td class="nowrap"><b>${stats[n]}</b></td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    `;
-    if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
-  }
-
-  function openGoalieStats(){
-    const modal = document.getElementById("goalieStatsModal");
-    if (!modal) return;
-    modal.style.display = "block";
-    renderGoalieStats();
-  }
-  function closeGoalieStats(){
-    const modal = document.getElementById("goalieStatsModal");
-    if (modal) modal.style.display = "none";
-  }
-
-  // ----------------------------
+// ----------------------------
   // Backup
   // ----------------------------
   function exportJSON(){
