@@ -49,8 +49,11 @@
     .matchBlock{ break-inside: avoid; page-break-inside: avoid; }
     .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
 
-    /* Modal */
-    #registerModal, #goalieStatsModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
+    /* Modals */
+    #registerModal, #goalieStatsModal, #pdfModal{
+      display:none; position:fixed; inset:0; background:rgba(0,0,0,.52);
+      padding:14px; z-index:9999;
+    }
     .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
     .modalHeader{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
     .listItem{ display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:8px 0; }
@@ -63,13 +66,27 @@
       .no-print{ display:none !important; }
       body{ margin:0; }
       .card{ border:none; margin:0; padding:0; }
-      .print-card{ border:1px solid var(--line) !important; padding:12px !important; margin: 10px 0 !important; border-radius: 12px !important; }
+      .print-card{ border:1px solid var(--line) !important; padding:10px !important; border-radius: 12px !important; }
       .nsk-top{ margin:0 0 8px; }
       .nsk-logo{ width:48px; height:48px; }
       table{ break-inside: avoid; }
       tr{ break-inside: avoid; }
+
+      /* 4 per sida (2x2) */
+      .printPage{
+        display:grid;
+        grid-template-columns: 1fr 1fr;
+        gap:10px;
+        padding:10px;
+        page-break-after: always;
+      }
+      .printPage:last-child{ page-break-after: auto; }
+      .printPage .matchBlock{ margin:0 !important; }
     }
   </style>
+
+  <!-- Dynamisk @page (A4/A3 landscape) sätts av JS -->
+  <style id="pageStyle"></style>
 </head>
 
 <body>
@@ -176,9 +193,9 @@
 
     <div class="btnrow no-print" style="margin-top:12px;">
       <button onclick="renderAll()">Skapa matchblad</button>
-      <button class="ghost" onclick="exportPDF()">Dela PDF</button>
+      <button class="ghost" onclick="openPdfModal()">Dela PDF</button>
       <button class="ghost" onclick="openGoalieStats()">Statistik målvakter</button>
-      <button class="ghost" onclick="openRegister()">Register</button>
+      <button class="ghost" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
 
@@ -191,6 +208,41 @@
     <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
   </div>
 
+  <!-- PDF MODAL -->
+  <div id="pdfModal" class="no-print">
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <b>Dela PDF</b>
+        <button class="ghost" onclick="closePdfModal()">Stäng</button>
+      </div>
+
+      <div class="card" style="margin:0;">
+        <div class="small" style="margin-bottom:8px;">
+          Välj pappersstorlek (liggande). Utskrift gör 2×2 rutor = upp till 4 matchblad per sida.
+        </div>
+
+        <div class="row" style="margin-top:6px;">
+          <div>
+            <label>Pappersstorlek</label>
+            <select id="pdfSize">
+              <option value="A4">A4 (liggande)</option>
+              <option value="A3">A3 (liggande)</option>
+            </select>
+            <div class="hint">Sparas i telefonen.</div>
+          </div>
+          <div style="display:flex; align-items:flex-end;">
+            <button onclick="exportPDF()">Skapa PDF/Print</button>
+          </div>
+        </div>
+
+        <div class="small" style="margin-top:10px;">
+          📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>
+          📄 Android/Chrome: Välj <b>Spara som PDF</b>.
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- GOALIE STATS MODAL -->
   <div id="goalieStatsModal" class="no-print">
     <div class="modalPanel">
@@ -200,7 +252,7 @@
       </div>
       <div class="card" style="margin:0;">
         <div class="small" style="margin-bottom:8px;">
-          Visar antal matcher där en spelare varit vald som målvakt (sparas i telefonen).
+          Visar antal matcher där en spelare varit vald som målvakt (sparas i telefonen, per lag).
         </div>
         <div id="goalieStatsBody"></div>
       </div>
@@ -211,7 +263,7 @@
   <div id="registerModal" class="no-print">
     <div class="modalPanel">
       <div class="modalHeader">
-        <b>Register</b>
+        <b>Truppen team 18</b>
         <button class="ghost" onclick="closeRegister()">Stäng</button>
       </div>
 
@@ -240,7 +292,7 @@
       <div class="card" style="margin-top:12px;">
         <b>Backup / Flytta till annan telefon</b>
         <div class="small" style="margin-top:6px;">
-          Export/Import av register + alla lag/matcher.
+          Export/Import av register + alla lag/matcher + målvaktsstatistik.
         </div>
         <div class="btnrow" style="margin-top:10px;">
           <button class="ghost" onclick="exportJSON()">Exportera JSON</button>
@@ -301,6 +353,33 @@
   }
 
   // ----------------------------
+  // PDF inställningar
+  // ----------------------------
+  const PDF_PREF_KEY = "nsk_pdf_size";
+  function loadPdfSize(){
+    const v = (localStorage.getItem(PDF_PREF_KEY) || "A4").toUpperCase();
+    return (v === "A3") ? "A3" : "A4";
+  }
+  function savePdfSize(v){
+    localStorage.setItem(PDF_PREF_KEY, (v || "A4").toUpperCase());
+  }
+  function applyPageStyle(){
+    const size = loadPdfSize();
+    const css = `
+      @page { size: ${size} landscape; margin: 10mm; }
+    `;
+    document.getElementById("pageStyle").textContent = css;
+  }
+  function openPdfModal(){
+    document.getElementById("pdfModal").style.display = "block";
+    const sel = document.getElementById("pdfSize");
+    sel.value = loadPdfSize();
+  }
+  function closePdfModal(){
+    document.getElementById("pdfModal").style.display = "none";
+  }
+
+  // ----------------------------
   // Målvakts-statistik (per lag, persistent)
   // ----------------------------
   function goalieStatsKey(teamOverride=null){
@@ -328,7 +407,7 @@
     saveGoalieStats(teamNo, stats);
   }
 
-  // Seed första gången (om statistik saknas) från sparade match-states, så att befintliga val räknas in.
+  // Seed första gången från befintliga match-states, så att gamla val räknas.
   function ensureGoalieStatsSeeded(teamNo){
     const key = goalieStatsKey(String(teamNo));
     if (localStorage.getItem(key) != null) return;
@@ -349,14 +428,11 @@
     localStorage.setItem(key, JSON.stringify(stats));
   }
 
-  function updateGoalieStatsForCurrentMatch(){
-    const teamNo = document.getElementById("teamSelect").value || "1";
-    const matchNo = document.getElementById("matchNo").value || "1";
+  function updateGoalieStatsForMatch(teamNo, matchNo, currentGoalie){
+    ensureGoalieStatsSeeded(teamNo);
+
     const countedK = goalieCountedKey(teamNo, matchNo);
-
-    const currentGoalie = (document.getElementById("goalie").value || "").trim();
-    const currentLower = currentGoalie ? currentGoalie.toLowerCase() : "";
-
+    const currentLower = (currentGoalie || "").trim() ? currentGoalie.trim().toLowerCase() : "";
     const prevLower = (localStorage.getItem(countedK) || "").trim();
 
     if (prevLower === currentLower) return;
@@ -369,13 +445,10 @@
     } else {
       localStorage.removeItem(countedK);
     }
-
-    if (document.getElementById("goalieStatsModal").style.display === "block"){
-      renderGoalieStats();
-    }
   }
 
   function uncountGoalieFor(teamNo, matchNo){
+    ensureGoalieStatsSeeded(teamNo);
     const countedK = goalieCountedKey(String(teamNo), String(matchNo));
     const prevLower = (localStorage.getItem(countedK) || "").trim();
     if (prevLower){
@@ -428,6 +501,82 @@
   }
 
   // ----------------------------
+  // "Match 1 -> övriga matcher" (spelare + målvakt) tills man manuellt ändrar
+  // ----------------------------
+  function manualKey(teamNo, matchNo){
+    return `nsk_manual_team_${teamNo}_match_${matchNo}`;
+  }
+  function loadManualFlags(teamNo, matchNo){
+    const raw = localStorage.getItem(manualKey(teamNo, matchNo));
+    const obj = raw ? safeParseJSON(raw, {}) : {};
+    return (obj && typeof obj === "object") ? obj : {};
+  }
+  function saveManualFlags(teamNo, matchNo, flags){
+    localStorage.setItem(manualKey(teamNo, matchNo), JSON.stringify(flags || {}));
+  }
+  function markManual(teamNo, matchNo, field){
+    const f = loadManualFlags(teamNo, matchNo);
+    f[field] = true;
+    saveManualFlags(teamNo, matchNo, f);
+  }
+
+  function getStateFor(teamNo, matchNo){
+    const raw = localStorage.getItem(`nsk_state_team_${teamNo}_match_${matchNo}`);
+    const st = raw ? safeParseJSON(raw, {}) : {};
+    return Object.assign(defaultsState(), st || {});
+  }
+  function setStateFor(teamNo, matchNo, st){
+    localStorage.setItem(`nsk_state_team_${teamNo}_match_${matchNo}`, JSON.stringify(st || {}));
+  }
+
+  function propagateFromMatch1(teamNo){
+    const count = loadMatchCountForTeam(teamNo);
+    const st1 = getStateFor(teamNo, 1);
+
+    for (let m=2; m<=count; m++){
+      const flags = loadManualFlags(teamNo, m);
+      const st = getStateFor(teamNo, m);
+
+      // teamSize + players hänger ihop
+      if (!flags.players){
+        st.teamSize = st1.teamSize || st.teamSize;
+        st.players = Array.isArray(st1.players) ? st1.players.slice() : st.players;
+      }
+      if (!flags.goalie){
+        st.goalie = st1.goalie || st.goalie;
+      }
+
+      setStateFor(teamNo, m, st);
+
+      // håll countedKey + goalieStats i sync om vi autokopierar målvakt
+      if (!flags.goalie){
+        updateGoalieStatsForMatch(String(teamNo), String(m), st.goalie || "");
+      }
+    }
+  }
+
+  function applyMatch1DefaultsIfNeeded(teamNo, matchNo, st){
+    if (parseInt(matchNo,10) === 1) return st;
+    const st1 = getStateFor(teamNo, 1);
+    const flags = loadManualFlags(teamNo, matchNo);
+
+    // Bara defaulta om man inte manuellt ändrat och fält saknas/är tomt
+    if (!flags.players){
+      const hasPlayers = Array.isArray(st.players) && st.players.some(x => (x||"").trim());
+      if (!hasPlayers){
+        st.teamSize = st1.teamSize || st.teamSize;
+        st.players = Array.isArray(st1.players) ? st1.players.slice() : st.players;
+      }
+    }
+    if (!flags.goalie){
+      if (!(st.goalie || "").trim() && (st1.goalie || "").trim()){
+        st.goalie = st1.goalie;
+      }
+    }
+    return st;
+  }
+
+  // ----------------------------
   // Default register data
   // ----------------------------
   const DEFAULT_PLAYERS = [
@@ -475,16 +624,22 @@
   // ----------------------------
   // Antal matcher per lag
   // ----------------------------
-  function matchCountKey(){
-    const team = document.getElementById("teamSelect").value || "1";
+  function matchCountKey(teamOverride=null){
+    const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
     return `nsk_matchCount_team_${team}`;
   }
-  function loadMatchCount(){
-    const raw = localStorage.getItem(matchCountKey());
+  function loadMatchCountForTeam(teamNo){
+    const raw = localStorage.getItem(matchCountKey(String(teamNo)));
     const n = raw ? parseInt(raw, 10) : 4;
     return (Number.isFinite(n) && n >= 1 && n <= 30) ? n : 4;
   }
-  function saveMatchCount(n){ localStorage.setItem(matchCountKey(), String(n)); }
+  function loadMatchCount(){
+    return loadMatchCountForTeam(document.getElementById("teamSelect").value || "1");
+  }
+  function saveMatchCount(n){
+    const team = document.getElementById("teamSelect").value || "1";
+    localStorage.setItem(matchCountKey(team), String(n));
+  }
   function fillMatchCountDropdown(){
     const sel = document.getElementById("matchCount");
     sel.innerHTML = "";
@@ -602,14 +757,25 @@
     window.clearTimeout(window.__savePillTimer);
     window.__savePillTimer = window.setTimeout(()=>setPill("Redo"), 700);
   }
+
   function loadState(){
+    const teamNo = document.getElementById("teamSelect").value || "1";
+    const matchNo = document.getElementById("matchNo").value || "1";
+
     const raw = localStorage.getItem(stateKey());
-    setFormState(raw ? safeParseJSON(raw, {}) : {});
+    let st = raw ? safeParseJSON(raw, {}) : {};
+    st = Object.assign(defaultsState(), st || {});
+    st = applyMatch1DefaultsIfNeeded(String(teamNo), String(matchNo), st);
+
+    setFormState(st);
     document.getElementById("msg").innerHTML = "";
   }
+
   function clearTeamMatch(){
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchNo = document.getElementById("matchNo").value || "1";
+
+    // ta bort målvakt från statistiken för denna match
     uncountGoalieFor(teamNo, matchNo);
 
     localStorage.removeItem(stateKey());
@@ -620,10 +786,13 @@
       renderGoalieStats();
     }
   }
+
   function loadStateFor(teamNo, matchNo){
     const raw = localStorage.getItem(stateKey(String(teamNo), String(matchNo)));
-    const st = raw ? safeParseJSON(raw, {}) : {};
-    return Object.assign(defaultsState(), st || {});
+    let st = raw ? safeParseJSON(raw, {}) : {};
+    st = Object.assign(defaultsState(), st || {});
+    st = applyMatch1DefaultsIfNeeded(String(teamNo), String(matchNo), st);
+    return st;
   }
 
   // ----------------------------
@@ -658,7 +827,23 @@
       }
 
       sel.value = vals[i-1] || "";
-      sel.addEventListener("change", ()=>{ saveState(); renderAll(); });
+
+      sel.addEventListener("change", ()=>{
+        const teamNo = document.getElementById("teamSelect").value || "1";
+        const matchNo = document.getElementById("matchNo").value || "1";
+
+        // match > 1 => detta är manuell ändring för denna match
+        if (parseInt(matchNo,10) > 1) markManual(teamNo, matchNo, "players");
+
+        saveState();
+
+        // om vi ändrar match 1 och andra matcher inte är manuella -> kopiera
+        if (parseInt(matchNo,10) === 1){
+          propagateFromMatch1(teamNo);
+        }
+
+        renderAll();
+      });
 
       wrap.appendChild(lab);
       wrap.appendChild(sel);
@@ -714,16 +899,14 @@
     }
     return out;
   }
-
   function makeRatings(roster){
     const r = {};
     const n = roster.length;
     for (let i=0; i<n; i++){
-      r[roster[i].toLowerCase()] = (n - i);
+      r[roster[i].toLowerCase()] = (n - i); // spelare 1 högst
     }
     return r;
   }
-
   function countOverlap(a, b){
     const setA = new Set((a||[]).map(x=>x.toLowerCase()));
     let o = 0;
@@ -753,8 +936,8 @@
       return shiftTimes.map(()=>[]);
     }
 
-    const W_FAIR = 10;
-    const W_STR  = 3;
+    const W_FAIR = 10; // jämn speltid
+    const W_STR  = 3;  // styrka
 
     let prev = null;
     const lineups = [];
@@ -766,21 +949,18 @@
         return b.r - a.r;
       });
 
+      // kandidat-pool (begränsa för kombinationer)
       const poolSet = new Set();
       const pool = [];
 
       for (const obj of countsArr.slice(0, Math.min(14, roster.length))){
         const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
+        if (!poolSet.has(key)){ poolSet.add(key); pool.push(obj.n); }
       }
       const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
       for (const obj of strongArr.slice(0, Math.min(10, roster.length))){
         const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
+        if (!poolSet.has(key)){ poolSet.add(key); pool.push(obj.n); }
       }
 
       const M = Math.min(pool.length, 14);
@@ -803,7 +983,6 @@
           const fairScore = -fairPenalty;
 
           const overlap = prev ? countOverlap(prev, lineup) : 0;
-
           const score = W_FAIR * fairScore + W_STR * strength;
 
           candidates.push({lineup, score, overlap});
@@ -821,11 +1000,12 @@
       let allowed = candidates;
       if (prev && roster.length >= 2 * k){
         const zero = candidates.filter(x => x.overlap === 0);
-        if (zero.length) allowed = zero; // ska alltid finnas när roster>=2k
+        if (zero.length) allowed = zero;
       }
 
       allowed.sort((x,y)=>{
         if (y.score !== x.score) return y.score - x.score;
+        // vid lika: minst overlap (men overlap ska vara 0 när regeln gäller)
         if (x.overlap !== y.overlap) return x.overlap - y.overlap;
         return 0;
       });
@@ -852,6 +1032,7 @@
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
+    // Plan ska visas som bara 1-4
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
             Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(st.arena || "—")}</b>`;
   }
@@ -883,16 +1064,16 @@
 
         <hr>
 
-        <div style="display:flex; gap:18px; flex-wrap:wrap;">
-          <div style="flex: 1 1 260px;">
+        <div style="display:flex; gap:14px; flex-wrap:wrap;">
+          <div style="flex: 1 1 220px;">
             <div><b>Laguppställning (ranking)</b></div>
             <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
             <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
             <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
           </div>
 
-          <div style="flex: 1 1 520px;">
-            <div><b>Bytesschema (jämn speltid + hård vila-regel)</b></div>
+          <div style="flex: 1 1 420px;">
+            <div><b>Bytesschema (hård vila-regel)</b></div>
             <table>
               <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
               <tbody>
@@ -906,7 +1087,7 @@
               </tbody>
             </table>
             <div class="small" style="margin-top:6px;">
-              Om roster har <b>minst 2× antal på plan</b> så tillåts <b>inga spelare två byten i rad</b>.
+              Om truppen har <b>minst 2× antal på plan</b> så tillåts <b>inga spelare två byten i rad</b>.
               Annars görs bästa möjliga.
             </div>
           </div>
@@ -917,6 +1098,7 @@
 
   // ----------------------------
   // Render ALLA matcher (1..matchCount) för valt lag
+  // - Nu: packa 4 matchBlock per sida (printPage)
   // ----------------------------
   function renderAll(){
     const err = validateCurrentMatch();
@@ -930,7 +1112,7 @@
 
     const globalCounts = {};
 
-    let html = "";
+    const blocks = [];
     for (let m=1; m<=matchCount; m++){
       const st = loadStateFor(teamNo, m);
 
@@ -943,24 +1125,37 @@
 
       const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
 
-      html += renderMatchBlock(teamNo, m, st, shiftTimes, lineups);
+      blocks.push(renderMatchBlock(teamNo, m, st, shiftTimes, lineups));
+    }
+
+    // grupper om 4 per sida
+    let html = "";
+    for (let i=0; i<blocks.length; i+=4){
+      html += `<div class="printPage">${blocks.slice(i, i+4).join("")}</div>`;
     }
 
     document.getElementById("output").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
   }
 
   function exportPDF(){
+    const sel = document.getElementById("pdfSize");
+    const chosen = (sel && sel.value) ? sel.value : loadPdfSize();
+    savePdfSize(chosen);
+    applyPageStyle();
+
     const help = document.getElementById("exportHelp");
     help.style.display = "block";
     help.innerHTML =
       "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>" +
       "📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
+
+    closePdfModal();
     renderAll();
     window.print();
   }
 
   // ----------------------------
-  // Register modal (inkl. redigera namn)
+  // Register modal
   // ----------------------------
   function openRegister(){
     document.getElementById("registerModal").style.display = "block";
@@ -1080,11 +1275,13 @@
   function refreshAllDropdownsAndPlayers(){
     const {players, coaches} = loadRegister();
 
+    // goalie
     const goalieSel = document.getElementById("goalie");
     const currentGoalie = goalieSel.value;
     fillSelect(goalieSel, players, "Välj...");
     goalieSel.value = currentGoalie;
 
+    // coaches multi
     const coachSel = document.getElementById("coach");
     const currentTeamCoaches = loadTeamCoaches();
     fillMultiSelect(coachSel, coaches);
@@ -1093,6 +1290,7 @@
       opt.selected = chosen.has(String(opt.value).toLowerCase());
     }
 
+    // players container (behåll val)
     const st = getFormState();
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
@@ -1108,7 +1306,9 @@
       teamCoaches: {},
       states: {},
       goalieStats: {},
-      goalieCounted: {}
+      goalieCounted: {},
+      manualFlags: {},
+      pdfPrefs: { [PDF_PREF_KEY]: loadPdfSize() }
     };
 
     for (let t=1; t<=3; t++){
@@ -1120,7 +1320,6 @@
       if (localStorage.getItem(kCoach) != null){
         payload.teamCoaches[kCoach] = safeParseJSON(localStorage.getItem(kCoach) || "[]", []);
       }
-
       const kGs = `nsk_goalie_stats_team_${t}`;
       if (localStorage.getItem(kGs) != null){
         payload.goalieStats[kGs] = safeParseJSON(localStorage.getItem(kGs) || "{}", {});
@@ -1136,6 +1335,9 @@
       }
       if (k.startsWith("nsk_goalie_counted_team_")){
         payload.goalieCounted[k] = localStorage.getItem(k) || "";
+      }
+      if (k.startsWith("nsk_manual_team_")){
+        payload.manualFlags[k] = safeParseJSON(localStorage.getItem(k) || "{}", {});
       }
     }
 
@@ -1189,6 +1391,14 @@
             if (k.startsWith("nsk_goalie_counted_team_")) localStorage.setItem(k, String(v || ""));
           }
         }
+        if (data.manualFlags && typeof data.manualFlags === "object"){
+          for (const [k,v] of Object.entries(data.manualFlags)){
+            if (k.startsWith("nsk_manual_team_")) localStorage.setItem(k, JSON.stringify(v || {}));
+          }
+        }
+        if (data.pdfPrefs && typeof data.pdfPrefs === "object"){
+          if (data.pdfPrefs[PDF_PREF_KEY]) localStorage.setItem(PDF_PREF_KEY, String(data.pdfPrefs[PDF_PREF_KEY]));
+        }
 
         refreshAllDropdownsAndPlayers();
         applyMatchCount();
@@ -1223,6 +1433,7 @@
     }
     arena.value = "1";
 
+    // teamSize 1-25 (default 10)
     const teamSize = document.getElementById("teamSize");
     teamSize.innerHTML = "";
     for (let i=1; i<=25; i++){
@@ -1233,6 +1444,7 @@
     }
     teamSize.value = "10";
 
+    // onCourt 3-5 (default 3)
     const onCourt = document.getElementById("onCourt");
     onCourt.innerHTML = "";
     [3,4,5].forEach(n=>{
@@ -1243,6 +1455,7 @@
     });
     onCourt.value = "3";
 
+    // Perioder 1-3 default 1
     const periodsCount = document.getElementById("periodsCount");
     periodsCount.innerHTML = "";
     [1,2,3].forEach(n=>{
@@ -1253,6 +1466,7 @@
     });
     periodsCount.value = "1";
 
+    // Periodtid 8-20 default 15
     const period = document.getElementById("periodMin");
     period.innerHTML = "";
     for (let m=8; m<=20; m++){
@@ -1263,6 +1477,7 @@
     }
     period.value = "15";
 
+    // Bytestid 30-180 default 90
     const shift = document.getElementById("shiftSec");
     shift.innerHTML = "";
     for (let s=30; s<=180; s+=5){
@@ -1278,18 +1493,22 @@
   // Init + events
   // ----------------------------
   function init(){
+    applyPageStyle();
+
     initSettingsDropdowns();
     wireImport();
 
     fillMatchCountDropdown();
     applyMatchCount();
 
+    // seed goalie stats om de inte finns (alla lag)
     for (let t=1; t<=3; t++) ensureGoalieStatsSeeded(String(t));
 
     refreshAllDropdownsAndPlayers();
     loadState();
     applyTeamCoachesToUI();
 
+    // autosave match meta + settings
     const ids = [
       "matchDate","matchTime","opponent","arena",
       "onCourt","periodsCount","periodMin","shiftSec"
@@ -1300,35 +1519,70 @@
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
+    // goalie: spara + statistik + (match1 -> övriga)
     const goalieEl = document.getElementById("goalie");
     goalieEl.addEventListener("change", ()=>{
+      const teamNo = document.getElementById("teamSelect").value || "1";
+      const matchNo = document.getElementById("matchNo").value || "1";
+
+      if (parseInt(matchNo,10) > 1) markManual(teamNo, matchNo, "goalie");
+
       saveState();
-      updateGoalieStatsForCurrentMatch();
+      updateGoalieStatsForMatch(teamNo, matchNo, goalieEl.value || "");
+
+      if (parseInt(matchNo,10) === 1){
+        propagateFromMatch1(teamNo);
+      }
+
+      if (document.getElementById("goalieStatsModal").style.display === "block"){
+        renderGoalieStats();
+      }
+
       renderAll();
     });
 
+    // team size changes how many player selects exist
     document.getElementById("teamSize").addEventListener("change", ()=>{
+      const teamNo = document.getElementById("teamSelect").value || "1";
+      const matchNo = document.getElementById("matchNo").value || "1";
+
       const newN = parseInt(document.getElementById("teamSize").value || "10", 10);
       const st = getFormState();
       st.teamSize = String(newN);
       renderPlayerSelectors(newN, st.players || []);
+
+      if (parseInt(matchNo,10) > 1) markManual(teamNo, matchNo, "players");
+
       saveState();
+
+      if (parseInt(matchNo,10) === 1){
+        propagateFromMatch1(teamNo);
+      }
+
       renderAll();
     });
 
+    // coach multiselect: save per TEAM only
     document.getElementById("coach").addEventListener("change", ()=>{
       saveTeamCoaches(selectedValues(document.getElementById("coach")));
       renderAll();
     });
 
+    // antal matcher per lag
     document.getElementById("matchCount").addEventListener("change", ()=>{
       const n = parseInt(document.getElementById("matchCount").value || "4", 10);
       saveMatchCount(n);
       applyMatchCount();
+
+      // om match 1 finns: se till att nya matcher defaultar
+      const teamNo = document.getElementById("teamSelect").value || "1";
+      propagateFromMatch1(teamNo);
+
       loadState();
       renderAll();
     });
 
+    // byt lag
     document.getElementById("teamSelect").addEventListener("change", ()=>{
       applyMatchCount();
       refreshAllDropdownsAndPlayers();
@@ -1341,16 +1595,27 @@
       }
     });
 
+    // byt match
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       renderAll();
     });
 
+    // modal close on outside click
     document.getElementById("registerModal").addEventListener("click", (e)=>{
       if (e.target.id === "registerModal") closeRegister();
     });
     document.getElementById("goalieStatsModal").addEventListener("click", (e)=>{
       if (e.target.id === "goalieStatsModal") closeGoalieStats();
+    });
+    document.getElementById("pdfModal").addEventListener("click", (e)=>{
+      if (e.target.id === "pdfModal") closePdfModal();
+    });
+
+    // pdf size selection persists
+    document.getElementById("pdfSize").addEventListener("change", ()=>{
+      savePdfSize(document.getElementById("pdfSize").value || "A4");
+      applyPageStyle();
     });
 
     renderAll();
