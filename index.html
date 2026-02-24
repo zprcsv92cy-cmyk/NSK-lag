@@ -675,11 +675,9 @@
   }
 
   function pickBestLineup(candidates, k){
-    // candidates: Array<{lineup, score, delta}>
+    // candidates: Array<{lineup, score}>
     candidates.sort((x,y)=>{
       if (y.score !== x.score) return y.score - x.score;
-      // tie-break: mindre byte
-      if (x.delta !== y.delta) return x.delta - y.delta;
       return 0;
     });
     return candidates.length ? candidates[0].lineup : [];
@@ -706,8 +704,6 @@
     // Viktning (tweakbara)
     const W_FAIR = 8;         // jämn speltid
     const W_STR  = 3;         // styrka
-    const W_CONT = 6;         // undvik stora förändringar
-    const PENALTY_DOUBLE = 120; // straff för delta >= 2 (dubbla byten)
 
     let prev = null;
     const lineups = [];
@@ -781,21 +777,20 @@
           const fairScore = -fairPenalty;
 
           const overlap = prev ? countOverlap(prev, lineup) : 0;
-          const delta = prev ? (k - overlap) : k; // första raden = "fullt byte"
-          const contScore = overlap;              // mer overlap = bättre
 
-          // Extra straff för "dubbla byten" (delta >=2) om roster > k
-          const rosterGtK = roster.length > k;
-          const doublePenalty = (rosterGtK && prev && delta >= 2) ? -PENALTY_DOUBLE * (delta - 1) : 0;
+// "Vila"-regel: om roster är tillräckligt stor (>= 2*k) försöker vi få 0 overlap (ingen spelar två byten i rad).
+// Annars: minimera overlap via straff.
+let restPenalty = 0;
+if (prev){
+  // straff per upprepad spelare
+  restPenalty = -W_REST * overlap;
+}
+const score =
+  W_FAIR * fairScore +
+  W_STR  * strength +
+  restPenalty;
 
-          // Slut-score
-          const score =
-            W_FAIR * fairScore +
-            W_STR  * strength +
-            W_CONT * contScore +
-            doublePenalty;
-
-          candidates.push({lineup, score, delta});
+          candidates.push({lineup, score});
           return;
         }
         for (let j=start; j<=M-left; j++){
@@ -806,18 +801,14 @@
       }
       rec(0, k);
 
-      // Om vi har prev och roster > k: försök först hitta alternativ med delta <= 1
-      let best = null;
-      if (prev && roster.length > k){
-        const filtered = candidates.filter(x => x.delta <= 1);
-        if (filtered.length){
-          best = pickBestLineup(filtered, k);
-        } else {
-          best = pickBestLineup(candidates, k);
-        }
-      } else {
-        best = pickBestLineup(candidates, k);
-      }
+      // Vila-regel: om vi har tillräckligt många spelare försöker vi först hitta lineup med 0 overlap.
+let best = null;
+if (prev && roster.length >= 2*k){
+  const filtered = candidates.filter(x => countOverlap(prev, x.lineup) === 0);
+  best = pickBestLineup(filtered.length ? filtered : candidates, k);
+} else {
+  best = pickBestLineup(candidates, k);
+}
 
       // uppdatera counts
       for (const n of best){
@@ -1106,12 +1097,12 @@
 // ----------------------------
 // Statistik målvakter (korrekt: räknar matcher från sparad state)
 // ----------------------------
-function computeGoalieStats(team){
+function computeGoalieStats(){
+  // Global (alla lag): räknar hur många matcher där en målvakt är vald (max 1 per match)
   const stats = {}; // name -> count
-  const prefix = `nsk_state_team_${team}_match_`;
   for (let i=0; i<localStorage.length; i++){
     const k = localStorage.key(i);
-    if (!k || !k.startsWith(prefix)) continue;
+    if (!k || !k.startsWith("nsk_state_")) continue;
     try{
       const st = JSON.parse(localStorage.getItem(k) || "{}");
       const g = (st.goalie || "").trim();
