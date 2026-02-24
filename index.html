@@ -50,7 +50,7 @@
     .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
 
     /* Modal */
-    #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
+    #registerModal, #goalieStatsModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
     .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
     .modalHeader{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
     .listItem{ display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:8px 0; }
@@ -177,6 +177,7 @@
     <div class="btnrow no-print" style="margin-top:12px;">
       <button onclick="renderAll()">Skapa matchblad</button>
       <button class="ghost" onclick="exportPDF()">Dela PDF</button>
+      <button class="ghost" onclick="openGoalieStats()">Statistik målvakter</button>
       <button class="ghost" onclick="openRegister()">Register</button>
       <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
@@ -188,6 +189,22 @@
   <div class="card print-card" id="output">
     <b>Matchblad</b>
     <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
+  </div>
+
+  <!-- GOALIE STATS MODAL -->
+  <div id="goalieStatsModal" class="no-print">
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <b>Statistik målvakter</b>
+        <button class="ghost" onclick="closeGoalieStats()">Stäng</button>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="small" style="margin-bottom:8px;">
+          Visar antal matcher där en spelare varit vald som målvakt (sparas i telefonen).
+        </div>
+        <div id="goalieStatsBody"></div>
+      </div>
+    </div>
   </div>
 
   <!-- REGISTER MODAL -->
@@ -281,6 +298,140 @@
     const last = parts[parts.length - 1];
     const initial = last ? last[0].toUpperCase() : "";
     return initial ? `${first} ${initial}` : first;
+  }
+
+  // ----------------------------
+  // Målvakts-statistik (per lag, persistent)
+  // ----------------------------
+  function goalieStatsKey(teamOverride=null){
+    const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
+    return `nsk_goalie_stats_team_${team}`;
+  }
+  function goalieCountedKey(teamNo, matchNo){
+    return `nsk_goalie_counted_team_${teamNo}_match_${matchNo}`;
+  }
+  function loadGoalieStats(teamNo){
+    const raw = localStorage.getItem(goalieStatsKey(String(teamNo)));
+    const obj = raw ? safeParseJSON(raw, {}) : {};
+    return (obj && typeof obj === "object") ? obj : {};
+  }
+  function saveGoalieStats(teamNo, obj){
+    localStorage.setItem(goalieStatsKey(String(teamNo)), JSON.stringify(obj || {}));
+  }
+  function incGoalie(teamNo, playerLower, delta){
+    if (!playerLower) return;
+    const stats = loadGoalieStats(teamNo);
+    const cur = parseInt(stats[playerLower] || "0", 10) || 0;
+    const next = Math.max(0, cur + (delta || 0));
+    if (next === 0) delete stats[playerLower];
+    else stats[playerLower] = next;
+    saveGoalieStats(teamNo, stats);
+  }
+
+  // Seed första gången (om statistik saknas) från sparade match-states, så att befintliga val räknas in.
+  function ensureGoalieStatsSeeded(teamNo){
+    const key = goalieStatsKey(String(teamNo));
+    if (localStorage.getItem(key) != null) return;
+
+    const stats = {};
+    const count = (function(){
+      const raw = localStorage.getItem(`nsk_matchCount_team_${teamNo}`);
+      const n = raw ? parseInt(raw, 10) : 4;
+      return (Number.isFinite(n) && n >= 1 && n <= 30) ? n : 4;
+    })();
+
+    for (let m=1; m<=count; m++){
+      const raw = localStorage.getItem(`nsk_state_team_${teamNo}_match_${m}`);
+      const st = raw ? safeParseJSON(raw, {}) : {};
+      const g = (st.goalie || "").trim();
+      if (!g) continue;
+      const gl = g.toLowerCase();
+      stats[gl] = (parseInt(stats[gl] || "0", 10) || 0) + 1;
+      localStorage.setItem(goalieCountedKey(String(teamNo), String(m)), gl);
+    }
+    localStorage.setItem(key, JSON.stringify(stats));
+  }
+
+  function updateGoalieStatsForCurrentMatch(){
+    const teamNo = document.getElementById("teamSelect").value || "1";
+    const matchNo = document.getElementById("matchNo").value || "1";
+    const countedK = goalieCountedKey(teamNo, matchNo);
+
+    const currentGoalie = (document.getElementById("goalie").value || "").trim();
+    const currentLower = currentGoalie ? currentGoalie.toLowerCase() : "";
+
+    const prevLower = (localStorage.getItem(countedK) || "").trim();
+
+    if (prevLower === currentLower) return;
+
+    // Ta bort tidigare räknad (om fanns)
+    if (prevLower) incGoalie(teamNo, prevLower, -1);
+
+    // Lägg till ny (om finns)
+    if (currentLower) {
+      incGoalie(teamNo, currentLower, +1);
+      localStorage.setItem(countedK, currentLower);
+    } else {
+      localStorage.removeItem(countedK);
+    }
+
+    // uppdatera om modal är öppen
+    if (document.getElementById("goalieStatsModal").style.display === "block"){
+      renderGoalieStats();
+    }
+  }
+
+  // Vid rensa match: justera statistiken korrekt (om matchen var räknad)
+  function uncountGoalieFor(teamNo, matchNo){
+    const countedK = goalieCountedKey(String(teamNo), String(matchNo));
+    const prevLower = (localStorage.getItem(countedK) || "").trim();
+    if (prevLower){
+      incGoalie(String(teamNo), prevLower, -1);
+      localStorage.removeItem(countedK);
+    }
+  }
+
+  function openGoalieStats(){
+    const teamNo = document.getElementById("teamSelect").value || "1";
+    ensureGoalieStatsSeeded(teamNo);
+    document.getElementById("goalieStatsModal").style.display = "block";
+    renderGoalieStats();
+  }
+  function closeGoalieStats(){
+    document.getElementById("goalieStatsModal").style.display = "none";
+  }
+  function renderGoalieStats(){
+    const teamNo = document.getElementById("teamSelect").value || "1";
+    ensureGoalieStatsSeeded(teamNo);
+
+    const {players} = loadRegister();
+    const stats = loadGoalieStats(teamNo);
+
+    const rows = players.map(name=>{
+      const c = parseInt(stats[String(name).toLowerCase()] || "0", 10) || 0;
+      return {name, c};
+    });
+
+    rows.sort((a,b)=>{
+      if (b.c !== a.c) return b.c - a.c;
+      return a.name.localeCompare(b.name, 'sv');
+    });
+
+    const any = rows.some(r=>r.c > 0);
+
+    document.getElementById("goalieStatsBody").innerHTML = any ? `
+      <table>
+        <thead><tr><th>Spelare</th><th class="nowrap">Målvakt (matcher)</th></tr></thead>
+        <tbody>
+          ${rows.filter(r=>r.c>0).map(r=>`
+            <tr>
+              <td>${escapeHtml(r.name)}</td>
+              <td class="nowrap">${r.c}</td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    ` : `<div class="small">Ingen målvakt-statistik ännu för detta lag.</div>`;
   }
 
   // ----------------------------
@@ -464,9 +615,18 @@
     document.getElementById("msg").innerHTML = "";
   }
   function clearTeamMatch(){
+    const teamNo = document.getElementById("teamSelect").value || "1";
+    const matchNo = document.getElementById("matchNo").value || "1";
+    // justera statistik först (om matchen var räknad)
+    uncountGoalieFor(teamNo, matchNo);
+
     localStorage.removeItem(stateKey());
     loadState();
     renderAll();
+
+    if (document.getElementById("goalieStatsModal").style.display === "block"){
+      renderGoalieStats();
+    }
   }
   function loadStateFor(teamNo, matchNo){
     const raw = localStorage.getItem(stateKey(String(teamNo), String(matchNo)));
@@ -550,23 +710,9 @@
 
   // ----------------------------
   // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
-  //
-  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
-  // - Vi försöker:
-  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
-  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
-  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
-  //
-  // Teknik:
-  // - Varje rad i bytesschema = en "stint" för de som är på plan.
-  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
-  //   (från en kandidat-pool) och väljer bästa score.
   // ----------------------------
   function rosterFromState(st){
-    // Ordningen här är "ranking": index 0 bäst
     const raw = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-
-    // ta bort dubbletter men behåll första (bäst)
     const out = [];
     const seen = new Set();
     for (const n of raw){
@@ -579,11 +725,10 @@
   }
 
   function makeRatings(roster){
-    // högre rating = bättre (spelare 1 högst)
     const r = {};
     const n = roster.length;
     for (let i=0; i<n; i++){
-      r[roster[i].toLowerCase()] = (n - i); // t.ex. 10..1
+      r[roster[i].toLowerCase()] = (n - i);
     }
     return r;
   }
@@ -598,10 +743,8 @@
   }
 
   function pickBestLineup(candidates, k){
-    // candidates: Array<{lineup, score, delta}>
     candidates.sort((x,y)=>{
       if (y.score !== x.score) return y.score - x.score;
-      // tie-break: mindre byte
       if (x.delta !== y.delta) return x.delta - y.delta;
       return 0;
     });
@@ -615,45 +758,39 @@
 
     const ratings = makeRatings(roster);
 
-    // init counts för roster
     for (const n of roster){
       const key = n.toLowerCase();
       if (globalCounts[key] == null) globalCounts[key] = 0;
     }
 
-    // om ingen roster
     if (!roster.length){
       return shiftTimes.map(()=>[]);
     }
 
-    // Viktning (tweakbara)
-    const W_FAIR = 8;         // jämn speltid
-    const W_STR  = 3;         // styrka
-    const W_CONT = 6;         // undvik stora förändringar
-    const PENALTY_DOUBLE = 120; // straff för delta >= 2 (dubbla byten)
+    const W_FAIR = 8;
+    const W_STR  = 3;
+    const W_CONT = 6;
+    const PENALTY_DOUBLE = 120;
 
     let prev = null;
     const lineups = [];
 
     for (let i=0; i<shiftTimes.length; i++){
-      // Kandidat-pool: spelare som har spelat minst + starka spelare + prev
       const countsArr = roster.map(n => ({n, c: globalCounts[n.toLowerCase()]||0, r: ratings[n.toLowerCase()]||0}));
       countsArr.sort((a,b)=>{
-        if (a.c !== b.c) return a.c - b.c;        // minst spelade först
-        return b.r - a.r;                         // vid lika: starkare först
+        if (a.c !== b.c) return a.c - b.c;
+        return b.r - a.r;
       });
 
       const poolSet = new Set();
       const pool = [];
 
-      // minst spelade
       for (const obj of countsArr.slice(0, Math.min(12, roster.length))){
         const key = obj.n.toLowerCase();
         if (!poolSet.has(key)){
           poolSet.add(key); pool.push(obj.n);
         }
       }
-      // topp starka (för att vinna)
       const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
       for (const obj of strongArr.slice(0, Math.min(8, roster.length))){
         const key = obj.n.toLowerCase();
@@ -661,7 +798,6 @@
           poolSet.add(key); pool.push(obj.n);
         }
       }
-      // previous lineup
       if (prev && prev.length){
         for (const n of prev){
           const key = n.toLowerCase();
@@ -671,7 +807,6 @@
         }
       }
 
-      // om pool för liten
       if (pool.length < k){
         for (const n of roster){
           const key = n.toLowerCase();
@@ -682,11 +817,9 @@
         }
       }
 
-      // begränsa poolstorlek för att enumerera kombinationer
       const M = Math.min(pool.length, 12);
       const P = pool.slice(0, M);
 
-      // Enumerera kombinationer av storlek k från P
       const candidates = [];
       const idxs = [];
       function rec(start, left){
@@ -704,14 +837,12 @@
           const fairScore = -fairPenalty;
 
           const overlap = prev ? countOverlap(prev, lineup) : 0;
-          const delta = prev ? (k - overlap) : k; // första raden = "fullt byte"
-          const contScore = overlap;              // mer overlap = bättre
+          const delta = prev ? (k - overlap) : k;
+          const contScore = overlap;
 
-          // Extra straff för "dubbla byten" (delta >=2) om roster > k
           const rosterGtK = roster.length > k;
           const doublePenalty = (rosterGtK && prev && delta >= 2) ? -PENALTY_DOUBLE * (delta - 1) : 0;
 
-          // Slut-score
           const score =
             W_FAIR * fairScore +
             W_STR  * strength +
@@ -729,20 +860,14 @@
       }
       rec(0, k);
 
-      // Om vi har prev och roster > k: försök först hitta alternativ med delta <= 1
       let best = null;
       if (prev && roster.length > k){
         const filtered = candidates.filter(x => x.delta <= 1);
-        if (filtered.length){
-          best = pickBestLineup(filtered, k);
-        } else {
-          best = pickBestLineup(candidates, k);
-        }
+        best = filtered.length ? pickBestLineup(filtered, k) : pickBestLineup(candidates, k);
       } else {
         best = pickBestLineup(candidates, k);
       }
 
-      // uppdatera counts
       for (const n of best){
         const key = n.toLowerCase();
         globalCounts[key] = (globalCounts[key] || 0) + 1;
@@ -763,9 +888,9 @@
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
-    const arenaLabel = `Plan ${st.arena || "—"}`;
+    // Plan ska vara 1-4 (inte "Plan 1" etc i UI) – men i matchblad visar vi "Plan: 1" osv.
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
-            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arenaLabel)}</b>`;
+            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(st.arena || "—")}</b>`;
   }
 
   function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
@@ -840,7 +965,6 @@
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchCount = loadMatchCount();
 
-    // globalCounts: hur många "stints" varje spelare fått över ALLA matcher
     const globalCounts = {};
 
     let html = "";
@@ -977,7 +1101,6 @@
 
     coaches[idx] = name;
 
-    // uppdatera team-val om den här coachen var vald
     const oldLower = String(current || "").toLowerCase();
     const selected = loadTeamCoaches();
     const updated = selected.map(x => (String(x).toLowerCase() === oldLower ? name : x));
@@ -994,13 +1117,11 @@
   function refreshAllDropdownsAndPlayers(){
     const {players, coaches} = loadRegister();
 
-    // goalie
     const goalieSel = document.getElementById("goalie");
     const currentGoalie = goalieSel.value;
     fillSelect(goalieSel, players, "Välj...");
     goalieSel.value = currentGoalie;
 
-    // coaches multi
     const coachSel = document.getElementById("coach");
     const currentTeamCoaches = loadTeamCoaches();
     fillMultiSelect(coachSel, coaches);
@@ -1009,7 +1130,6 @@
       opt.selected = chosen.has(String(opt.value).toLowerCase());
     }
 
-    // players container (behåll val)
     const st = getFormState();
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
@@ -1023,7 +1143,9 @@
       coaches: loadRegister().coaches,
       matchCounts: {},
       teamCoaches: {},
-      states: {}
+      states: {},
+      goalieStats: {},
+      goalieCounted: {}
     };
 
     for (let t=1; t<=3; t++){
@@ -1035,12 +1157,22 @@
       if (localStorage.getItem(kCoach) != null){
         payload.teamCoaches[kCoach] = safeParseJSON(localStorage.getItem(kCoach) || "[]", []);
       }
+
+      const kGs = `nsk_goalie_stats_team_${t}`;
+      if (localStorage.getItem(kGs) != null){
+        payload.goalieStats[kGs] = safeParseJSON(localStorage.getItem(kGs) || "{}", {});
+      }
     }
 
     for (let i=0; i<localStorage.length; i++){
       const k = localStorage.key(i);
-      if (k && k.startsWith("nsk_state_")){
+      if (!k) continue;
+
+      if (k.startsWith("nsk_state_")){
         payload.states[k] = safeParseJSON(localStorage.getItem(k) || "{}", {});
+      }
+      if (k.startsWith("nsk_goalie_counted_team_")){
+        payload.goalieCounted[k] = localStorage.getItem(k) || "";
       }
     }
 
@@ -1084,6 +1216,16 @@
             if (k.startsWith("nsk_state_")) localStorage.setItem(k, JSON.stringify(v));
           }
         }
+        if (data.goalieStats && typeof data.goalieStats === "object"){
+          for (const [k,v] of Object.entries(data.goalieStats)){
+            if (k.startsWith("nsk_goalie_stats_team_")) localStorage.setItem(k, JSON.stringify(v || {}));
+          }
+        }
+        if (data.goalieCounted && typeof data.goalieCounted === "object"){
+          for (const [k,v] of Object.entries(data.goalieCounted)){
+            if (k.startsWith("nsk_goalie_counted_team_")) localStorage.setItem(k, String(v || ""));
+          }
+        }
 
         refreshAllDropdownsAndPlayers();
         applyMatchCount();
@@ -1091,6 +1233,10 @@
         loadState();
         renderAll();
         document.getElementById("importMsg").innerHTML = "<span class='ok'>✔ Import klar</span>";
+
+        if (document.getElementById("goalieStatsModal").style.display === "block"){
+          renderGoalieStats();
+        }
       } catch(e){
         document.getElementById("importMsg").innerHTML = "<span class='error'>✖ Import misslyckades</span>";
       } finally {
@@ -1103,18 +1249,17 @@
   // Init dropdowns
   // ----------------------------
   function initSettingsDropdowns(){
-    // 1-4
+    // Plan: val 1-4 (INTE "Plan 1" etc)
     const arena = document.getElementById("arena");
     arena.innerHTML = "";
     for (let i=1; i<=4; i++){
       const o = document.createElement("option");
       o.value = String(i);
-      o.textContent = `Plan ${i}`;
+      o.textContent = String(i);
       arena.appendChild(o);
     }
     arena.value = "1";
 
-    // teamSize 1-25 (default 10)
     const teamSize = document.getElementById("teamSize");
     teamSize.innerHTML = "";
     for (let i=1; i<=25; i++){
@@ -1125,7 +1270,6 @@
     }
     teamSize.value = "10";
 
-    // onCourt 3-5 (default 3)
     const onCourt = document.getElementById("onCourt");
     onCourt.innerHTML = "";
     [3,4,5].forEach(n=>{
@@ -1136,7 +1280,6 @@
     });
     onCourt.value = "3";
 
-    // Perioder 1-3 default 1
     const periodsCount = document.getElementById("periodsCount");
     periodsCount.innerHTML = "";
     [1,2,3].forEach(n=>{
@@ -1147,7 +1290,6 @@
     });
     periodsCount.value = "1";
 
-    // Periodtid 8-20 default 15
     const period = document.getElementById("periodMin");
     period.innerHTML = "";
     for (let m=8; m<=20; m++){
@@ -1158,7 +1300,6 @@
     }
     period.value = "15";
 
-    // Bytestid 30-180 default 90
     const shift = document.getElementById("shiftSec");
     shift.innerHTML = "";
     for (let s=30; s<=180; s+=5){
@@ -1180,15 +1321,16 @@
     fillMatchCountDropdown();
     applyMatchCount();
 
+    // seed goalie stats för alla lag (så gamla val räknas med om statistik saknas)
+    for (let t=1; t<=3; t++) ensureGoalieStatsSeeded(String(t));
+
     refreshAllDropdownsAndPlayers();
     loadState();
     applyTeamCoachesToUI();
 
-    // autosave match meta + settings
     const ids = [
       "matchDate","matchTime","opponent","arena",
-      "onCourt","periodsCount","periodMin","shiftSec",
-      "goalie"
+      "onCourt","periodsCount","periodMin","shiftSec"
     ];
     ids.forEach(id=>{
       const el = document.getElementById(id);
@@ -1196,7 +1338,14 @@
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
-    // team size changes how many player selects exist
+    // goalie: spara + uppdatera målvaktsstatistik
+    const goalieEl = document.getElementById("goalie");
+    goalieEl.addEventListener("change", ()=>{
+      saveState();
+      updateGoalieStatsForCurrentMatch();
+      renderAll();
+    });
+
     document.getElementById("teamSize").addEventListener("change", ()=>{
       const newN = parseInt(document.getElementById("teamSize").value || "10", 10);
       const st = getFormState();
@@ -1206,13 +1355,11 @@
       renderAll();
     });
 
-    // coach multiselect: save per TEAM only
     document.getElementById("coach").addEventListener("change", ()=>{
       saveTeamCoaches(selectedValues(document.getElementById("coach")));
       renderAll();
     });
 
-    // antal matcher per lag
     document.getElementById("matchCount").addEventListener("change", ()=>{
       const n = parseInt(document.getElementById("matchCount").value || "4", 10);
       saveMatchCount(n);
@@ -1221,16 +1368,19 @@
       renderAll();
     });
 
-    // byt lag
     document.getElementById("teamSelect").addEventListener("change", ()=>{
       applyMatchCount();
       refreshAllDropdownsAndPlayers();
       applyTeamCoachesToUI();
       loadState();
       renderAll();
+
+      // om stats-modal öppen: visa för nytt lag
+      if (document.getElementById("goalieStatsModal").style.display === "block"){
+        renderGoalieStats();
+      }
     });
 
-    // byt match
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       renderAll();
@@ -1239,6 +1389,9 @@
     // modal close on outside click
     document.getElementById("registerModal").addEventListener("click", (e)=>{
       if (e.target.id === "registerModal") closeRegister();
+    });
+    document.getElementById("goalieStatsModal").addEventListener("click", (e)=>{
+      if (e.target.id === "goalieStatsModal") closeGoalieStats();
     });
 
     renderAll();
