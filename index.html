@@ -80,6 +80,26 @@
       /* Dölj checkbox-kolumn vid utskrift så det blir kompakt */
       .chkCell, .chkCell *{ display:none !important; }
     }
+  
+    /* Tabs (Lag 1–3) */
+    .tabs{ display:flex; gap:8px; margin: 8px 0 12px; overflow:auto; -webkit-overflow-scrolling:touch; }
+    .tabBtn{
+      flex: 0 0 auto;
+      padding:10px 12px;
+      border-radius:999px;
+      border:1px solid var(--line);
+      background:#fff;
+      color:var(--text);
+      font-weight:800;
+      cursor:pointer;
+    }
+    .tabBtn.active{
+      background:var(--btn);
+      color:var(--btnText);
+      border-color:var(--btn);
+    }
+    @media print{ .tabs{ display:none !important; } }
+
   </style>
 </head>
 
@@ -92,10 +112,16 @@
     </div>
   </div>
 
+  <div class="tabs no-print" id="teamTabs" aria-label="Välj lag">
+    <button class="tabBtn" type="button" data-team="1">Lag 1</button>
+    <button class="tabBtn" type="button" data-team="2">Lag 2</button>
+    <button class="tabBtn" type="button" data-team="3">Lag 3</button>
+  </div>
+
   <!-- TOPP: LAG + MATCHINFO -->
   <div class="card no-print">
     <div class="row">
-      <div>
+      <div style="display:none;">
         <label>Lag</label>
         <select id="teamSelect">
           <option value="1">Lag 1</option>
@@ -1045,6 +1071,8 @@
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
     applyTeamCoachesToUI();
+
+    wireTeamTabs();
     renderAll();
   }
 
@@ -1216,6 +1244,40 @@
     });
   }
 
+  
+  // ----------------------------
+  // Lag-flikar (ersätter lag-rullista)
+  // ----------------------------
+  function setActiveTeamTab(team){
+    const tabs = document.getElementById("teamTabs");
+    if (!tabs) return;
+    for (const btn of tabs.querySelectorAll(".tabBtn")){
+      btn.classList.toggle("active", String(btn.dataset.team) === String(team));
+    }
+  }
+  function wireTeamTabs(){
+    const tabs = document.getElementById("teamTabs");
+    const sel = document.getElementById("teamSelect");
+    if (!tabs || !sel) return;
+
+    for (const btn of tabs.querySelectorAll(".tabBtn")){
+      btn.addEventListener("click", ()=>{
+        const team = btn.dataset.team || "1";
+        if (sel.value !== String(team)){
+          sel.value = String(team);
+          // trigga samma logik som tidigare
+          sel.dispatchEvent(new Event("change", {bubbles:true}));
+        } else {
+          // uppdatera bara UI
+          setActiveTeamTab(team);
+        }
+      });
+    }
+    // initial active
+    setActiveTeamTab(sel.value || "1");
+  }
+
+
   // ----------------------------
   // Init dropdowns
   // ----------------------------
@@ -1348,6 +1410,7 @@
     });
 
     document.getElementById("teamSelect").addEventListener("change", ()=>{
+      setActiveTeamTab(document.getElementById("teamSelect").value || "1");
       applyMatchCount();
       refreshAllDropdownsAndPlayers();
       applyTeamCoachesToUI();
