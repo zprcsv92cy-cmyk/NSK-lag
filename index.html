@@ -51,7 +51,6 @@
 
     /* Checklist UI */
     .doneRow td{ background: #f5fff5; }
-    .doneRow td:not(.chkCell){ text-decoration: line-through; color: var(--muted); }
     .chk{
       width:22px; height:22px;
       accent-color: #111;
@@ -82,6 +81,17 @@
       color:var(--btnText);
       border-color:var(--btn);
     }
+
+
+    /* Views (Start/Main) */
+    .view{ display:none; }
+    .view.active{ display:block; }
+    .homeActions{ display:flex; gap:10px; flex-wrap:wrap; }
+    .homeActions button{ flex: 1 1 220px; }
+    .poolList .listItem{ align-items:flex-start; }
+    .poolMeta{ font-size:14px; }
+    .poolMeta .small{ display:block; margin-top:2px; }
+
 
     /* Modal */
     #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
@@ -219,9 +229,7 @@
     <div class="btnrow no-print" style="margin-top:12px;">
       <button onclick="renderAll()">Skapa matchblad</button>
       <button class="ghost" onclick="exportPDF()">Dela PDF</button>
-      <button class="ghost" onclick="openRegister()">Register</button>
-      <button class="ghost" onclick="openGoalieStats()">Statistik målvakter</button>
-      <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
+            <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
 
     <div id="exportHelp" class="small no-print" style="margin-top:8px;display:none;"></div>
@@ -237,7 +245,7 @@
   <div id="registerModal" class="no-print">
     <div class="modalPanel">
       <div class="modalHeader">
-        <b>Register</b>
+        <b>Truppen team 18</b>
         <button class="ghost" onclick="closeRegister()">Stäng</button>
       </div>
 
@@ -345,10 +353,175 @@
   }
 
   // ----------------------------
+  // Poolspel (Start sida)
+  // ----------------------------
+  function poolsKey(){ return "nsk_pools"; }
+  function loadPools(){
+    const raw = localStorage.getItem(poolsKey());
+    const arr = raw ? safeParseJSON(raw, []) : [];
+    return Array.isArray(arr) ? arr : [];
+  }
+  function savePools(arr){
+    localStorage.setItem(poolsKey(), JSON.stringify(Array.isArray(arr)?arr:[]));
+  }
+  function currentPoolId(){
+    return localStorage.getItem("nsk_current_pool") || "";
+  }
+  function setCurrentPool(id){
+    localStorage.setItem("nsk_current_pool", String(id||""));
+  }
+  function poolPrefix(idOverride=null){
+    const id = idOverride ?? currentPoolId();
+    const safe = id ? String(id) : "default";
+    return `nsk_pool_${safe}_`;
+  }
+
+  function goHome(){
+    document.getElementById("homeView").classList.add("active");
+    document.getElementById("mainView").classList.remove("active");
+    renderPoolList();
+  }
+
+  function openPool(id){
+    setCurrentPool(id);
+    document.getElementById("homeView").classList.remove("active");
+    document.getElementById("mainView").classList.add("active");
+    updateCurrentPoolHeader();
+    wireTeamTabs();
+    onTeamChanged();
+  }
+
+  function finishPool(){
+    const id = currentPoolId();
+    if (!id) { goHome(); return; }
+    const pools = loadPools();
+    const idx = pools.findIndex(p=>p && p.id===id);
+    if (idx >= 0){
+      pools[idx].completed = true;
+      pools[idx].updatedAt = Date.now();
+      savePools(pools);
+    }
+    goHome();
+  }
+
+  function updateCurrentPoolHeader(){
+    const id = currentPoolId();
+    const pools = loadPools();
+    const p = pools.find(x=>x && x.id===id);
+    const titleEl = document.getElementById("currentPoolTitle");
+    const subEl = document.getElementById("currentPoolSub");
+    if (!titleEl || !subEl) return;
+    if (!p){
+      titleEl.textContent = "Poolspel";
+      subEl.textContent = "";
+      return;
+    }
+    titleEl.textContent = "Poolspel";
+    subEl.textContent = `${p.date || "—"} • ${p.place || "—"}`;
+  }
+
+  function renderPoolList(){
+    const wrap = document.getElementById("poolList");
+    if (!wrap) return;
+    const pools = loadPools().slice().sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
+    if (!pools.length){
+      wrap.innerHTML = "<div class='small'>Inga sparade poolspel ännu.</div>";
+      return;
+    }
+    wrap.innerHTML = pools.map(p=>{
+      const date = escapeHtml(p?.date || "—");
+      const place = escapeHtml(p?.place || "—");
+      const done = p?.completed ? "<span class='pill' style='margin-left:6px;'>Klar</span>" : "";
+      return `
+        <div class="listItem" style="cursor:pointer;" onclick="openPool('${escapeHtml(p.id)}')">
+          <div style="flex:1;">
+            <div class="poolMeta"><b>${date}</b> • ${place}${done}</div>
+            <span class="small">Tryck för att öppna</span>
+          </div>
+          <div style="display:flex; gap:8px;">
+            <button class="ghost" type="button" onclick="event.stopPropagation(); editPool('${escapeHtml(p.id)}')">Redigera</button>
+            <button class="ghost" type="button" onclick="event.stopPropagation(); deletePool('${escapeHtml(p.id)}')">Ta bort</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function openNewPool(){
+    const m = document.getElementById("newPoolModal");
+    if (!m) return;
+    const d = document.getElementById("poolDate");
+    const pl = document.getElementById("poolPlace");
+    const msg = document.getElementById("poolMsg");
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm = String(today.getMonth()+1).padStart(2,"0");
+    const dd = String(today.getDate()).padStart(2,"0");
+    if (d) d.value = `${yyyy}-${mm}-${dd}`;
+    if (pl) pl.value = localStorage.getItem("nsk_last_place") || "";
+    if (msg) msg.textContent = "";
+    m.style.display = "block";
+  }
+  function closeNewPool(){
+    const m = document.getElementById("newPoolModal");
+    if (m) m.style.display = "none";
+  }
+  function saveNewPool(){
+    const d = (document.getElementById("poolDate")?.value || "").trim();
+    const place = (document.getElementById("poolPlace")?.value || "").trim();
+    const msg = document.getElementById("poolMsg");
+    if (!d || !place){
+      if (msg) msg.innerHTML = "<span class='error'>✖ Fyll i datum och ort.</span>";
+      return;
+    }
+    localStorage.setItem("nsk_last_place", place);
+    const id = `${Date.now().toString(36)}`;
+    const pools = loadPools();
+    pools.push({id, date:d, place, createdAt:Date.now(), updatedAt:Date.now(), completed:false});
+    savePools(pools);
+    closeNewPool();
+    openPool(id);
+  }
+
+  function editPool(id){
+    const pools = loadPools();
+    const p = pools.find(x=>x && x.id===id);
+    if (!p) return;
+    const newDate = prompt("Datum (YYYY-MM-DD):", p.date || "");
+    if (newDate == null) return;
+    const nd = String(newDate).trim();
+    const newPlace = prompt("Ort:", p.place || "");
+    if (newPlace == null) return;
+    const np = String(newPlace).trim();
+    if (!nd || !np) return;
+    p.date = nd; p.place = np; p.updatedAt = Date.now();
+    savePools(pools);
+    if (currentPoolId() === id) updateCurrentPoolHeader();
+    renderPoolList();
+  }
+
+  function deletePool(id){
+    if (!confirm("Ta bort poolspel och all sparad data?")) return;
+    const prefix = poolPrefix(id);
+    const toRemove = [];
+    for (let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (k && k.startsWith(prefix)) toRemove.push(k);
+    }
+    toRemove.forEach(k=>localStorage.removeItem(k));
+    const pools = loadPools().filter(p=>p && p.id!==id);
+    savePools(pools);
+    if (currentPoolId() === id) setCurrentPool("");
+    renderPoolList();
+  }
+
+
+
+  // ----------------------------
   // Shift checklist state (per lag+match+rad)
   // ----------------------------
   function shiftDoneKey(teamNo, matchNo, idx){
-    return `nsk_shiftDone_team_${teamNo}_match_${matchNo}_i_${idx}`;
+    return `${poolPrefix()}shiftDone_team_${teamNo}_match_${matchNo}_i_${idx}`;
   }
   function isShiftDone(teamNo, matchNo, idx){
     return localStorage.getItem(shiftDoneKey(teamNo, matchNo, idx)) === "1";
@@ -414,7 +587,7 @@
   // ----------------------------
   function matchCountKey(){
     const team = document.getElementById("teamSelect").value || "1";
-    return `nsk_matchCount_team_${team}`;
+    return `${poolPrefix()}matchCount_team_${team}`;
   }
   function loadMatchCount(){
     const raw = localStorage.getItem(matchCountKey());
@@ -453,7 +626,7 @@
   // ----------------------------
   function teamCoachKey(teamOverride=null){
     const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
-    return `nsk_team_coaches_team_${team}`;
+    return `${poolPrefix()}team_coaches_team_${team}`;
   }
   function loadTeamCoaches(){
     const raw = localStorage.getItem(teamCoachKey());
@@ -521,7 +694,7 @@
   function stateKey(teamOverride=null, matchOverride=null){
     const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
     const matchNo = matchOverride ?? (document.getElementById("matchNo").value || "1");
-    return `nsk_state_team_${team}_match_${matchNo}`;
+    return `${poolPrefix()}state_team_${team}_match_${matchNo}`;
   }
   function defaultsState(){
     return {
@@ -896,13 +1069,7 @@
     return `
       <div class="print-card matchBlock">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-          <div>
-            <b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b>
-            <div class="small" style="margin-top:4px;line-height:1.25;">
-              <b>Tränare:</b> ${escapeHtml(coachText)}<br>
-              <b>Målvakt:</b> ${escapeHtml(goalie)}
-            </div>
-          </div>
+          <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
           <div class="small">${formatInfoLine(st)}</div>
         </div>
 
@@ -912,7 +1079,8 @@
           <div style="flex: 1 1 260px;">
             <div><b>Laguppställning</b></div>
             <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
-            
+            <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
+            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
           </div>
 
           <div style="flex: 1 1 520px;">
@@ -1147,7 +1315,9 @@
     const stats = {};
     for (let i=0; i<localStorage.length; i++){
       const k = localStorage.key(i);
-      if (!k || !k.startsWith("nsk_state_team_")) continue;
+      if (!k) continue;
+      // state keys: nsk_pool_<id>_state_team_X_match_Y
+      if (k.indexOf("state_team_") === -1) continue;
       try{
         const st = JSON.parse(localStorage.getItem(k) || "{}");
         const g = (st.goalie || "").trim();
@@ -1428,11 +1598,45 @@
       if (e.target.id === "goalieStatsModal") closeGoalieStats();
     });
 
+    wireTeamTabs();
+
+    // Startsida
+    renderPoolList();
+    goHome();
+
     renderAll();
   }
 
   window.addEventListener("load", init);
 </script>
+
+  </div><!-- /mainView -->
+
+  <!-- NEW POOL MODAL -->
+  <div id="newPoolModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999;">
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <b>Skapa nytt poolspel</b>
+        <button class="ghost" type="button" onclick="closeNewPool()">Stäng</button>
+      </div>
+      <div class="card" style="margin:0;">
+        <div class="row">
+          <div>
+            <label>Datum</label>
+            <input id="poolDate" type="date" />
+          </div>
+          <div>
+            <label>Ort</label>
+            <input id="poolPlace" placeholder="Ort" />
+          </div>
+        </div>
+        <div class="btnrow" style="margin-top:12px;">
+          <button type="button" onclick="saveNewPool()">Spara</button>
+        </div>
+        <div id="poolMsg" class="small" style="margin-top:8px;"></div>
+      </div>
+    </div>
+  </div>
 
 </body>
 </html>
