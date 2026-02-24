@@ -488,8 +488,8 @@ body[data-pdf="A4"] th{ font-size:8px !important; }
   
 
 function renderGoalieStats(){
-  const teamSel = document.getElementById("goalieStatsTeam");
-  const filterTeam = teamSel ? (teamSel.value || "all") : "all";
+  const teamSel = document.getElementById("teamSelect");
+  const filterTeam = teamSel ? (teamSel.value || "1") : "1";
 
   const data = computeGoalieStats(filterTeam);
   const box = document.getElementById("goalieStatsTable");
