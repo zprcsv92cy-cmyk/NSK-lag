@@ -569,17 +569,6 @@
 
   // ----------------------------
   // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
-  //
-  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
-  // - Vi försöker:
-  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
-  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
-  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
-  //
-  // Teknik:
-  // - Varje rad i bytesschema = en "stint" för de som är på plan.
-  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
-  //   (från en kandidat-pool) och väljer bästa score.
   // ----------------------------
   function rosterFromState(st){
     // Ordningen här är "ranking": index 0 bäst
@@ -1033,70 +1022,68 @@
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
 
-  
-// ----------------------------
-// Statistik målvakter (korrekt: räknar matcher från sparad state)
-// ----------------------------
-function computeGoalieStats(team){
-  const stats = {}; // name -> count
-  const prefix = `nsk_state_team_${team}_match_`;
-  for (let i=0; i<localStorage.length; i++){
-    const k = localStorage.key(i);
-    if (!k || !k.startsWith(prefix)) continue;
-    try{
-      const st = JSON.parse(localStorage.getItem(k) || "{}");
-      const g = (st.goalie || "").trim();
-      if (!g) continue;
-      stats[g] = (stats[g] || 0) + 1;
-    }catch(e){}
-  }
-  return stats;
-}
+  // ----------------------------
+  // Statistik målvakter (GLOBAL)
+  // ----------------------------
+  function computeGoalieStats(){
+    const stats = {}; // name -> count
 
-function renderGoalieStats(){
-  const team = document.getElementById("teamSelect")?.value || "1";
-  const list = document.getElementById("goalieStatsList");
-  const hint = document.getElementById("goalieStatsHint");
-  if (!list) return;
+    for (let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith("nsk_state_")) continue;
 
-  const stats = computeGoalieStats();
-  const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
-
-  if (!names.length){
-    list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher totalt).</div>";
-    if (hint) hint.innerHTML = "";
-    return;
+      try{
+        const st = JSON.parse(localStorage.getItem(k) || "{}");
+        const g = (st.goalie || "").trim();
+        if (!g) continue;
+        stats[g] = (stats[g] || 0) + 1;
+      }catch(e){}
+    }
+    return stats;
   }
 
-  list.innerHTML = `
-    <table>
-      <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
-      <tbody>
-        ${names.map(n=>`
-          <tr>
-            <td>${escapeHtml(n)}</td>
-            <td class="nowrap"><b>${stats[n]}</b></td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
+  function renderGoalieStats(){
+    const list = document.getElementById("goalieStatsList");
+    const hint = document.getElementById("goalieStatsHint");
+    if (!list) return;
 
-  if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
-}
+    const stats = computeGoalieStats();
+    const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
 
-function openGoalieStats(){
-  const modal = document.getElementById("goalieStatsModal");
-  if (!modal) return;
-  modal.style.display = "block";
-  renderGoalieStats();
-}
-function closeGoalieStats(){
-  const modal = document.getElementById("goalieStatsModal");
-  if (modal) modal.style.display = "none";
-}
+    if (!names.length){
+      list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher).</div>";
+      if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
+      return;
+    }
 
-// ----------------------------
+    list.innerHTML = `
+      <table>
+        <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
+        <tbody>
+          ${names.map(n=>`
+            <tr>
+              <td>${escapeHtml(n)}</td>
+              <td class="nowrap"><b>${stats[n]}</b></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
+    if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
+  }
+
+  function openGoalieStats(){
+    const modal = document.getElementById("goalieStatsModal");
+    if (!modal) return;
+    modal.style.display = "block";
+    renderGoalieStats();
+  }
+  function closeGoalieStats(){
+    const modal = document.getElementById("goalieStatsModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  // ----------------------------
   // Backup
   // ----------------------------
   function exportJSON(){
