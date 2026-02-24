@@ -1703,5 +1703,63 @@ function init(){
   window.addEventListener("load", init);
 </script>
 
+
+<script>
+/* ===== KORREKT MÅLVAKTSSTATISTIK ===== */
+function computeGoalieStats(team){
+  const stats = {};
+  const prefix = `nsk_state_team_${team}_match_`;
+
+  for (let i = 0; i < localStorage.length; i++){
+    const key = localStorage.key(i);
+    if (!key.startsWith(prefix)) continue;
+
+    try{
+      const state = JSON.parse(localStorage.getItem(key) || "{}");
+      const g = (state.goalie || "").trim();
+      if (!g) continue;
+
+      if (!stats[g]) stats[g] = 0;
+      stats[g]++;
+    }catch(e){}
+  }
+  return stats;
+}
+
+function renderGoalieStats(){
+  const teamEl = document.getElementById("teamSelect");
+  const team = teamEl ? (teamEl.value || "1") : "1";
+  const stats = computeGoalieStats(team);
+
+  const listEl = document.getElementById("goalieStatsList");
+  if (!listEl) return;
+
+  const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,"sv"));
+
+  if (!names.length){
+    listEl.innerHTML = "<div class='small'>Ingen statistik ännu.</div>";
+    return;
+  }
+
+  listEl.innerHTML = names.map(name => `
+    <div class="listItem">
+      <div>${name}</div>
+      <div><b>${stats[name]} matcher</b></div>
+    </div>
+  `).join("");
+}
+
+function openGoalieStats(){
+  const modal = document.getElementById("goalieStatsModal");
+  if (modal) modal.style.display = "block";
+  renderGoalieStats();
+}
+
+function closeGoalieStats(){
+  const modal = document.getElementById("goalieStatsModal");
+  if (modal) modal.style.display = "none";
+}
+</script>
+
 </body>
 </html>
