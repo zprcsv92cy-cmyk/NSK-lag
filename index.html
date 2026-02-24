@@ -1044,34 +1044,44 @@
   // - Ta bort avsnittet "Laguppställning (ranking)..."
   // - Ta bort text "hård vila-regel"
   // - Ta bort förklarande text under tabellen
-  function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
-    return `
-      <div class="print-card matchBlock">
-        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-          <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
-          <div class="small">${formatInfoLine(st)}</div>
-        </div>
+function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
+  const coaches = loadTeamCoaches();
+  const coachText = coaches.length ? coaches.join(", ") : "—";
+  const goalie = (st.goalie || "").trim() || "—";
 
-        <hr>
-
-        <div>
-          <div><b>Bytesschema</b></div>
-          <table>
-            <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
-            <tbody>
-              ${shiftTimes.map((t,i)=>`
-                <tr>
-                  <td>${i+1}</td>
-                  <td class="nowrap">${escapeHtml(t)}</td>
-                  <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
-                </tr>
-              `).join("")}
-            </tbody>
-          </table>
-        </div>
+  return `
+    <div class="print-card matchBlock">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
+        <div class="small">${formatInfoLine(st)}</div>
       </div>
-    `;
-  }
+
+      <hr>
+
+      <!-- Tränare + Målvakt (inte i bytesschemat) -->
+      <div class="small" style="margin-bottom:6px;">
+        <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
+        <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
+      </div>
+
+      <div>
+        <div><b>Bytesschema</b></div>
+        <table>
+          <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+          <tbody>
+            ${shiftTimes.map((t,i)=>`
+              <tr>
+                <td>${i+1}</td>
+                <td class="nowrap">${escapeHtml(t)}</td>
+                <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
+              </tr>
+            `).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
 
   // ----------------------------
   // Render ALLA matcher (1..matchCount) för valt lag
