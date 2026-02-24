@@ -22,7 +22,7 @@
     }
     *{ box-sizing:border-box; }
     body{ margin:14px; font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial; color:var(--text); background:var(--bg); }
-    .nsk-top{ display:flex; align-items:center; gap:12px; margin: 6px 0 12px; }
+    .nsk-top{ display:flex; align-items:center; gap:12px; margin: 6px 0 10px; }
     .nsk-logo{ width:56px; height:56px; border-radius:var(--radius); object-fit:cover; border:1px solid var(--line); background:#fff; }
     h1{ margin:0; font-size:22px; }
     .small{ font-size:12px; color:var(--muted); }
@@ -58,9 +58,11 @@
     }
     .chkCell{ width:44px; }
 
-
-    /* Team tabs */
-    .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    /* Team tabs (top) */
+    .tabsTop{
+      margin: 0 0 12px;
+    }
+    .tabs{ display:flex; gap:10px; flex-wrap:wrap; }
     .tabbtn{
       flex: 1 1 120px;
       padding:10px 12px;
@@ -79,7 +81,6 @@
       color:var(--btnText);
       border-color:var(--btn);
     }
-
 
     /* Modal */
     #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
@@ -115,27 +116,24 @@
     </div>
   </div>
 
-  <!-- TOPP: LAG + MATCHINFO -->
+  <!-- TEAM TABS (högst upp) -->
+  <div class="tabsTop no-print">
+    <div class="tabs" id="teamTabs">
+      <button type="button" class="tabbtn" data-team="1">Lag 1</button>
+      <button type="button" class="tabbtn" data-team="2">Lag 2</button>
+      <button type="button" class="tabbtn" data-team="3">Lag 3</button>
+    </div>
+    <!-- Keep select for storage keys (hidden) -->
+    <select id="teamSelect" style="display:none;">
+      <option value="1">Lag 1</option>
+      <option value="2">Lag 2</option>
+      <option value="3">Lag 3</option>
+    </select>
+  </div>
+
+  <!-- TOPP: MATCHINFO -->
   <div class="card no-print">
     <div class="row">
-      <div>
-        <label>Lag</label>
-
-        <!-- Team tabs (tap to switch) -->
-        <div class="tabs" id="teamTabs">
-          <button type="button" class="tabbtn" data-team="1">Lag 1</button>
-          <button type="button" class="tabbtn" data-team="2">Lag 2</button>
-          <button type="button" class="tabbtn" data-team="3">Lag 3</button>
-        </div>
-
-        <!-- Keep select for storage keys (hidden) -->
-        <select id="teamSelect" style="display:none;">
-          <option value="1">Lag 1</option>
-          <option value="2">Lag 2</option>
-          <option value="3">Lag 3</option>
-        </select>
-      </div>
-
       <div>
         <label>Antal matcher</label>
         <select id="matchCount"></select>
@@ -488,7 +486,6 @@
     applyMatchCount();
     refreshAllDropdownsAndPlayers();
     applyTeamCoachesToUI();
-    wireTeamTabs();
     loadState();
     renderAll();
     const m=document.getElementById("goalieStatsModal");
@@ -517,7 +514,6 @@
     setActiveTeamTab(document.getElementById("teamSelect").value || "1");
   }
 
-
   // ----------------------------
   // Per (lag + match) state
   // ----------------------------
@@ -539,7 +535,7 @@
       shiftSec: "90",
       players: [],
       goalie: "",
-      inheritedFromMatch1: true // för match>1: om true => uppdateras automatiskt när match 1 ändras
+      inheritedFromMatch1: true
     };
   }
 
@@ -550,7 +546,6 @@
       const sel = document.getElementById(`p${i}`);
       players.push(sel ? (sel.value || "") : "");
     }
-    // behåll flaggan som ligger sparad (om finns), annars default
     const raw = localStorage.getItem(stateKey());
     const prev = raw ? safeParseJSON(raw, {}) : {};
     return {
@@ -592,7 +587,7 @@
   }
 
   // ----------------------------
-  // NYTT: Match 1 -> automatiskt till andra matcher
+  // Match 1 -> automatiskt till andra matcher
   // ----------------------------
   function propagateMatch1ToOtherMatches(){
     const teamNo = document.getElementById("teamSelect").value || "1";
@@ -607,14 +602,11 @@
       const curRaw = localStorage.getItem(key);
       const cur = curRaw ? safeParseJSON(curRaw, {}) : {};
 
-      // om matchen aldrig sparats => ärver
       const neverSaved = !curRaw;
-
       const inherited = (typeof cur.inheritedFromMatch1 === "boolean") ? cur.inheritedFromMatch1 : true;
 
       if (neverSaved || inherited){
         const next = Object.assign(defaultsState(), cur || {});
-        // kopiera ENDAST spelare + målvakt + teamSize (för att spelarfälten stämmer)
         next.teamSize = m1.teamSize || next.teamSize;
         next.players = Array.isArray(m1.players) ? m1.players.slice() : [];
         next.goalie = m1.goalie || "";
@@ -632,7 +624,6 @@
     const key = stateKey();
     const raw = localStorage.getItem(key);
 
-    // Om matchen saknar state helt: skapa genom att ärva från match 1
     if (!raw){
       const m1 = loadStateFor(teamNo, 1);
       const base = defaultsState();
@@ -644,7 +635,6 @@
       return;
     }
 
-    // Om matchen säger att den fortfarande ärver: uppdatera just spelare+goalie från match1 vid load
     const cur = safeParseJSON(raw, {});
     const inherited = (typeof cur.inheritedFromMatch1 === "boolean") ? cur.inheritedFromMatch1 : true;
     if (inherited){
@@ -672,15 +662,11 @@
     setPill("Sparat");
     window.clearTimeout(window.__savePillTimer);
     window.__savePillTimer = window.setTimeout(()=>setPill("Redo"), 700);
-
-    // om du sparar match 1: tryck ut spelare+målvakt till andra matcher (om de inte är manuellt ändrade)
     propagateMatch1ToOtherMatches();
   }
 
   function loadState(){
-    // se till att match>1 kan ärva innan vi läser
     ensureInheritanceOnLoad();
-
     const raw = localStorage.getItem(stateKey());
     setFormState(raw ? safeParseJSON(raw, {}) : {});
     document.getElementById("msg").innerHTML = "";
@@ -695,7 +681,7 @@
   }
 
   // ----------------------------
-  // Dynamic player selectors (Spelare 1..N)
+  // Dynamic player selectors
   // ----------------------------
   function renderPlayerSelectors(n, values){
     const {players} = loadRegister();
@@ -727,7 +713,7 @@
 
       sel.value = vals[i-1] || "";
       sel.addEventListener("change", ()=>{
-        setManualOverrideForCurrentMatch(); // om match>1: bryt arv
+        setManualOverrideForCurrentMatch();
         saveState();
         renderAll();
         const m=document.getElementById("goalieStatsModal");
@@ -801,7 +787,6 @@
   // makeLineupsForMatch (vila-regel)
   // ----------------------------
   function makeLineupsForMatch(st, globalCounts, shiftTimes){
-
     const roster = rosterFromState(st);
     const kWanted = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
     const k = Math.min(kWanted, roster.length || kWanted);
@@ -1372,14 +1357,14 @@
     initSettingsDropdowns();
     wireImport();
 
+    // Team tabs MUST be wired on load
+    wireTeamTabs();
+
     fillMatchCountDropdown();
     applyMatchCount();
 
     refreshAllDropdownsAndPlayers();
-
-    // Viktigt: loadState måste kunna ärva från match1 innan den läser
     loadState();
-
     applyTeamCoachesToUI();
 
     const ids = [
@@ -1406,7 +1391,6 @@
       const st = getFormState();
       st.teamSize = String(newN);
       renderPlayerSelectors(newN, st.players || []);
-      // teamSize ändrar spelare => ska bryta arv för match>1
       setManualOverrideForCurrentMatch();
       saveState();
       renderAll();
@@ -1424,8 +1408,6 @@
       loadState();
       renderAll();
     });
-
-    document.getElementById("teamSelect").addEventListener("change", ()=>{ onTeamChanged(); });
 
     document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
