@@ -58,6 +58,29 @@
     }
     .chkCell{ width:44px; }
 
+
+    /* Team tabs */
+    .tabs{ display:flex; gap:10px; flex-wrap:wrap; margin-top:6px; }
+    .tabbtn{
+      flex: 1 1 120px;
+      padding:10px 12px;
+      border-radius:12px;
+      border:1px solid var(--line);
+      background:var(--ghost);
+      color:var(--ghostText);
+      font-weight:800;
+      cursor:pointer;
+      -webkit-tap-highlight-color: transparent;
+      text-align:center;
+    }
+    .tabbtn:active{ transform: translateY(1px); }
+    .tabbtn.active{
+      background:var(--btn);
+      color:var(--btnText);
+      border-color:var(--btn);
+    }
+
+
     /* Modal */
     #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
     .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
@@ -80,26 +103,6 @@
       /* Dölj checkbox-kolumn vid utskrift så det blir kompakt */
       .chkCell, .chkCell *{ display:none !important; }
     }
-  
-    /* Tabs (Lag 1–3) */
-    .tabs{ display:flex; gap:8px; margin: 8px 0 12px; overflow:auto; -webkit-overflow-scrolling:touch; }
-    .tabBtn{
-      flex: 0 0 auto;
-      padding:10px 12px;
-      border-radius:999px;
-      border:1px solid var(--line);
-      background:#fff;
-      color:var(--text);
-      font-weight:800;
-      cursor:pointer;
-    }
-    .tabBtn.active{
-      background:var(--btn);
-      color:var(--btnText);
-      border-color:var(--btn);
-    }
-    @media print{ .tabs{ display:none !important; } }
-
   </style>
 </head>
 
@@ -112,18 +115,21 @@
     </div>
   </div>
 
-  <div class="tabs no-print" id="teamTabs" aria-label="Välj lag">
-    <button class="tabBtn" type="button" data-team="1">Lag 1</button>
-    <button class="tabBtn" type="button" data-team="2">Lag 2</button>
-    <button class="tabBtn" type="button" data-team="3">Lag 3</button>
-  </div>
-
   <!-- TOPP: LAG + MATCHINFO -->
   <div class="card no-print">
     <div class="row">
-      <div style="display:none;">
+      <div>
         <label>Lag</label>
-        <select id="teamSelect">
+
+        <!-- Team tabs (tap to switch) -->
+        <div class="tabs" id="teamTabs">
+          <button type="button" class="tabbtn" data-team="1">Lag 1</button>
+          <button type="button" class="tabbtn" data-team="2">Lag 2</button>
+          <button type="button" class="tabbtn" data-team="3">Lag 3</button>
+        </div>
+
+        <!-- Keep select for storage keys (hidden) -->
+        <select id="teamSelect" style="display:none;">
           <option value="1">Lag 1</option>
           <option value="2">Lag 2</option>
           <option value="3">Lag 3</option>
@@ -465,6 +471,52 @@
       opt.selected = chosen.has(String(opt.value).toLowerCase());
     }
   }
+
+  // ----------------------------
+  // Team tabs (UI)
+  // ----------------------------
+  function setActiveTeamTab(team){
+    const wrap = document.getElementById("teamTabs");
+    if (!wrap) return;
+    const t = String(team || "1");
+    wrap.querySelectorAll(".tabbtn").forEach(btn=>{
+      btn.classList.toggle("active", btn.getAttribute("data-team") === t);
+    });
+  }
+
+  function onTeamChanged(){
+    applyMatchCount();
+    refreshAllDropdownsAndPlayers();
+    applyTeamCoachesToUI();
+    wireTeamTabs();
+    loadState();
+    renderAll();
+    const m=document.getElementById("goalieStatsModal");
+    if(m && m.style.display==="block") renderGoalieStats();
+    setActiveTeamTab(document.getElementById("teamSelect").value || "1");
+  }
+
+  function switchTeam(team){
+    const sel = document.getElementById("teamSelect");
+    if (!sel) return;
+    const t = String(team || "1");
+    if (sel.value === t){
+      setActiveTeamTab(t);
+      return;
+    }
+    sel.value = t;
+    onTeamChanged();
+  }
+
+  function wireTeamTabs(){
+    const wrap = document.getElementById("teamTabs");
+    if (!wrap) return;
+    wrap.querySelectorAll(".tabbtn").forEach(btn=>{
+      btn.addEventListener("click", ()=> switchTeam(btn.getAttribute("data-team")));
+    });
+    setActiveTeamTab(document.getElementById("teamSelect").value || "1");
+  }
+
 
   // ----------------------------
   // Per (lag + match) state
@@ -1071,8 +1123,6 @@
     renderRegisterLists();
     refreshAllDropdownsAndPlayers();
     applyTeamCoachesToUI();
-
-    wireTeamTabs();
     renderAll();
   }
 
@@ -1231,10 +1281,7 @@
 
         refreshAllDropdownsAndPlayers();
         applyMatchCount();
-        
-    wireTeamTabs();
-    setActiveTeamTab(document.getElementById(\"teamSelect\").value || \"1\");
-applyTeamCoachesToUI();
+        applyTeamCoachesToUI();
         loadState();
         renderAll();
         renderGoalieStats();
@@ -1246,49 +1293,6 @@ applyTeamCoachesToUI();
       }
     });
   }
-
-  
-  // ----------------------------
-  // Lag-flikar (ersätter lag-rullista)
-  // ----------------------------
-  function setActiveTeamTab(team){
-    const tabs = document.getElementById("teamTabs");
-    if (!tabs) return;
-    for (const btn of tabs.querySelectorAll(".tabBtn")){
-      btn.classList.toggle("active", String(btn.dataset.team) === String(team));
-    }
-  }
-
-  function switchTeam(team){
-    const sel = document.getElementById("teamSelect");
-    if (!sel) return;
-    const t = String(team || "1");
-    sel.value = t;
-    setActiveTeamTab(t);
-
-    // Samma beteende som tidigare när man byter lag
-    applyMatchCount();
-    refreshAllDropdownsAndPlayers();
-    applyTeamCoachesToUI();
-    loadState();
-    renderAll();
-  }
-
-  function wireTeamTabs(){
-    const tabs = document.getElementById("teamTabs");
-    const sel = document.getElementById("teamSelect");
-    if (!tabs || !sel) return;
-
-    for (const btn of tabs.querySelectorAll(".tabBtn")){
-      btn.addEventListener("click", ()=>{
-        const team = btn.dataset.team || "1";
-        switchTeam(team);
-      });
-    }
-    // initial active
-    setActiveTeamTab(sel.value || "1");
-  }
-
 
   // ----------------------------
   // Init dropdowns
@@ -1421,11 +1425,9 @@ applyTeamCoachesToUI();
       renderAll();
     });
 
-    document.getElementById("teamSelect").addEventListener("change", ()=>{
-      switchTeam(document.getElementById("teamSelect").value || "1");
-    });
+    document.getElementById("teamSelect").addEventListener("change", ()=>{ onTeamChanged(); });
 
-document.getElementById("matchNo").addEventListener("change", ()=>{
+    document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       renderAll();
     });
