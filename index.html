@@ -486,6 +486,7 @@ body[data-pdf="A4"] th{ font-size:8px !important; }
     document.getElementById("goalieStatsModal").style.display = "none";
   }
   
+
 function renderGoalieStats(){
   const teamSel = document.getElementById("goalieStatsTeam");
   const filterTeam = teamSel ? (teamSel.value || "all") : "all";
@@ -528,20 +529,17 @@ function renderGoalieStats(){
     </div>
   `;
 
-  // Wire inputs: save overrides on change
   const overrides = loadGoalieOverrides(filterTeam);
+
   box.querySelectorAll('input[data-goalie-lower]').forEach(inp=>{
-    inp.addEventListener("change", ()=>{
-      const lower = inp.getAttribute("data-goalie-lower") || "";
-      const v = parseInt(inp.value || "0", 10);
-      if (!Number.isFinite(v) || v <= 0){
-        delete overrides[lower];
-        // also hide this row immediately by rerender after saving a 0 as "remove"
-        overrides[lower] = 0;
-      } else {
-        overrides[lower] = v;
-      }
+    inp.addEventListener("input", ()=>{
+      const lower = (inp.getAttribute("data-goalie-lower") || "").toLowerCase();
+      let v = parseInt(inp.value || "0", 10);
+      if (!Number.isFinite(v)) v = 0;
+      overrides[lower] = v; // 0 => removed in compute
       saveGoalieOverrides(filterTeam, overrides);
+    });
+    inp.addEventListener("change", ()=>{
       renderGoalieStats();
     });
   });
@@ -551,6 +549,7 @@ function renderGoalieStats(){
     msg.innerHTML = `<span class="pill">${escapeHtml(label)}</span>`;
   }
 }
+
 
   // ----------------------------
   // "Match 1 -> övriga matcher" (spelare + målvakt) tills man manuellt ändrar
