@@ -40,8 +40,6 @@
     .error{ color:var(--danger); font-weight:700; }
     .ok{ color:var(--ok); font-weight:700; }
     hr{ border:0; border-top:1px solid var(--line); margin:10px 0; }
-    ol{ margin: 8px 0 8px 20px; padding:0; }
-    li{ margin: 4px 0; }
     table{ width:100%; border-collapse:collapse; }
     th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; vertical-align:top; }
     th{ font-size:12px; color:var(--muted); font-weight:700; }
@@ -66,22 +64,25 @@
       .no-print{ display:none !important; }
       body{ margin:0; }
       .card{ border:none; margin:0; padding:0; }
-      .print-card{ border:1px solid var(--line) !important; padding:10px !important; border-radius: 12px !important; }
-      .nsk-top{ margin:0 0 8px; }
-      .nsk-logo{ width:48px; height:48px; }
-      table{ break-inside: avoid; }
-      tr{ break-inside: avoid; }
+      .print-card{ border:1px solid var(--line) !important; padding:8px !important; border-radius: 12px !important; }
+      .nsk-top{ margin:0 0 6px; }
+      .nsk-logo{ width:44px; height:44px; }
 
       /* 4 per sida (2x2) */
       .printPage{
         display:grid;
         grid-template-columns: 1fr 1fr;
-        gap:10px;
-        padding:10px;
+        gap:8px;
+        padding:8px;
         page-break-after: always;
       }
       .printPage:last-child{ page-break-after: auto; }
       .printPage .matchBlock{ margin:0 !important; }
+
+      /* gör tabellen kompakt så 4 matcher får plats */
+      th, td{ font-size:11px !important; padding:4px 4px !important; }
+      th{ font-size:10px !important; }
+      .small{ font-size:10px !important; }
     }
   </style>
 
@@ -198,8 +199,6 @@
       <button class="ghost" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
-
-    <div id="exportHelp" class="small no-print" style="margin-top:8px;display:none;"></div>
   </div>
 
   <!-- OUTPUT / MATCHBLAD (PRINT-VÄNLIGT) -->
@@ -365,15 +364,12 @@
   }
   function applyPageStyle(){
     const size = loadPdfSize();
-    const css = `
-      @page { size: ${size} landscape; margin: 10mm; }
-    `;
+    const css = `@page { size: ${size} landscape; margin: 10mm; }`;
     document.getElementById("pageStyle").textContent = css;
   }
   function openPdfModal(){
     document.getElementById("pdfModal").style.display = "block";
-    const sel = document.getElementById("pdfSize");
-    sel.value = loadPdfSize();
+    document.getElementById("pdfSize").value = loadPdfSize();
   }
   function closePdfModal(){
     document.getElementById("pdfModal").style.display = "none";
@@ -537,7 +533,6 @@
       const flags = loadManualFlags(teamNo, m);
       const st = getStateFor(teamNo, m);
 
-      // teamSize + players hänger ihop
       if (!flags.players){
         st.teamSize = st1.teamSize || st.teamSize;
         st.players = Array.isArray(st1.players) ? st1.players.slice() : st.players;
@@ -548,7 +543,6 @@
 
       setStateFor(teamNo, m, st);
 
-      // håll countedKey + goalieStats i sync om vi autokopierar målvakt
       if (!flags.goalie){
         updateGoalieStatsForMatch(String(teamNo), String(m), st.goalie || "");
       }
@@ -560,7 +554,6 @@
     const st1 = getStateFor(teamNo, 1);
     const flags = loadManualFlags(teamNo, matchNo);
 
-    // Bara defaulta om man inte manuellt ändrat och fält saknas/är tomt
     if (!flags.players){
       const hasPlayers = Array.isArray(st.players) && st.players.some(x => (x||"").trim());
       if (!hasPlayers){
@@ -832,12 +825,10 @@
         const teamNo = document.getElementById("teamSelect").value || "1";
         const matchNo = document.getElementById("matchNo").value || "1";
 
-        // match > 1 => detta är manuell ändring för denna match
         if (parseInt(matchNo,10) > 1) markManual(teamNo, matchNo, "players");
 
         saveState();
 
-        // om vi ändrar match 1 och andra matcher inte är manuella -> kopiera
         if (parseInt(matchNo,10) === 1){
           propagateFromMatch1(teamNo);
         }
@@ -917,8 +908,9 @@
   }
 
   // ----------------------------
-  // HÅRD bytesschema-regel:
-  // Om roster >= 2*k så MÅSTE overlap == 0 (ingen får spela två byten i rad).
+  // Bytesschema:
+  // - Undvik samma spelare två byten i rad så långt det går
+  // - Om roster >= 2*k och vi har prev => kräva overlap == 0 (ingen får spela två byten i rad)
   // ----------------------------
   function makeLineupsForMatch(st, globalCounts, shiftTimes){
     const roster = rosterFromState(st);
@@ -936,8 +928,9 @@
       return shiftTimes.map(()=>[]);
     }
 
-    const W_FAIR = 10; // jämn speltid
-    const W_STR  = 3;  // styrka
+    const W_FAIR = 10;  // jämn speltid
+    const W_STR  = 3;   // styrka
+    const W_REST = 40;  // straff för overlap (någon spelar två byten i rad)
 
     let prev = null;
     const lineups = [];
@@ -949,7 +942,6 @@
         return b.r - a.r;
       });
 
-      // kandidat-pool (begränsa för kombinationer)
       const poolSet = new Set();
       const pool = [];
 
@@ -961,6 +953,15 @@
       for (const obj of strongArr.slice(0, Math.min(10, roster.length))){
         const key = obj.n.toLowerCase();
         if (!poolSet.has(key)){ poolSet.add(key); pool.push(obj.n); }
+      }
+
+      // säkerställ att vi kan välja k
+      if (pool.length < k){
+        for (const n of roster){
+          const key = n.toLowerCase();
+          if (!poolSet.has(key)){ poolSet.add(key); pool.push(n); }
+          if (pool.length >= k) break;
+        }
       }
 
       const M = Math.min(pool.length, 14);
@@ -983,7 +984,9 @@
           const fairScore = -fairPenalty;
 
           const overlap = prev ? countOverlap(prev, lineup) : 0;
-          const score = W_FAIR * fairScore + W_STR * strength;
+          const restPenalty = -W_REST * overlap;
+
+          const score = W_FAIR * fairScore + W_STR * strength + restPenalty;
 
           candidates.push({lineup, score, overlap});
           return;
@@ -996,7 +999,7 @@
       }
       rec(0, k);
 
-      // HÅRD regel: om roster >= 2*k (och vi har en prev) så tillåt endast overlap==0
+      // om vi kan (minst 2*k spelare) => inga två byten i rad
       let allowed = candidates;
       if (prev && roster.length >= 2 * k){
         const zero = candidates.filter(x => x.overlap === 0);
@@ -1005,7 +1008,6 @@
 
       allowed.sort((x,y)=>{
         if (y.score !== x.score) return y.score - x.score;
-        // vid lika: minst overlap (men overlap ska vara 0 när regeln gäller)
         if (x.overlap !== y.overlap) return x.overlap - y.overlap;
         return 0;
       });
@@ -1032,24 +1034,17 @@
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
-    // Plan ska visas som bara 1-4
+    // Plan visas som bara 1-4
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
             Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(st.arena || "—")}</b>`;
   }
 
+  // PDF-krav:
+  // - Ta bort raden "Antal i laget... Perioder... Bytestid..."
+  // - Ta bort avsnittet "Laguppställning (ranking)..."
+  // - Ta bort text "hård vila-regel"
+  // - Ta bort förklarande text under tabellen
   function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
-    const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-    const periodMin = parseInt(st.periodMin, 10) || 15;
-    const shiftSec = parseInt(st.shiftSec, 10) || 90;
-
-    const chosen = rosterFromState(st);
-    const goalie = st.goalie || "—";
-
-    const coaches = loadTeamCoaches();
-    const coachText = coaches.length ? coaches.join(", ") : "—";
-
-    const onCourt = st.onCourt || "3";
-
     return `
       <div class="print-card matchBlock">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
@@ -1057,40 +1052,22 @@
           <div class="small">${formatInfoLine(st)}</div>
         </div>
 
-        <div class="small" style="margin-top:6px;">
-          Antal i laget: <b>${escapeHtml(st.teamSize || "—")}</b> • Antal på plan: <b>${escapeHtml(onCourt)}</b>
-          • Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b>
-        </div>
-
         <hr>
 
-        <div style="display:flex; gap:14px; flex-wrap:wrap;">
-          <div style="flex: 1 1 220px;">
-            <div><b>Laguppställning (ranking)</b></div>
-            <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
-            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
-            <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
-          </div>
-
-          <div style="flex: 1 1 420px;">
-            <div><b>Bytesschema (hård vila-regel)</b></div>
-            <table>
-              <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
-              <tbody>
-                ${shiftTimes.map((t,i)=>`
-                  <tr>
-                    <td>${i+1}</td>
-                    <td class="nowrap">${escapeHtml(t)}</td>
-                    <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-            <div class="small" style="margin-top:6px;">
-              Om truppen har <b>minst 2× antal på plan</b> så tillåts <b>inga spelare två byten i rad</b>.
-              Annars görs bästa möjliga.
-            </div>
-          </div>
+        <div>
+          <div><b>Bytesschema</b></div>
+          <table>
+            <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+            <tbody>
+              ${shiftTimes.map((t,i)=>`
+                <tr>
+                  <td>${i+1}</td>
+                  <td class="nowrap">${escapeHtml(t)}</td>
+                  <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
+                </tr>
+              `).join("")}
+            </tbody>
+          </table>
         </div>
       </div>
     `;
@@ -1098,7 +1075,7 @@
 
   // ----------------------------
   // Render ALLA matcher (1..matchCount) för valt lag
-  // - Nu: packa 4 matchBlock per sida (printPage)
+  // - packa 4 matchBlock per sida (printPage)
   // ----------------------------
   function renderAll(){
     const err = validateCurrentMatch();
@@ -1111,8 +1088,8 @@
     const matchCount = loadMatchCount();
 
     const globalCounts = {};
-
     const blocks = [];
+
     for (let m=1; m<=matchCount; m++){
       const st = loadStateFor(teamNo, m);
 
@@ -1128,7 +1105,6 @@
       blocks.push(renderMatchBlock(teamNo, m, st, shiftTimes, lineups));
     }
 
-    // grupper om 4 per sida
     let html = "";
     for (let i=0; i<blocks.length; i+=4){
       html += `<div class="printPage">${blocks.slice(i, i+4).join("")}</div>`;
@@ -1142,12 +1118,6 @@
     const chosen = (sel && sel.value) ? sel.value : loadPdfSize();
     savePdfSize(chosen);
     applyPageStyle();
-
-    const help = document.getElementById("exportHelp");
-    help.style.display = "block";
-    help.innerHTML =
-      "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>" +
-      "📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
 
     closePdfModal();
     renderAll();
@@ -1494,7 +1464,6 @@
   // ----------------------------
   function init(){
     applyPageStyle();
-
     initSettingsDropdowns();
     wireImport();
 
@@ -1508,7 +1477,7 @@
     loadState();
     applyTeamCoachesToUI();
 
-    // autosave match meta + settings
+    // autosave match meta + settings (ej goalie här)
     const ids = [
       "matchDate","matchTime","opponent","arena",
       "onCourt","periodsCount","periodMin","shiftSec"
