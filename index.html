@@ -485,39 +485,72 @@ body[data-pdf="A4"] th{ font-size:8px !important; }
   function closeGoalieStats(){
     document.getElementById("goalieStatsModal").style.display = "none";
   }
-  function renderGoalieStats(){
-    const teamNo = document.getElementById("teamSelect").value || "1";
-    ensureGoalieStatsSeeded(teamNo);
+  
+function renderGoalieStats(){
+  const teamSel = document.getElementById("goalieStatsTeam");
+  const filterTeam = teamSel ? (teamSel.value || "all") : "all";
 
-    const {players} = loadRegister();
-    const stats = loadGoalieStats(teamNo);
+  const data = computeGoalieStats(filterTeam);
+  const box = document.getElementById("goalieStatsTable");
+  const msg = document.getElementById("goalieStatsMsg");
 
-    const rows = players.map(name=>{
-      const c = parseInt(stats[String(name).toLowerCase()] || "0", 10) || 0;
-      return {name, c};
-    });
+  if (!box) return;
 
-    rows.sort((a,b)=>{
-      if (b.c !== a.c) return b.c - a.c;
-      return a.name.localeCompare(b.name, 'sv');
-    });
-
-    const any = rows.some(r=>r.c > 0);
-
-    document.getElementById("goalieStatsBody").innerHTML = any ? `
-      <table>
-        <thead><tr><th>Spelare</th><th class="nowrap">Målvakt (matcher)</th></tr></thead>
-        <tbody>
-          ${rows.filter(r=>r.c>0).map(r=>`
-            <tr>
-              <td>${escapeHtml(r.name)}</td>
-              <td class="nowrap">${r.c}</td>
-            </tr>
-          `).join("")}
-        </tbody>
-      </table>
-    ` : `<div class="small">Ingen målvakt-statistik ännu för detta lag.</div>`;
+  if (!data.length){
+    box.innerHTML = "<div class='small'>Ingen målvakt är vald i sparade matcher.</div>";
+    if (msg) msg.innerHTML = "";
+    return;
   }
+
+  box.innerHTML = `
+    <table>
+      <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
+      <tbody>
+        ${data.map(x=>`
+          <tr>
+            <td>${escapeHtml(x.name)}</td>
+            <td class="nowrap">
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value="${x.n}"
+                data-goalie-lower="${escapeHtml(x.lower)}"
+                style="width:90px; padding:6px 8px; border-radius:10px; border:1px solid #ccc;"
+              >
+            </td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+    <div class="small" style="margin-top:8px;">
+      Ändra antal manuellt. Sätt <b>0</b> för att ta bort spelaren från listan.
+    </div>
+  `;
+
+  // Wire inputs: save overrides on change
+  const overrides = loadGoalieOverrides(filterTeam);
+  box.querySelectorAll('input[data-goalie-lower]').forEach(inp=>{
+    inp.addEventListener("change", ()=>{
+      const lower = inp.getAttribute("data-goalie-lower") || "";
+      const v = parseInt(inp.value || "0", 10);
+      if (!Number.isFinite(v) || v <= 0){
+        delete overrides[lower];
+        // also hide this row immediately by rerender after saving a 0 as "remove"
+        overrides[lower] = 0;
+      } else {
+        overrides[lower] = v;
+      }
+      saveGoalieOverrides(filterTeam, overrides);
+      renderGoalieStats();
+    });
+  });
+
+  if (msg){
+    const label = (filterTeam === "all") ? "Alla lag" : `Lag ${filterTeam}`;
+    msg.innerHTML = `<span class="pill">${escapeHtml(label)}</span>`;
+  }
+}
 
   // ----------------------------
   // "Match 1 -> övriga matcher" (spelare + målvakt) tills man manuellt ändrar
