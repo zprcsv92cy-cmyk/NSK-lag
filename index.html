@@ -49,6 +49,15 @@
     .matchBlock{ break-inside: avoid; page-break-inside: avoid; }
     .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
 
+    /* Checklist UI */
+    .doneRow td{ background: #f5fff5; }
+    .chk{
+      width:22px; height:22px;
+      accent-color: #111;
+      cursor:pointer;
+    }
+    .chkCell{ width:44px; }
+
     /* Modal */
     #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
     .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
@@ -68,31 +77,9 @@
       .nsk-logo{ width:48px; height:48px; }
       table{ break-inside: avoid; }
       tr{ break-inside: avoid; }
+      /* Dölj checkbox-kolumn vid utskrift så det blir kompakt */
+      .chkCell, .chkCell *{ display:none !important; }
     }
-  
-    /* --- Checkbart bytesschema --- */
-    .shiftTable tbody tr{ transition: background .15s ease, opacity .15s ease; }
-    .shiftTable tbody tr:nth-child(odd){ background:#fafafa; }
-    .shiftDone{ background:#eaf7ea !important; }
-    .shiftDone td{ opacity:.75; }
-    .shiftDone .shiftNames{ text-decoration: line-through; }
-
-    .doneCell{
-      width: 70px;
-      text-align:center;
-      vertical-align: middle;
-    }
-    .doneBox{
-      width:22px; height:22px;
-      transform: translateY(1px);
-    }
-
-    .shiftControls{
-      display:flex; gap:10px; flex-wrap:wrap;
-      align-items:center; justify-content:flex-end;
-      margin: 8px 0 0;
-    }
-
   </style>
 </head>
 
@@ -263,23 +250,23 @@
     </div>
   </div>
 
-<!-- GOALIE STATS MODAL -->
-<div id="goalieStatsModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999;">
-  <div class="modalPanel">
-    <div class="modalHeader">
-      <b>Statistik målvakter</b>
-      <button class="ghost" onclick="closeGoalieStats()">Stäng</button>
-    </div>
-
-    <div class="card" style="margin:0;">
-      <div class="small" style="margin-bottom:8px;">
-        Visar hur många <b>matcher</b> en spelare varit vald som målvakt (max 1 gång per match).
+  <!-- GOALIE STATS MODAL -->
+  <div id="goalieStatsModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999;">
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <b>Statistik målvakter</b>
+        <button class="ghost" onclick="closeGoalieStats()">Stäng</button>
       </div>
-      <div id="goalieStatsList"></div>
-      <div id="goalieStatsHint" class="small" style="margin-top:10px;"></div>
+
+      <div class="card" style="margin:0;">
+        <div class="small" style="margin-bottom:8px;">
+          Visar hur många <b>matcher</b> en spelare varit vald som målvakt (max 1 gång per match). <span class="pill">Alla lag</span>
+        </div>
+        <div id="goalieStatsList"></div>
+        <div id="goalieStatsHint" class="small" style="margin-top:10px;"></div>
+      </div>
     </div>
   </div>
-</div>
 
 <script>
   // ----------------------------
@@ -324,6 +311,27 @@
     const last = parts[parts.length - 1];
     const initial = last ? last[0].toUpperCase() : "";
     return initial ? `${first} ${initial}` : first;
+  }
+
+  // ----------------------------
+  // Shift checklist state (per lag+match+rad)
+  // ----------------------------
+  function shiftDoneKey(teamNo, matchNo, idx){
+    return `nsk_shiftDone_team_${teamNo}_match_${matchNo}_i_${idx}`;
+  }
+  function isShiftDone(teamNo, matchNo, idx){
+    return localStorage.getItem(shiftDoneKey(teamNo, matchNo, idx)) === "1";
+  }
+  function setShiftDone(teamNo, matchNo, idx, done){
+    localStorage.setItem(shiftDoneKey(teamNo, matchNo, idx), done ? "1" : "0");
+  }
+  function toggleShiftDone(teamNo, matchNo, idx, done){
+    setShiftDone(teamNo, matchNo, idx, done);
+    // bara uppdatera blocket visuellt utan att röra data
+    const row = document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
+    if (row){
+      row.classList.toggle("doneRow", !!done);
+    }
   }
 
   // ----------------------------
@@ -510,46 +518,15 @@
     localStorage.removeItem(stateKey());
     loadState();
     renderAll();
+    // uppdatera statistik om den är öppen
+    const m=document.getElementById("goalieStatsModal");
+    if (m && m.style.display==="block") renderGoalieStats();
   }
   function loadStateFor(teamNo, matchNo){
     const raw = localStorage.getItem(stateKey(String(teamNo), String(matchNo)));
     const st = raw ? safeParseJSON(raw, {}) : {};
     return Object.assign(defaultsState(), st || {});
   }
-
-  // ----------------------------
-  // Bytesschema: bocka av "klart" per rad (sparas per lag+match)
-  // ----------------------------
-  function shiftDoneKey(teamOverride=null, matchOverride=null){
-    return stateKey(teamOverride, matchOverride) + "_shiftDone";
-  }
-  function loadShiftDone(teamNo, matchNo){
-    const raw = localStorage.getItem(shiftDoneKey(String(teamNo), String(matchNo)));
-    const arr = raw ? safeParseJSON(raw, []) : [];
-    return Array.isArray(arr) ? arr.map(Boolean) : [];
-  }
-  function saveShiftDone(teamNo, matchNo, arr){
-    localStorage.setItem(shiftDoneKey(String(teamNo), String(matchNo)), JSON.stringify(arr.map(Boolean)));
-  }
-  function onShiftDoneToggle(teamNo, matchNo, idx, checked){
-    const arr = loadShiftDone(teamNo, matchNo);
-    while (arr.length <= idx) arr.push(false);
-    arr[idx] = !!checked;
-    saveShiftDone(teamNo, matchNo, arr);
-    // uppdatera radens styling direkt
-    const row = document.querySelector(`[data-shift-row="${teamNo}-${matchNo}-${idx}"]`);
-    if (row){
-      row.classList.toggle("shiftDone", !!checked);
-      const box = row.querySelector("input[type='checkbox']");
-      if (box) box.checked = !!checked;
-    }
-  }
-  function resetShiftDone(teamNo, matchNo){
-    localStorage.removeItem(shiftDoneKey(String(teamNo), String(matchNo)));
-    // rerender för att nollställa UI
-    renderAll();
-  }
-
 
   // ----------------------------
   // Dynamic player selectors (Spelare 1..N)
@@ -583,7 +560,12 @@
       }
 
       sel.value = vals[i-1] || "";
-      sel.addEventListener("change", ()=>{ saveState(); renderAll(); const m=document.getElementById("goalieStatsModal"); if(m && m.style.display==="block"){ renderGoalieStats(); } });
+      sel.addEventListener("change", ()=>{
+        saveState();
+        renderAll();
+        const m=document.getElementById("goalieStatsModal");
+        if (m && m.style.display==="block") renderGoalieStats();
+      });
 
       wrap.appendChild(lab);
       wrap.appendChild(sel);
@@ -626,24 +608,10 @@
   }
 
   // ----------------------------
-  // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
-  //
-  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
-  // - Vi försöker:
-  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
-  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
-  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
-  //
-  // Teknik:
-  // - Varje rad i bytesschema = en "stint" för de som är på plan.
-  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
-  //   (från en kandidat-pool) och väljer bästa score.
+  // Rotation helpers
   // ----------------------------
   function rosterFromState(st){
-    // Ordningen här är "ranking": index 0 bäst
     const raw = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-
-    // ta bort dubbletter men behåll första (bäst)
     const out = [];
     const seen = new Set();
     for (const n of raw){
@@ -654,163 +622,108 @@
     }
     return out;
   }
-
   function makeRatings(roster){
-    // högre rating = bättre (spelare 1 högst)
     const r = {};
     const n = roster.length;
     for (let i=0; i<n; i++){
-      r[roster[i].toLowerCase()] = (n - i); // t.ex. 10..1
+      r[roster[i].toLowerCase()] = (n - i);
     }
     return r;
   }
 
-  function countOverlap(a, b){
-    const setA = new Set((a||[]).map(x=>x.toLowerCase()));
-    let o = 0;
-    for (const x of (b||[])){
-      if (setA.has(x.toLowerCase())) o++;
-    }
-    return o;
-  }
-
-  function pickBestLineup(candidates, k){
-    // candidates: Array<{lineup, score}>
-    candidates.sort((x,y)=>{
-      if (y.score !== x.score) return y.score - x.score;
-      return 0;
-    });
-    return candidates.length ? candidates[0].lineup : [];
-  }
-
+  // ----------------------------
+  // makeLineupsForMatch (VILA-REGEL)
+  // - Om möjligt: undvik att samma spelare spelar två byten i rad
+  // - Samtidigt: jämna speltid + lite styrka
+  // ----------------------------
   function makeLineupsForMatch(st, globalCounts, shiftTimes){
+
     const roster = rosterFromState(st);
+
     const kWanted = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
     const k = Math.min(kWanted, roster.length || kWanted);
 
     const ratings = makeRatings(roster);
 
-    // init counts för roster
     for (const n of roster){
       const key = n.toLowerCase();
       if (globalCounts[key] == null) globalCounts[key] = 0;
     }
 
-    // om ingen roster
     if (!roster.length){
       return shiftTimes.map(()=>[]);
     }
 
-    // Viktning (tweakbara)
-    const W_FAIR = 8;         // jämn speltid
-    const W_STR  = 3;         // styrka
+    // vikter
+    const W_FAIR = 10;          // jämn speltid
+    const W_STR  = 2;           // styrka
+    const W_REST = 15;          // vila mellan byten
+    const PENALTY_REPEAT = 200; // straff om samma spelar igen direkt
 
     let prev = null;
     const lineups = [];
 
     for (let i=0; i<shiftTimes.length; i++){
-      // Kandidat-pool: spelare som har spelat minst + starka spelare + prev
-      const countsArr = roster.map(n => ({n, c: globalCounts[n.toLowerCase()]||0, r: ratings[n.toLowerCase()]||0}));
+
+      const countsArr = roster.map(n => ({
+        n,
+        c: globalCounts[n.toLowerCase()] || 0,
+        r: ratings[n.toLowerCase()] || 0
+      }));
+
       countsArr.sort((a,b)=>{
-        if (a.c !== b.c) return a.c - b.c;        // minst spelade först
-        return b.r - a.r;                         // vid lika: starkare först
+        if (a.c !== b.c) return a.c - b.c;
+        return b.r - a.r;
       });
 
-      const poolSet = new Set();
-      const pool = [];
+      // kandidatpool (håll liten för att vara snabb på mobil)
+      const pool = countsArr.map(x=>x.n).slice(0, Math.min(10, roster.length));
 
-      // minst spelade
-      for (const obj of countsArr.slice(0, Math.min(12, roster.length))){
-        const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
-      }
-      // topp starka (för att vinna)
-      const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
-      for (const obj of strongArr.slice(0, Math.min(8, roster.length))){
-        const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
-      }
-      // previous lineup
-      if (prev && prev.length){
-        for (const n of prev){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-        }
-      }
-
-      // om pool för liten
-      if (pool.length < k){
-        for (const n of roster){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-          if (pool.length >= k) break;
-        }
-      }
-
-      // begränsa poolstorlek för att enumerera kombinationer
-      const M = Math.min(pool.length, 12);
-      const P = pool.slice(0, M);
-
-      // Enumerera kombinationer av storlek k från P
       const candidates = [];
-      const idxs = [];
-      function rec(start, left){
+
+      function rec(start, left, chosen){
         if (left === 0){
-          const lineup = idxs.map(j => P[j]);
+
+          const lineup = chosen.slice();
 
           const minC = Math.min(...roster.map(n=>globalCounts[n.toLowerCase()]||0));
+
           let fairPenalty = 0;
           let strength = 0;
+          let repeatCount = 0;
+
           for (const n of lineup){
             const key = n.toLowerCase();
             fairPenalty += (globalCounts[key] || 0) - minC;
             strength += (ratings[key] || 0);
+            if (prev && prev.includes(n)) repeatCount++;
           }
-          const fairScore = -fairPenalty;
 
-          const overlap = prev ? countOverlap(prev, lineup) : 0;
+          const restScore = -repeatCount;
 
-// "Vila"-regel: om roster är tillräckligt stor (>= 2*k) försöker vi få 0 overlap (ingen spelar två byten i rad).
-// Annars: minimera overlap via straff.
-let restPenalty = 0;
-if (prev){
-  // straff per upprepad spelare
-  restPenalty = -W_REST * overlap;
-}
-const score =
-  W_FAIR * fairScore +
-  W_STR  * strength +
-  restPenalty;
+          const score =
+            (-fairPenalty * W_FAIR) +
+            (strength * W_STR) +
+            (restScore * W_REST) -
+            (repeatCount * PENALTY_REPEAT);
 
-          candidates.push({lineup, score});
+          candidates.push({ lineup, score, repeatCount });
           return;
         }
-        for (let j=start; j<=M-left; j++){
-          idxs.push(j);
-          rec(j+1, left-1);
-          idxs.pop();
+
+        for (let j=start; j<=pool.length-left; j++){
+          chosen.push(pool[j]);
+          rec(j+1, left-1, chosen);
+          chosen.pop();
         }
       }
-      rec(0, k);
 
-      // Vila-regel: om vi har tillräckligt många spelare försöker vi först hitta lineup med 0 overlap.
-let best = null;
-if (prev && roster.length >= 2*k){
-  const filtered = candidates.filter(x => countOverlap(prev, x.lineup) === 0);
-  best = pickBestLineup(filtered.length ? filtered : candidates, k);
-} else {
-  best = pickBestLineup(candidates, k);
-}
+      rec(0, k, []);
 
-      // uppdatera counts
+      candidates.sort((a,b)=>b.score - a.score);
+
+      const best = candidates[0]?.lineup || [];
+
       for (const n of best){
         const key = n.toLowerCase();
         globalCounts[key] = (globalCounts[key] || 0) + 1;
@@ -831,24 +744,16 @@ if (prev && roster.length >= 2*k){
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
-    const arenaLabel = `Plan ${st.arena || "—"}`;
+    const arenaLabel = `${st.arena || "—"}`;
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
             Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arenaLabel)}</b>`;
   }
 
   function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
-    const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-    const periodMin = parseInt(st.periodMin, 10) || 15;
-    const shiftSec = parseInt(st.shiftSec, 10) || 90;
-
     const chosen = rosterFromState(st);
     const goalie = st.goalie || "—";
-
     const coaches = loadTeamCoaches();
     const coachText = coaches.length ? coaches.join(", ") : "—";
-
-    const onCourt = st.onCourt || "3";
-    const shiftDone = loadShiftDone(teamNo, matchNo);
 
     return `
       <div class="print-card matchBlock">
@@ -857,48 +762,50 @@ if (prev && roster.length >= 2*k){
           <div class="small">${formatInfoLine(st)}</div>
         </div>
 
-        <div class="small" style="margin-top:6px;">
-          Antal i laget: <b>${escapeHtml(st.teamSize || "—")}</b> • Antal på plan: <b>${escapeHtml(onCourt)}</b>
-          • Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b>
-        </div>
-
         <hr>
 
         <div style="display:flex; gap:18px; flex-wrap:wrap;">
           <div style="flex: 1 1 260px;">
             <div><b>Laguppställning</b></div>
             <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
-            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
             <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
+            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
           </div>
 
           <div style="flex: 1 1 520px;">
-            <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-              <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
-              <div class="small no-print">
-                <button class="ghost" type="button" onclick="resetShiftDone('${escapeHtml(teamNo)}','${escapeHtml(matchNo)}')">Nollställ bockar</button>
-              </div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+              <div><b>Bytesschema</b></div>
+              <div class="small"><span class="pill">Bocka av när klart</span></div>
             </div>
-            <table class="shiftTable">
-              <thead><tr><th class="doneCell no-print">Klar</th><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+            <table>
+              <thead>
+                <tr>
+                  <th class="chkCell"></th>
+                  <th>#</th>
+                  <th>Tid kvar</th>
+                  <th>På plan</th>
+                </tr>
+              </thead>
               <tbody>
-                ${shiftTimes.map((t,i)=>`
-                  <tr data-shift-row="${escapeHtml(teamNo)}-${escapeHtml(matchNo)}-${i}" class="${(shiftDone[i] ? 'shiftDone' : '')}">
-                    <td class="doneCell no-print">
-                      <input class="doneBox" type="checkbox"
-                        ${shiftDone[i] ? 'checked' : ''}
-                        onchange="onShiftDoneToggle('${escapeHtml(teamNo)}','${escapeHtml(matchNo)}',${i}, this.checked)">
-                    </td>
-                    <td>${i+1}</td>
-                    <td class="nowrap">${escapeHtml(t)}</td>
-                    <td class="shiftNames">${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
-                  </tr>
-                `).join("")}
+                ${shiftTimes.map((t,i)=>{
+                  const done = isShiftDone(teamNo, matchNo, i);
+                  return `
+                    <tr id="shiftRow_${teamNo}_${matchNo}_${i}" class="${done ? "doneRow" : ""}">
+                      <td class="chkCell">
+                        <input class="chk" type="checkbox"
+                          ${done ? "checked" : ""}
+                          onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked)">
+                      </td>
+                      <td>${i+1}</td>
+                      <td class="nowrap">${escapeHtml(t)}</td>
+                      <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
+                    </tr>
+                  `;
+                }).join("")}
               </tbody>
             </table>
             <div class="small" style="margin-top:6px;">
-              Målet är att <b>undvika dubbla byten</b> (helst 1 åt gången) och samtidigt hålla <b>så jämn speltid som möjligt</b>.
-              Ranking (Spelare 1 bäst) vägs in för att få <b>starka byten</b>.
+              Målet är att så långt det är möjligt <b>undvika att samma spelare spelar två byten i rad</b> och samtidigt hålla <b>jämn speltid</b>.
             </div>
           </div>
         </div>
@@ -919,7 +826,6 @@ if (prev && roster.length >= 2*k){
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchCount = loadMatchCount();
 
-    // globalCounts: hur många "stints" varje spelare fått över ALLA matcher
     const globalCounts = {};
 
     let html = "";
@@ -952,7 +858,7 @@ if (prev && roster.length >= 2*k){
   }
 
   // ----------------------------
-  // Register modal (inkl. redigera namn)
+  // Register modal
   // ----------------------------
   function openRegister(){
     document.getElementById("registerModal").style.display = "block";
@@ -1056,7 +962,6 @@ if (prev && roster.length >= 2*k){
 
     coaches[idx] = name;
 
-    // uppdatera team-val om den här coachen var vald
     const oldLower = String(current || "").toLowerCase();
     const selected = loadTeamCoaches();
     const updated = selected.map(x => (String(x).toLowerCase() === oldLower ? name : x));
@@ -1093,70 +998,66 @@ if (prev && roster.length >= 2*k){
     renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
   }
 
-  
-// ----------------------------
-// Statistik målvakter (korrekt: räknar matcher från sparad state)
-// ----------------------------
-function computeGoalieStats(){
-  // Global (alla lag): räknar hur många matcher där en målvakt är vald (max 1 per match)
-  const stats = {}; // name -> count
-  for (let i=0; i<localStorage.length; i++){
-    const k = localStorage.key(i);
-    if (!k || !k.startsWith("nsk_state_")) continue;
-    try{
-      const st = JSON.parse(localStorage.getItem(k) || "{}");
-      const g = (st.goalie || "").trim();
-      if (!g) continue;
-      stats[g] = (stats[g] || 0) + 1;
-    }catch(e){}
+  // ----------------------------
+  // Statistik målvakter (GLOBAL: alla lag)
+  // ----------------------------
+  function computeGoalieStats(){
+    const stats = {};
+    for (let i=0; i<localStorage.length; i++){
+      const k = localStorage.key(i);
+      if (!k || !k.startsWith("nsk_state_team_")) continue;
+      try{
+        const st = JSON.parse(localStorage.getItem(k) || "{}");
+        const g = (st.goalie || "").trim();
+        if (!g) continue;
+        stats[g] = (stats[g] || 0) + 1; // 1 per match
+      }catch(e){}
+    }
+    return stats;
   }
-  return stats;
-}
 
-function renderGoalieStats(){
-  const team = document.getElementById("teamSelect")?.value || "1";
-  const list = document.getElementById("goalieStatsList");
-  const hint = document.getElementById("goalieStatsHint");
-  if (!list) return;
+  function renderGoalieStats(){
+    const list = document.getElementById("goalieStatsList");
+    const hint = document.getElementById("goalieStatsHint");
+    if (!list) return;
 
-  const stats = computeGoalieStats();
-  const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
+    const stats = computeGoalieStats();
+    const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
 
-  if (!names.length){
-    list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher totalt).</div>";
+    if (!names.length){
+      list.innerHTML = "<div class='small'>Ingen statistik ännu.</div>";
+      if (hint) hint.innerHTML = "";
+      return;
+    }
+
+    list.innerHTML = `
+      <table>
+        <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
+        <tbody>
+          ${names.map(n=>`
+            <tr>
+              <td>${escapeHtml(n)}</td>
+              <td class="nowrap"><b>${stats[n]}</b></td>
+            </tr>
+          `).join("")}
+        </tbody>
+      </table>
+    `;
     if (hint) hint.innerHTML = "";
-    return;
   }
 
-  list.innerHTML = `
-    <table>
-      <thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
-      <tbody>
-        ${names.map(n=>`
-          <tr>
-            <td>${escapeHtml(n)}</td>
-            <td class="nowrap"><b>${stats[n]}</b></td>
-          </tr>
-        `).join("")}
-      </tbody>
-    </table>
-  `;
+  function openGoalieStats(){
+    const modal = document.getElementById("goalieStatsModal");
+    if (!modal) return;
+    modal.style.display = "block";
+    renderGoalieStats();
+  }
+  function closeGoalieStats(){
+    const modal = document.getElementById("goalieStatsModal");
+    if (modal) modal.style.display = "none";
+  }
 
-  if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
-}
-
-function openGoalieStats(){
-  const modal = document.getElementById("goalieStatsModal");
-  if (!modal) return;
-  modal.style.display = "block";
-  renderGoalieStats();
-}
-function closeGoalieStats(){
-  const modal = document.getElementById("goalieStatsModal");
-  if (modal) modal.style.display = "none";
-}
-
-// ----------------------------
+  // ----------------------------
   // Backup
   // ----------------------------
   function exportJSON(){
@@ -1232,6 +1133,7 @@ function closeGoalieStats(){
         applyTeamCoachesToUI();
         loadState();
         renderAll();
+        renderGoalieStats();
         document.getElementById("importMsg").innerHTML = "<span class='ok'>✔ Import klar</span>";
       } catch(e){
         document.getElementById("importMsg").innerHTML = "<span class='error'>✖ Import misslyckades</span>";
@@ -1245,13 +1147,13 @@ function closeGoalieStats(){
   // Init dropdowns
   // ----------------------------
   function initSettingsDropdowns(){
-    // 1-4
+    // Plan 1-4 (bara siffror)
     const arena = document.getElementById("arena");
     arena.innerHTML = "";
     for (let i=1; i<=4; i++){
       const o = document.createElement("option");
       o.value = String(i);
-      o.textContent = `Plan ${i}`;
+      o.textContent = String(i);
       arena.appendChild(o);
     }
     arena.value = "1";
@@ -1334,7 +1236,12 @@ function closeGoalieStats(){
     ];
     ids.forEach(id=>{
       const el = document.getElementById(id);
-      el.addEventListener("change", ()=>{ saveState(); renderAll(); const m=document.getElementById("goalieStatsModal"); if(m && m.style.display==="block"){ renderGoalieStats(); } });
+      el.addEventListener("change", ()=>{
+        saveState();
+        renderAll();
+        const m=document.getElementById("goalieStatsModal");
+        if(m && m.style.display==="block") renderGoalieStats();
+      });
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
@@ -1370,6 +1277,8 @@ function closeGoalieStats(){
       applyTeamCoachesToUI();
       loadState();
       renderAll();
+      const m=document.getElementById("goalieStatsModal");
+      if(m && m.style.display==="block") renderGoalieStats();
     });
 
     // byt match
