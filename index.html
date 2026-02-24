@@ -816,7 +816,7 @@
 
         <div style="display:flex; gap:18px; flex-wrap:wrap;">
           <div style="flex: 1 1 260px;">
-            <div><b>Laguppställning (ranking)</b></div>
+            <div><b>Laguppställning</b></div>
             <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
             <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
             <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
@@ -1059,11 +1059,11 @@ function renderGoalieStats(){
   const hint = document.getElementById("goalieStatsHint");
   if (!list) return;
 
-  const stats = computeGoalieStats(team);
+  const stats = computeGoalieStats();
   const names = Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
 
   if (!names.length){
-    list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher för detta lag).</div>";
+    list.innerHTML = "<div class='small'>Ingen statistik ännu (ingen målvakt vald i sparade matcher totalt).</div>";
     if (hint) hint.innerHTML = "";
     return;
   }
@@ -1082,7 +1082,7 @@ function renderGoalieStats(){
     </table>
   `;
 
-  if (hint) hint.innerHTML = `<span class="pill">Lag ${escapeHtml(team)}</span>`;
+  if (hint) hint.innerHTML = `<span class="pill">Alla lag</span>`;
 }
 
 function openGoalieStats(){
