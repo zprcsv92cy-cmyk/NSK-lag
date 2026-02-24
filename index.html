@@ -1255,6 +1255,22 @@
       btn.classList.toggle("active", String(btn.dataset.team) === String(team));
     }
   }
+
+  function switchTeam(team){
+    const sel = document.getElementById("teamSelect");
+    if (!sel) return;
+    const t = String(team || "1");
+    sel.value = t;
+    setActiveTeamTab(t);
+
+    // Samma beteende som tidigare när man byter lag
+    applyMatchCount();
+    refreshAllDropdownsAndPlayers();
+    applyTeamCoachesToUI();
+    loadState();
+    renderAll();
+  }
+
   function wireTeamTabs(){
     const tabs = document.getElementById("teamTabs");
     const sel = document.getElementById("teamSelect");
@@ -1263,14 +1279,7 @@
     for (const btn of tabs.querySelectorAll(".tabBtn")){
       btn.addEventListener("click", ()=>{
         const team = btn.dataset.team || "1";
-        if (sel.value !== String(team)){
-          sel.value = String(team);
-          // trigga samma logik som tidigare
-          sel.dispatchEvent(new Event("change", {bubbles:true}));
-        } else {
-          // uppdatera bara UI
-          setActiveTeamTab(team);
-        }
+        switchTeam(team);
       });
     }
     // initial active
@@ -1410,17 +1419,10 @@
     });
 
     document.getElementById("teamSelect").addEventListener("change", ()=>{
-      setActiveTeamTab(document.getElementById("teamSelect").value || "1");
-      applyMatchCount();
-      refreshAllDropdownsAndPlayers();
-      applyTeamCoachesToUI();
-      loadState();
-      renderAll();
-      const m=document.getElementById("goalieStatsModal");
-      if(m && m.style.display==="block") renderGoalieStats();
+      switchTeam(document.getElementById("teamSelect").value || "1");
     });
 
-    document.getElementById("matchNo").addEventListener("change", ()=>{
+document.getElementById("matchNo").addEventListener("change", ()=>{
       loadState();
       renderAll();
     });
