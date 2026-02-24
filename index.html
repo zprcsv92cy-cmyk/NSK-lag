@@ -64,7 +64,7 @@
       .no-print{ display:none !important; }
       body{ margin:0; }
       .card{ border:none; margin:0; padding:0; }
-      .print-card{ border:1px solid var(--line) !important; padding:8px !important; border-radius: 12px !important; }
+      .print-card{ border:1px solid var(--line) !important; padding:6px !important; border-radius: 12px !important; }
       .nsk-top{ margin:0 0 6px; }
       .nsk-logo{ width:44px; height:44px; }
 
@@ -72,8 +72,8 @@
       .printPage{
         display:grid;
         grid-template-columns: 1fr 1fr;
-        gap:6px;
-        padding:6px;
+        gap:4px;
+        padding:4px;
         page-break-after: always;
       }
       .printPage:last-child{ page-break-after: auto; }
@@ -86,17 +86,27 @@
 
 /* Extra kompakt för A4 (så 4 matcher ryms på 1 sida) */
 body[data-pdf="A4"] .printPage{
-  gap:6px;
-  padding:6px;
-  transform: scale(0.92);
+  gap:4px;
+  padding:4px;
+  transform: scale(0.82);
   transform-origin: top left;
-  width: 108.7%;
+  width: 121.95%;
 }
-body[data-pdf="A4"] .print-card{ padding:6px !important; }
-body[data-pdf="A4"] th, body[data-pdf="A4"] td{ font-size:10px !important; padding:3px 3px !important; }
-body[data-pdf="A4"] .small{ font-size:9px !important; }
-
-  }
+body[data-pdf="A4"] .print-card{
+  padding:4px !important;
+  border-radius:10px !important;
+}
+body[data-pdf="A4"] hr{ display:none !important; }
+body[data-pdf="A4"] b{ line-height:1.05; }
+body[data-pdf="A4"] .small{ font-size:8px !important; line-height:1.05 !important; }
+body[data-pdf="A4"] table{ width:100%; }
+body[data-pdf="A4"] th, body[data-pdf="A4"] td{
+  font-size:9px !important;
+  padding:2px 2px !important;
+  line-height:1.05 !important;
+}
+body[data-pdf="A4"] th{ font-size:8px !important; }
+}
   </style>
 
   <!-- Dynamisk @page (A4/A3 landscape) sätts av JS -->
@@ -1165,7 +1175,7 @@ function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
     pl.innerHTML = players.map((n,i)=>`
       <div class="listItem">
         <div>${escapeHtml(n)}</div>
-        <div style="display:flex; gap:6px;">
+        <div style="display:flex; gap:4px;">
           <button class="ghost" onclick="editPlayer(${i})">Redigera</button>
           <button class="ghost" onclick="removePlayer(${i})">Ta bort</button>
         </div>
@@ -1176,7 +1186,7 @@ function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
     cl.innerHTML = coaches.map((n,i)=>`
       <div class="listItem">
         <div>${escapeHtml(n)}</div>
-        <div style="display:flex; gap:6px;">
+        <div style="display:flex; gap:4px;">
           <button class="ghost" onclick="editCoach(${i})">Redigera</button>
           <button class="ghost" onclick="removeCoach(${i})">Ta bort</button>
         </div>
