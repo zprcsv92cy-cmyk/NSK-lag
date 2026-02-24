@@ -1527,7 +1527,52 @@ function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
   // ----------------------------
   // Init + events
   // ----------------------------
-  function init(){
+  
+// ----------------------------
+// Auto goalie stats per match
+// ----------------------------
+function goalieMapKey(){
+  const team = document.getElementById("teamSelect")?.value || "1";
+  const matchNo = document.getElementById("matchNo")?.value || "1";
+  return `nsk_goalie_map_team_${team}_match_${matchNo}`;
+}
+function statsKey(){
+  const team = document.getElementById("teamSelect")?.value || "1";
+  return `nsk_goalie_stats_team_${team}`;
+}
+function loadStats(){
+  try { return JSON.parse(localStorage.getItem(statsKey()) || "{}"); } catch { return {}; }
+}
+function saveStats(obj){
+  localStorage.setItem(statsKey(), JSON.stringify(obj || {}));
+}
+function updateGoalieStatsAuto(newGoalie){
+  const mapK = goalieMapKey();
+  const prev = localStorage.getItem(mapK) || "";
+  if (prev === newGoalie) return;
+
+  const stats = loadStats();
+
+  // decrement previous
+  if (prev){
+    const key = prev.toLowerCase();
+    if (stats[key] != null){
+      stats[key] = Math.max(0, (stats[key]||0) - 1);
+      if (stats[key] === 0) delete stats[key];
+    }
+  }
+
+  // increment new
+  if (newGoalie){
+    const key = newGoalie.toLowerCase();
+    stats[key] = (stats[key] || 0) + 1;
+  }
+
+  saveStats(stats);
+  localStorage.setItem(mapK, newGoalie || "");
+}
+
+function init(){
     applyPageStyle();
     initSettingsDropdowns();
     wireImport();
@@ -1549,7 +1594,7 @@ function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
     ];
     ids.forEach(id=>{
       const el = document.getElementById(id);
-      el.addEventListener("change", ()=>{ saveState(); renderAll(); });
+      el.addEventListener("change", ()=>{ if(id==="goalie"){ updateGoalieStatsAuto(document.getElementById("goalie").value||""); } saveState(); renderAll(); });
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
