@@ -334,11 +334,8 @@
     if (localStorage.getItem(key) != null) return;
 
     const stats = {};
-    const count = (function(){
-      const raw = localStorage.getItem(`nsk_matchCount_team_${teamNo}`);
-      const n = raw ? parseInt(raw, 10) : 4;
-      return (Number.isFinite(n) && n >= 1 && n <= 30) ? n : 4;
-    })();
+    const rawCount = localStorage.getItem(`nsk_matchCount_team_${teamNo}`);
+    const count = rawCount ? (parseInt(rawCount, 10) || 4) : 4;
 
     for (let m=1; m<=count; m++){
       const raw = localStorage.getItem(`nsk_state_team_${teamNo}_match_${m}`);
@@ -364,10 +361,8 @@
 
     if (prevLower === currentLower) return;
 
-    // Ta bort tidigare räknad (om fanns)
     if (prevLower) incGoalie(teamNo, prevLower, -1);
 
-    // Lägg till ny (om finns)
     if (currentLower) {
       incGoalie(teamNo, currentLower, +1);
       localStorage.setItem(countedK, currentLower);
@@ -375,13 +370,11 @@
       localStorage.removeItem(countedK);
     }
 
-    // uppdatera om modal är öppen
     if (document.getElementById("goalieStatsModal").style.display === "block"){
       renderGoalieStats();
     }
   }
 
-  // Vid rensa match: justera statistiken korrekt (om matchen var räknad)
   function uncountGoalieFor(teamNo, matchNo){
     const countedK = goalieCountedKey(String(teamNo), String(matchNo));
     const prevLower = (localStorage.getItem(countedK) || "").trim();
@@ -617,7 +610,6 @@
   function clearTeamMatch(){
     const teamNo = document.getElementById("teamSelect").value || "1";
     const matchNo = document.getElementById("matchNo").value || "1";
-    // justera statistik först (om matchen var räknad)
     uncountGoalieFor(teamNo, matchNo);
 
     localStorage.removeItem(stateKey());
@@ -690,7 +682,6 @@
 
   // ----------------------------
   // Bytesschema times (utan 00:00)
-  // Total matchtid = periodMin * periodsCount
   // ----------------------------
   function formatMMSS(totalSeconds){
     const s = Math.max(0, Math.floor(totalSeconds));
@@ -705,11 +696,11 @@
     for (let t = totalSeconds; t > 0; t -= step){
       times.push(formatMMSS(t));
     }
-    return [...new Set(times)]; // ingen 00:00
+    return [...new Set(times)];
   }
 
   // ----------------------------
-  // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
+  // Rotation helpers
   // ----------------------------
   function rosterFromState(st){
     const raw = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
@@ -742,15 +733,10 @@
     return o;
   }
 
-  function pickBestLineup(candidates, k){
-    candidates.sort((x,y)=>{
-      if (y.score !== x.score) return y.score - x.score;
-      if (x.delta !== y.delta) return x.delta - y.delta;
-      return 0;
-    });
-    return candidates.length ? candidates[0].lineup : [];
-  }
-
+  // ----------------------------
+  // HÅRD bytesschema-regel:
+  // Om roster >= 2*k så MÅSTE overlap == 0 (ingen får spela två byten i rad).
+  // ----------------------------
   function makeLineupsForMatch(st, globalCounts, shiftTimes){
     const roster = rosterFromState(st);
     const kWanted = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
@@ -767,10 +753,8 @@
       return shiftTimes.map(()=>[]);
     }
 
-    const W_FAIR = 8;
+    const W_FAIR = 10;
     const W_STR  = 3;
-    const W_CONT = 6;
-    const PENALTY_DOUBLE = 120;
 
     let prev = null;
     const lineups = [];
@@ -785,39 +769,21 @@
       const poolSet = new Set();
       const pool = [];
 
-      for (const obj of countsArr.slice(0, Math.min(12, roster.length))){
+      for (const obj of countsArr.slice(0, Math.min(14, roster.length))){
         const key = obj.n.toLowerCase();
         if (!poolSet.has(key)){
           poolSet.add(key); pool.push(obj.n);
         }
       }
       const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
-      for (const obj of strongArr.slice(0, Math.min(8, roster.length))){
+      for (const obj of strongArr.slice(0, Math.min(10, roster.length))){
         const key = obj.n.toLowerCase();
         if (!poolSet.has(key)){
           poolSet.add(key); pool.push(obj.n);
         }
       }
-      if (prev && prev.length){
-        for (const n of prev){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-        }
-      }
 
-      if (pool.length < k){
-        for (const n of roster){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-          if (pool.length >= k) break;
-        }
-      }
-
-      const M = Math.min(pool.length, 12);
+      const M = Math.min(pool.length, 14);
       const P = pool.slice(0, M);
 
       const candidates = [];
@@ -837,19 +803,10 @@
           const fairScore = -fairPenalty;
 
           const overlap = prev ? countOverlap(prev, lineup) : 0;
-          const delta = prev ? (k - overlap) : k;
-          const contScore = overlap;
 
-          const rosterGtK = roster.length > k;
-          const doublePenalty = (rosterGtK && prev && delta >= 2) ? -PENALTY_DOUBLE * (delta - 1) : 0;
+          const score = W_FAIR * fairScore + W_STR * strength;
 
-          const score =
-            W_FAIR * fairScore +
-            W_STR  * strength +
-            W_CONT * contScore +
-            doublePenalty;
-
-          candidates.push({lineup, score, delta});
+          candidates.push({lineup, score, overlap});
           return;
         }
         for (let j=start; j<=M-left; j++){
@@ -860,13 +817,20 @@
       }
       rec(0, k);
 
-      let best = null;
-      if (prev && roster.length > k){
-        const filtered = candidates.filter(x => x.delta <= 1);
-        best = filtered.length ? pickBestLineup(filtered, k) : pickBestLineup(candidates, k);
-      } else {
-        best = pickBestLineup(candidates, k);
+      // HÅRD regel: om roster >= 2*k (och vi har en prev) så tillåt endast overlap==0
+      let allowed = candidates;
+      if (prev && roster.length >= 2 * k){
+        const zero = candidates.filter(x => x.overlap === 0);
+        if (zero.length) allowed = zero; // ska alltid finnas när roster>=2k
       }
+
+      allowed.sort((x,y)=>{
+        if (y.score !== x.score) return y.score - x.score;
+        if (x.overlap !== y.overlap) return x.overlap - y.overlap;
+        return 0;
+      });
+
+      const best = allowed.length ? allowed[0].lineup : [];
 
       for (const n of best){
         const key = n.toLowerCase();
@@ -888,7 +852,6 @@
     const date = st.matchDate || "—";
     const time = st.matchTime || "—";
     const opp  = st.opponent || "—";
-    // Plan ska vara 1-4 (inte "Plan 1" etc i UI) – men i matchblad visar vi "Plan: 1" osv.
     return `Datum: <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>
             Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(st.arena || "—")}</b>`;
   }
@@ -929,7 +892,7 @@
           </div>
 
           <div style="flex: 1 1 520px;">
-            <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
+            <div><b>Bytesschema (jämn speltid + hård vila-regel)</b></div>
             <table>
               <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
               <tbody>
@@ -943,8 +906,8 @@
               </tbody>
             </table>
             <div class="small" style="margin-top:6px;">
-              Målet är att <b>undvika dubbla byten</b> (helst 1 åt gången) och samtidigt hålla <b>så jämn speltid som möjligt</b>.
-              Ranking (Spelare 1 bäst) vägs in för att få <b>starka byten</b>.
+              Om roster har <b>minst 2× antal på plan</b> så tillåts <b>inga spelare två byten i rad</b>.
+              Annars görs bästa möjliga.
             </div>
           </div>
         </div>
@@ -1321,7 +1284,6 @@
     fillMatchCountDropdown();
     applyMatchCount();
 
-    // seed goalie stats för alla lag (så gamla val räknas med om statistik saknas)
     for (let t=1; t<=3; t++) ensureGoalieStatsSeeded(String(t));
 
     refreshAllDropdownsAndPlayers();
@@ -1338,7 +1300,6 @@
       el.addEventListener("input", ()=>{ saveState(); });
     });
 
-    // goalie: spara + uppdatera målvaktsstatistik
     const goalieEl = document.getElementById("goalie");
     goalieEl.addEventListener("change", ()=>{
       saveState();
@@ -1375,7 +1336,6 @@
       loadState();
       renderAll();
 
-      // om stats-modal öppen: visa för nytt lag
       if (document.getElementById("goalieStatsModal").style.display === "block"){
         renderGoalieStats();
       }
@@ -1386,7 +1346,6 @@
       renderAll();
     });
 
-    // modal close on outside click
     document.getElementById("registerModal").addEventListener("click", (e)=>{
       if (e.target.id === "registerModal") closeRegister();
     });
