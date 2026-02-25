@@ -1,11 +1,10 @@
 {
   "name": "NSK Lag",
-  "short_name": "NSK Lag",
-  "start_url": "./",
-  "scope": "./",
+  "short_name": "NSK",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#ffffff",
-  "theme_color": "#0b74ff",
+  "theme_color": "#111111",
   "icons": [
     {
       "src": "icon-192.png",
