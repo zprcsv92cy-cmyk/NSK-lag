@@ -543,24 +543,24 @@ function renderPoolList(){
       wrap.innerHTML = "<div class='small'>Inga sparade poolspel ännu.</div>";
       return;
     }
+    
     wrap.innerHTML = pools.map(p=>{
       const date = escapeHtml(p?.date || "—");
       const place = escapeHtml(p?.place || "—");
       const done = p?.completed ? "<span class='pill' style='margin-left:6px;'>Klar</span>" : "";
       return `
-        <div class="listItem" style="cursor:pointer;" onclick="openPool('${escapeHtml(p.id)}')">
-          <div style="flex:1;">
-            <div class="poolMeta"><b>${date}</b> • ${place}${done}</div>
-            <span class="small">Tryck för att öppna</span>
-          </div>
-          <div style="display:flex; gap:8px;">
-            <button class="ghost" type="button" onclick="event.stopPropagation(); startPool('${escapeHtml(p.id)}')">Påbörja poolspel</button>
-            <button class="ghost" type="button" onclick="event.stopPropagation(); editPool('${escapeHtml(p.id)}')">Redigera</button>
-            <button class="ghost" type="button" onclick="event.stopPropagation(); deletePool('${escapeHtml(p.id)}')">Ta bort</button>
+        <div class="listItem" style="display:block;">
+          <div class="poolMeta"><b>${date}</b> • ${place}${done}</div>
+          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+            <button class="ghost" type="button" onclick="openPool('${escapeHtml(p.id)}')">Öppna</button>
+            <button class="ghost" type="button" onclick="startPool('${escapeHtml(p.id)}')">Påbörja poolspel</button>
+            <button class="ghost" type="button" onclick="editPool('${escapeHtml(p.id)}')">Redigera</button>
+            <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
           </div>
         </div>
       `;
     }).join("");
+
   }
 
   function openNewPool(){
