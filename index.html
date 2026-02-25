@@ -1249,3 +1249,46 @@
 
 </body>
 </html>
+
+
+<!-- FIX: Navigation override to ensure start page and correct pool run flow -->
+<script>
+(function(){
+
+  function showView(id){
+    const views = ["homeView","mainView","teamSelectView","runView"];
+    views.forEach(v=>{
+      const el = document.getElementById(v);
+      if(el) el.style.display = (v===id ? "block" : "none");
+    });
+  }
+
+  window.goHome = function(){
+    showView("homeView");
+  };
+
+  window.openPoolRunTeamSelect = function(poolId){
+    try{
+      localStorage.setItem("nsk_current_pool", poolId || "");
+    }catch(e){}
+    showView("teamSelectView");
+  };
+
+  window.selectRunTeam = function(teamNo){
+    try{
+      localStorage.setItem("nsk_run_team", String(teamNo||"1"));
+    }catch(e){}
+    showView("runView");
+    if (typeof renderRun === "function") renderRun();
+  };
+
+  // Ensure start page visible on load
+  window.addEventListener("load", function(){
+    const home = document.getElementById("homeView");
+    if(home){
+      showView("homeView");
+    }
+  });
+
+})();
+</script>
