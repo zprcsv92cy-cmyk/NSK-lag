@@ -789,8 +789,10 @@ function lineupToShortText(names){return (names||[]).map(shortName).filter(Boole
 
 // ---------- edit output ----------
 function formatInfoLine(st){
-  const date=st.matchDate||"—"; const time=st.matchTime||"—"; const opp=st.opponent||"—"; const arena=`${st.arena||"—"}`;
-  return ` <b>${escapeHtml(date)}</b> • Start: <b>${escapeHtml(time)}</b><br>Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>`;
+  const time = st.matchTime || "—";
+  const opp  = st.opponent || "—";
+  const arena = `${st.arena || "—"}`;
+  return `Start: <b>${escapeHtml(time)}</b><br>Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>`;
 }
 function renderEditMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
   const chosen=rosterFromState(st);
