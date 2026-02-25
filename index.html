@@ -1811,7 +1811,68 @@ function renderAll(){
   }
 
   window.addEventListener("load", init);
+
+  let __pendingPoolId = null;
+
+  function startPool(id){
+    __pendingPoolId = id;
+    openTeamSelect();
+  }
+
+  function openTeamSelect(){
+    const modal = document.getElementById("teamSelectModal");
+    const list = document.getElementById("teamSelectList");
+    if (!modal || !list) return;
+
+    const teams = [1,2,3];
+    list.innerHTML = teams.map(t=>{
+      const coaches = loadTeamCoachesForPool(t) || [];
+      const coachText = coaches.length ? coaches.join(", ") : "—";
+      return `
+        <div class="listItem" style="cursor:pointer;" onclick="chooseTeam(${t})">
+          <div>
+            <div><b>Lag ${t}</b></div>
+            <div class="small">Tränare: ${escapeHtml(coachText)}</div>
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    modal.style.display = "block";
+  }
+
+  function closeTeamSelect(){
+    const modal = document.getElementById("teamSelectModal");
+    if (modal) modal.style.display = "none";
+  }
+
+  function chooseTeam(teamNo){
+    closeTeamSelect();
+    if (!__pendingPoolId) return;
+    openPool(__pendingPoolId);
+    switchTeam(teamNo);
+  }
+
+  function loadTeamCoachesForPool(teamNo){
+    const key = `${poolPrefix()}team_coaches_team_${teamNo}`;
+    const raw = localStorage.getItem(key);
+    const arr = raw ? safeParseJSON(raw, []) : [];
+    return Array.isArray(arr) ? arr : [];
+  }
+
 </script>
+
+
+  <!-- TEAM SELECT MODAL -->
+  <div id="teamSelectModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999;">
+    <div class="modalPanel">
+      <div class="modalHeader">
+        <b>Välj lag</b>
+        <button class="ghost" type="button" onclick="closeTeamSelect()">Stäng</button>
+      </div>
+      <div id="teamSelectList" class="card" style="margin:0;"></div>
+    </div>
+  </div>
 
 </body>
 </html>
