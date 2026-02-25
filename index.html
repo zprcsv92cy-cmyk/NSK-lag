@@ -96,8 +96,8 @@ th{font-size:12px;color:var(--muted);font-weight:800}
 </div>
 
 <!-- EDIT VIEW -->
-<div id="editView" class="view no-print">
-  <div class="card">
+<div id="editView" class="view">
+  <div class="card no-print">
     <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
       <div>
         <b>Redigera poolspel</b>
@@ -115,7 +115,7 @@ th{font-size:12px;color:var(--muted);font-weight:800}
     <option value="1">1</option><option value="2">2</option><option value="3">3</option>
   </select>
 
-  <div class="card">
+  <div class="card no-print">
     <div class="row">
       <div><label>Lag</label>
         <div class="btnrow">
@@ -126,7 +126,7 @@ th{font-size:12px;color:var(--muted);font-weight:800}
       </div>
       <div><label>Antal matcher</label><select id="matchCount"></select></div>
       <div><label>Match</label><select id="matchNo"></select></div>
-      <div><label>Datum</label><input id="matchDate" type="date"></div>
+      
       <div><label>Starttid</label><input id="matchTime" type="time"></div>
     </div>
     <div class="row" style="margin-top:10px;">
@@ -146,7 +146,7 @@ th{font-size:12px;color:var(--muted);font-weight:800}
     </div>
   </div>
 
-  <div class="card">
+  <div class="card no-print">
     <b>Spelare (denna match)</b>
     <div id="playersContainer" class="row" style="margin-top:10px;"></div>
     <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
@@ -212,18 +212,18 @@ th{font-size:12px;color:var(--muted);font-weight:800}
     <div class="row">
       <div>
         <button type="button" onclick="chooseTeam('1')" style="width:100%;text-align:left;">
-          Lag 1<br><span class="small" id="coachHint1">Tränare: —</span>
-        </button>
+          Lag 1<br>
+</button>
       </div>
       <div>
         <button type="button" onclick="chooseTeam('2')" style="width:100%;text-align:left;">
-          Lag 2<br><span class="small" id="coachHint2">Tränare: —</span>
-        </button>
+          Lag 2<br>
+</button>
       </div>
       <div>
         <button type="button" onclick="chooseTeam('3')" style="width:100%;text-align:left;">
-          Lag 3<br><span class="small" id="coachHint3">Tränare: —</span>
-        </button>
+          Lag 3<br>
+</button>
       </div>
     </div>
   </div>
@@ -417,7 +417,7 @@ function openTeamSelect(){
     const raw=localStorage.getItem(`${poolPrefix(__pendingPoolId)}team_coaches_team_${t}`);
     const arr=raw?safeParseJSON(raw,[]):[];
     const txt=(Array.isArray(arr)&&arr.length)?arr.join(", "):"—";
-    document.getElementById("coachHint"+t).textContent = "Tränare: "+txt;
+    const el=document.getElementById("coachHint"+t); if(el){ el.textContent = "Tränare: "+txt; }
   }
   document.getElementById("teamSelectModal").style.display="block";
 }
@@ -544,7 +544,7 @@ function getFormState(){
   const raw=localStorage.getItem(stateKey());
   const prev=raw?safeParseJSON(raw,{}):{};
   return {
-    matchDate:document.getElementById("matchDate").value||"",
+    matchDate:document.getElementById().value||"",
     matchTime:document.getElementById("matchTime").value||"",
     opponent:document.getElementById("opponent").value||"",
     arena:document.getElementById("arena").value||"1",
@@ -560,7 +560,7 @@ function getFormState(){
 }
 function setFormState(s){
   const d=Object.assign(defaultsState(), s||{});
-  document.getElementById("matchDate").value=d.matchDate||"";
+  document.getElementById().value=d.matchDate||"";
   document.getElementById("matchTime").value=d.matchTime||"";
   document.getElementById("opponent").value=d.opponent||"";
   document.getElementById("arena").value=d.arena||"1";
@@ -980,9 +980,15 @@ function initEditForCurrentPool(){
 
 // ---------- events ----------
 function exportPDF(){
+  // Säkerställ att utskriftsvyn (matchbladen) är synlig
+  showView("editView");
+
   const help=document.getElementById("exportHelp");
-  help.style.display="block";
-  help.innerHTML="📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
+  if(help){
+    help.style.display="block";
+    help.innerHTML="📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
+  }
+
   renderEditOutput();
   window.print();
 }
@@ -1067,7 +1073,7 @@ function init(){
   });
 
   // edit listeners
-  ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
+  ["matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
     el.addEventListener("input", ()=>{saveState();});
