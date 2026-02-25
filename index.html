@@ -1,156 +1,152 @@
 <!doctype html>
 <html lang="sv">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>NSK Lag</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>NSK Lag</title>
+<style>
+:root{
+  --bg:#fff;--card:#fff;--text:#111;--muted:#666;--line:#e7e7e7;
+  --btn:#111;--btnText:#fff;--ghost:#f4f4f4;--ghostText:#111;
+  --danger:#b00020;--ok:#0b7a0b;--radius:14px;
+}
+*{box-sizing:border-box}
+body{margin:14px;font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg)}
+.nsk-top{display:flex;align-items:center;gap:12px;margin:6px 0 10px}
+.nsk-logo{width:56px;height:56px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--line);background:#fff}
+h1{margin:0;font-size:22px}
+.small{font-size:12px;color:var(--muted)}
+.card{border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin:12px 0;background:var(--card)}
+label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
+select,input{width:100%;padding:10px;border-radius:12px;border:1px solid #ccc;background:#fff;color:var(--text);outline:none}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>*{flex:1 1 160px}
+.btnrow{display:flex;gap:10px;flex-wrap:wrap}
+button{padding:12px 14px;border-radius:12px;border:0;background:var(--btn);color:var(--btnText);font-weight:800;cursor:pointer;-webkit-tap-highlight-color:transparent}
+button:active{transform:translateY(1px)}
+button.ghost{background:var(--ghost);color:var(--ghostText);border:1px solid var(--line);font-weight:800}
+.pill{display:inline-block;padding:6px 10px;border-radius:999px;background:#f6f6f6;border:1px solid var(--line);font-size:12px;color:var(--muted)}
+.error{color:var(--danger);font-weight:800}
+.ok{color:var(--ok);font-weight:800}
+hr{border:0;border-top:1px solid var(--line);margin:10px 0}
+table{width:100%;border-collapse:collapse}
+th,td{border-bottom:1px solid #eee;padding:8px 6px;text-align:left;font-size:14px;vertical-align:top}
+th{font-size:12px;color:var(--muted);font-weight:800}
+.nowrap{white-space:nowrap}
+.matchBlock{break-inside:avoid;page-break-inside:avoid}
+.hint{font-size:12px;color:var(--muted);margin-top:6px}
 
-  <style>
-    :root{
-      --bg:#ffffff;
-      --card:#ffffff;
-      --text:#111;
-      --muted:#666;
-      --line:#e7e7e7;
-      --btn:#111;
-      --btnText:#fff;
-      --ghost:#f4f4f4;
-      --ghostText:#111;
-      --danger:#b00020;
-      --ok:#0b7a0b;
-      --radius:14px;
-    }
-    *{ box-sizing:border-box; }
-    body{ margin:14px; font-family:-apple-system, system-ui, Segoe UI, Roboto, Arial; color:var(--text); background:var(--bg); }
-    .nsk-top{ display:flex; align-items:center; gap:12px; margin: 6px 0 12px; }
-    .nsk-logo{ width:56px; height:56px; border-radius:var(--radius); object-fit:cover; border:1px solid var(--line); background:#fff; }
-    h1{ margin:0; font-size:22px; }
-    .small{ font-size:12px; color:var(--muted); }
-    .card{ border:1px solid var(--line); border-radius:var(--radius); padding:12px; margin:12px 0; background:var(--card); }
-    label{ display:block; font-size:12px; color:var(--muted); margin: 0 0 6px; }
-    select, input{ width:100%; padding:10px; border-radius:12px; border:1px solid #ccc; background:#fff; color:var(--text); outline:none; }
-    input::placeholder{ color:#9a9a9a; }
-    .row{ display:flex; gap:10px; flex-wrap:wrap; }
-    .row > *{ flex: 1 1 160px; }
-    .btnrow{ display:flex; gap:10px; flex-wrap:wrap; }
-    button{ padding:12px 14px; border-radius:12px; border:0; background:var(--btn); color:var(--btnText); font-weight:700; cursor:pointer; -webkit-tap-highlight-color: transparent; }
-    button:active{ transform: translateY(1px); }
-    button.ghost{ background:var(--ghost); color:var(--ghostText); border:1px solid var(--line); font-weight:700; }
-    .pill{ display:inline-block; padding:6px 10px; border-radius:999px; background:#f6f6f6; border:1px solid var(--line); font-size:12px; color:var(--muted); }
-    .error{ color:var(--danger); font-weight:700; }
-    .ok{ color:var(--ok); font-weight:700; }
-    hr{ border:0; border-top:1px solid var(--line); margin:10px 0; }
-    ol{ margin: 8px 0 8px 20px; padding:0; }
-    li{ margin: 4px 0; }
-    table{ width:100%; border-collapse:collapse; }
-    th, td{ border-bottom:1px solid #eee; padding:8px 6px; text-align:left; font-size:14px; vertical-align:top; }
-    th{ font-size:12px; color:var(--muted); font-weight:700; }
-    .nowrap{ white-space:nowrap; }
-    .matchBlock{ break-inside: avoid; page-break-inside: avoid; }
-    .hint{ font-size:12px; color:var(--muted); margin-top:6px; }
+/* Views */
+.view{display:none}
+.view.active{display:block}
 
-    /* Modal */
-    #registerModal{ display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999; }
-    .modalPanel{ background:#fff; border-radius:var(--radius); padding:12px; max-width:980px; margin:0 auto; max-height:90vh; overflow:auto; border:1px solid var(--line); }
-    .modalHeader{ display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:8px; }
-    .listItem{ display:flex; justify-content:space-between; align-items:center; gap:10px; border-bottom:1px solid #eee; padding:8px 0; }
-    .listItem:last-child{ border-bottom:0; }
-    .twoCols{ display:flex; gap:12px; flex-wrap:wrap; }
-    .twoCols > .card{ flex: 1 1 360px; }
+/* Home */
+.homeActions{display:flex;gap:10px;flex-wrap:wrap}
+.homeActions button{flex:1 1 240px}
+.poolCard{margin:0 0 10px}
 
-    /* Print/PDF */
-    @media print{
-      .no-print{ display:none !important; }
-      body{ margin:0; }
-      .card{ border:none; margin:0; padding:0; }
-      .print-card{ border:1px solid var(--line) !important; padding:12px !important; margin: 10px 0 !important; border-radius: 12px !important; }
-      .nsk-top{ margin:0 0 8px; }
-      .nsk-logo{ width:48px; height:48px; }
-      table{ break-inside: avoid; }
-      tr{ break-inside: avoid; }
-    }
-  </style>
+/* Checklist */
+.chkCell{width:44px}
+.chk{width:22px;height:22px;accent-color:#111;cursor:pointer}
+.doneRow td{background:#f5fff5;text-decoration:line-through}
+.doneRow td.chkCell{text-decoration:none}
+
+/* Modal */
+.modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.52);padding:14px;z-index:9999}
+.modalPanel{background:#fff;border-radius:var(--radius);padding:12px;max-width:980px;margin:0 auto;max-height:90vh;overflow:auto;border:1px solid var(--line)}
+.modalHeader{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:8px}
+.listItem{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;border-bottom:1px solid #eee;padding:8px 0}
+.listItem:last-child{border-bottom:0}
+.twoCols{display:flex;gap:12px;flex-wrap:wrap}
+.twoCols>.card{flex:1 1 360px}
+
+/* Print */
+@media print{
+  .no-print{display:none!important}
+  body{margin:0}
+  .card{border:none;margin:0;padding:0}
+  .print-card{border:1px solid var(--line)!important;padding:12px!important;margin:10px 0!important;border-radius:12px!important}
+  .chkCell,.chkCell *{display:none!important}
+}
+</style>
 </head>
-
 <body>
-  <div class="nsk-top">
-    <img class="nsk-logo" src="./icon-192.png" alt="NSK">
-    <div>
-      <h1>NSK Lag</h1>
-      <div class="small">Matchinfo • Laguppställning • Byten • PDF</div>
+<div class="nsk-top">
+  <img class="nsk-logo" src="./icon-192.png" alt="NSK">
+  <div>
+    <h1>NSK Lag</h1>
+    <div class="small">Poolspel • Lag • Byten • PDF</div>
+  </div>
+</div>
+
+<!-- HOME -->
+<div id="homeView" class="view active no-print">
+  <div class="card">
+    <div class="homeActions">
+      <button type="button" onclick="openRegister()">Truppen team 18</button>
+      <button type="button" onclick="openNewPool()">Skapa nytt poolspel</button>
+      <button class="ghost" type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
 
-  <!-- TOPP: LAG + MATCHINFO -->
-  <div class="card no-print">
+  <div class="card">
+    <b>Sparade poolspel</b>
+    <div id="poolList" style="margin-top:10px;"></div>
+  </div>
+</div>
+
+<!-- EDIT VIEW -->
+<div id="editView" class="view no-print">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <b>Redigera poolspel</b>
+        <div id="editSub" class="small"></div>
+      </div>
+      <div class="btnrow">
+        <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
+        <button class="ghost" type="button" onclick="showRun()">Poolspel-läge</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- team hidden select -->
+  <select id="teamSelect" style="display:none">
+    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+  </select>
+
+  <div class="card">
     <div class="row">
-      <div>
-        <label>Lag</label>
-        <select id="teamSelect">
-          <option value="1">Lag 1</option>
-          <option value="2">Lag 2</option>
-          <option value="3">Lag 3</option>
-        </select>
+      <div><label>Lag</label>
+        <div class="btnrow">
+          <button class="ghost" type="button" onclick="switchTeam('1')" id="tbtn1">Lag 1</button>
+          <button class="ghost" type="button" onclick="switchTeam('2')" id="tbtn2">Lag 2</button>
+          <button class="ghost" type="button" onclick="switchTeam('3')" id="tbtn3">Lag 3</button>
+        </div>
       </div>
-
-      <div>
-        <label>Antal matcher</label>
-        <select id="matchCount"></select>
-      </div>
-
-      <div>
-        <label>Match</label>
-        <select id="matchNo"></select>
-      </div>
-
-      <div>
-        <label>Starttid</label>
-        <input id="matchTime" type="time">
-      </div>
+      <div><label>Antal matcher</label><select id="matchCount"></select></div>
+      <div><label>Match</label><select id="matchNo"></select></div>
+      <div><label>Datum</label><input id="matchDate" type="date"></div>
+      <div><label>Starttid</label><input id="matchTime" type="time"></div>
     </div>
-
     <div class="row" style="margin-top:10px;">
-      <div>
-        <label>Motståndare</label>
-        <input id="opponent" placeholder="Skriv motståndare">
-      </div>
-      <div>
-        <label>Plan</label>
-        <select id="arena"></select>
-      </div>
+      <div><label>Motståndare</label><input id="opponent" placeholder="Skriv motståndare"></div>
+      <div><label>Plan</label><select id="arena"></select></div>
     </div>
-
     <div class="row" style="margin-top:10px;">
-      <div>
-        <label>Antal i laget</label>
-        <select id="teamSize"></select>
-      </div>
-      <div>
-        <label>Antal på plan</label>
-        <select id="onCourt"></select>
-      </div>
-      <div>
-        <label>Perioder per match</label>
-        <select id="periodsCount"></select>
-      </div>
-      <div>
-        <label>Periodtid (min)</label>
-        <select id="periodMin"></select>
-      </div>
-      <div>
-        <label>Bytestid (sek)</label>
-        <select id="shiftSec"></select>
-      </div>
+      <div><label>Antal i laget</label><select id="teamSize"></select></div>
+      <div><label>Antal på plan</label><select id="onCourt"></select></div>
+      <div><label>Perioder per match</label><select id="periodsCount"></select></div>
+      <div><label>Periodtid (min)</label><select id="periodMin"></select></div>
+      <div><label>Bytestid (sek)</label><select id="shiftSec"></select></div>
     </div>
-
-    <div style="margin-top:10px;" class="small">
-      Allt sparas automatiskt per lag + match.
+    <div class="small" style="margin-top:10px;">
+      Allt sparas automatiskt per poolspel + lag + match.
       <span id="saveState" class="pill" style="margin-left:8px;">Redo</span>
     </div>
   </div>
 
-  <!-- LAGUPPSTÄLLNING -->
-  <div class="card no-print">
+  <div class="card">
     <b>Spelare (denna match)</b>
     <div id="playersContainer" class="row" style="margin-top:10px;"></div>
     <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
@@ -169,1116 +165,933 @@
 
     <div id="msg" class="small" style="margin-top:10px;"></div>
 
-    <div class="btnrow no-print" style="margin-top:12px;">
-      <button onclick="renderAll()">Skapa matchblad</button>
-      <button class="ghost" onclick="exportPDF()">Dela PDF</button>
-      <button class="ghost" onclick="openRegister()">Register</button>
-      <button class="ghost" onclick="clearTeamMatch()">Rensa (lag+match)</button>
+    <div class="btnrow" style="margin-top:12px;">
+      <button type="button" onclick="renderEditOutput()">Skapa matchblad</button>
+      <button class="ghost" type="button" onclick="exportPDF()">Dela PDF</button>
+      <button class="ghost" type="button" onclick="clearTeamMatch()">Rensa (lag+match)</button>
     </div>
 
-    <div id="exportHelp" class="small no-print" style="margin-top:8px;display:none;"></div>
+    <div id="exportHelp" class="small" style="margin-top:8px;display:none;"></div>
   </div>
 
-  <!-- OUTPUT / MATCHBLAD (PRINT-VÄNLIGT) -->
-  <div class="card print-card" id="output">
+  <div class="card print-card" id="editOutput">
     <b>Matchblad</b>
     <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
   </div>
+</div>
 
-  <!-- REGISTER MODAL -->
-  <div id="registerModal" class="no-print">
-    <div class="modalPanel">
-      <div class="modalHeader">
-        <b>Register</b>
-        <button class="ghost" onclick="closeRegister()">Stäng</button>
+<!-- RUN VIEW -->
+<div id="runView" class="view no-print">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+      <div>
+        <b>Poolspel-läge</b>
+        <div id="runSub" class="small"></div>
       </div>
-
-      <div class="twoCols">
-        <div class="card" style="margin:0;">
-          <b>Spelare</b>
-          <div class="row" style="margin-top:10px;">
-            <input id="newPlayer" placeholder="Förnamn Efternamn">
-            <button onclick="addPlayer()">Lägg till</button>
-          </div>
-          <div id="playerList" style="margin-top:10px;"></div>
-          <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
-        </div>
-
-        <div class="card" style="margin:0;">
-          <b>Tränare</b>
-          <div class="row" style="margin-top:10px;">
-            <input id="newCoach" placeholder="Förnamn Efternamn">
-            <button onclick="addCoach()">Lägg till</button>
-          </div>
-          <div id="coachList" style="margin-top:10px;"></div>
-          <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
-        </div>
+      <div class="btnrow">
+        <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
+        <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
+        <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
-
-      <div class="card" style="margin-top:12px;">
-        <b>Backup / Flytta till annan telefon</b>
-        <div class="small" style="margin-top:6px;">
-          Export/Import av register + alla lag/matcher.
-        </div>
-        <div class="btnrow" style="margin-top:10px;">
-          <button class="ghost" onclick="exportJSON()">Exportera JSON</button>
-          <label style="margin:0; flex: 1 1 260px;">
-            <span class="small">Importera JSON</span>
-            <input id="importFile" type="file" accept="application/json" />
-          </label>
-        </div>
-        <div id="importMsg" class="small" style="margin-top:8px;"></div>
-      </div>
-
     </div>
+    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
 
+  <div class="card" id="runOutput">
+    <b>Poolspel-läge</b><div class="small">Välj lag.</div>
+  </div>
+</div>
+
+<!-- TEAM SELECT MODAL -->
+<div id="teamSelectModal" class="modal no-print">
+  <div class="modalPanel">
+    <div class="modalHeader">
+      <b>Välj lag</b>
+      <button class="ghost" type="button" onclick="closeTeamSelect()">Stäng</button>
+    </div>
+    <div class="row">
+      <div>
+        <button type="button" onclick="chooseTeam('1')" style="width:100%;text-align:left;">
+          Lag 1<br><span class="small" id="coachHint1">Tränare: —</span>
+        </button>
+      </div>
+      <div>
+        <button type="button" onclick="chooseTeam('2')" style="width:100%;text-align:left;">
+          Lag 2<br><span class="small" id="coachHint2">Tränare: —</span>
+        </button>
+      </div>
+      <div>
+        <button type="button" onclick="chooseTeam('3')" style="width:100%;text-align:left;">
+          Lag 3<br><span class="small" id="coachHint3">Tränare: —</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- NEW POOL MODAL -->
+<div id="newPoolModal" class="modal no-print">
+  <div class="modalPanel">
+    <div class="modalHeader">
+      <b>Skapa nytt poolspel</b>
+      <button class="ghost" type="button" onclick="closeNewPool()">Stäng</button>
+    </div>
+    <div class="card" style="margin:0;">
+      <div class="row">
+        <div><label>Datum</label><input id="poolDate" type="date"/></div>
+        <div><label>Ort</label><input id="poolPlace" placeholder="Ort"/></div>
+      </div>
+      <div class="btnrow" style="margin-top:12px;">
+        <button type="button" onclick="saveNewPool()">Spara</button>
+      </div>
+      <div id="poolMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MODAL -->
+<div id="registerModal" class="modal no-print">
+  <div class="modalPanel">
+    <div class="modalHeader">
+      <b>Truppen team 18</b>
+      <button class="ghost" type="button" onclick="closeRegister()">Stäng</button>
+    </div>
+    <div class="twoCols">
+      <div class="card" style="margin:0;">
+        <b>Spelare</b>
+        <div class="row" style="margin-top:10px;">
+          <input id="newPlayer" placeholder="Förnamn Efternamn">
+          <button type="button" onclick="addPlayer()">Lägg till</button>
+        </div>
+        <div id="playerList" style="margin-top:10px;"></div>
+        <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
+      </div>
+      <div class="card" style="margin:0;">
+        <b>Tränare</b>
+        <div class="row" style="margin-top:10px;">
+          <input id="newCoach" placeholder="Förnamn Efternamn">
+          <button type="button" onclick="addCoach()">Lägg till</button>
+        </div>
+        <div id="coachList" style="margin-top:10px;"></div>
+        <div class="small" style="margin-top:8px;">Sorteras A–Ö. Sparas i telefonen.</div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:12px;">
+      <b>Backup / Flytta till annan telefon</b>
+      <div class="small" style="margin-top:6px;">Export/Import av register + alla poolspel.</div>
+      <div class="btnrow" style="margin-top:10px;">
+        <button class="ghost" type="button" onclick="exportJSON()">Exportera JSON</button>
+        <label style="margin:0; flex: 1 1 260px;">
+          <span class="small">Importera JSON</span>
+          <input id="importFile" type="file" accept="application/json" />
+        </label>
+      </div>
+      <div id="importMsg" class="small" style="margin-top:8px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- GOALIE STATS MODAL -->
+<div id="goalieStatsModal" class="modal no-print">
+  <div class="modalPanel">
+    <div class="modalHeader">
+      <b>Statistik målvakter</b>
+      <button class="ghost" type="button" onclick="closeGoalieStats()">Stäng</button>
+    </div>
+    <div class="card" style="margin:0;">
+      <div class="small" style="margin-bottom:8px;">
+        Visar hur många <b>matcher</b> en spelare varit vald som målvakt (max 1 gång per match). <span class="pill">Alla poolspel</span>
+      </div>
+      <div id="goalieStatsList"></div>
+    </div>
+  </div>
+</div>
+
 <script>
-  // ----------------------------
-  // Utilities
-  // ----------------------------
-  function escapeHtml(s){
-    return String(s).replace(/[&<>"']/g, m => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
-    }[m]));
-  }
-  function uniq(arr){
-    const out = [];
-    const seen = new Set();
-    for (const x of arr){
-      const v = (x || "").trim();
-      if (!v) continue;
-      const key = v.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      out.push(v);
-    }
-    return out;
-  }
-  function setPill(text){
-    const pill = document.getElementById("saveState");
-    if (!pill) return;
-    pill.textContent = text;
-  }
-  function safeParseJSON(raw, fallback){
-    try { return JSON.parse(raw); } catch { return fallback; }
-  }
-  function selectedValues(selectEl){
-    return Array.from(selectEl.selectedOptions || []).map(o => o.value).filter(Boolean);
-  }
+// ---------- utils ----------
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));}
+function safeParseJSON(raw,f){try{return JSON.parse(raw);}catch{return f;}}
+function uniq(arr){const out=[],seen=new Set(); for(const x of (arr||[])){const v=(x||"").trim(); if(!v) continue; const k=v.toLowerCase(); if(seen.has(k)) continue; seen.add(k); out.push(v);} return out;}
+function setPill(t){const p=document.getElementById("saveState"); if(p) p.textContent=t;}
+function selectedValues(sel){return Array.from(sel.selectedOptions||[]).map(o=>o.value).filter(Boolean);}
+function shortName(full){
+  const parts=String(full||"").trim().split(/\s+/).filter(Boolean);
+  if(!parts.length) return "";
+  if(parts.length===1) return parts[0];
+  return parts[0]+" "+(parts[parts.length-1][0]||"").toUpperCase();
+}
+function showView(id){
+  ["homeView","editView","runView"].forEach(v=>{
+    const el=document.getElementById(v);
+    if(!el) return;
+    el.classList.toggle("active", v===id);
+    el.style.display = (v===id) ? "block" : "none";
+  });
+}
 
-  // Förnamn + första bokstaven i efternamn (t.ex. "August H")
-  function shortName(full){
-    const parts = String(full || "").trim().split(/\s+/).filter(Boolean);
-    if (!parts.length) return "";
-    if (parts.length === 1) return parts[0];
-    const first = parts[0];
-    const last = parts[parts.length - 1];
-    const initial = last ? last[0].toUpperCase() : "";
-    return initial ? `${first} ${initial}` : first;
-  }
+// ---------- poolspel ----------
+function poolsKey(){return "nsk_pools";}
+function loadPools(){const raw=localStorage.getItem(poolsKey()); const arr=raw?safeParseJSON(raw,[]):[]; return Array.isArray(arr)?arr:[];}
+function savePools(arr){localStorage.setItem(poolsKey(), JSON.stringify(Array.isArray(arr)?arr:[]));}
+function currentPoolId(){return localStorage.getItem("nsk_current_pool")||"";}
+function setCurrentPool(id){localStorage.setItem("nsk_current_pool", String(id||""));}
+function poolPrefix(idOverride=null){
+  const id=idOverride ?? currentPoolId();
+  const safe=id?String(id):"default";
+  return `nsk_pool_${safe}_`;
+}
 
-  // ----------------------------
-  // Default register data
-  // ----------------------------
-  const DEFAULT_PLAYERS = [
-    "Alex Andersson","Benjamin Berg","Carl Carlsson","David Dahl",
-    "Elias Eriksson","Filip Friberg","Gustav Gran","Hugo Holm"
-  ];
-  const DEFAULT_COACHES = ["Peter","Olle","Fredrik","Tommy"];
-
-  function loadRegister(){
-    const p = localStorage.getItem("nsk_players");
-    const c = localStorage.getItem("nsk_coaches");
-    let players = p ? safeParseJSON(p, DEFAULT_PLAYERS.slice()) : DEFAULT_PLAYERS.slice();
-    let coaches = c ? safeParseJSON(c, DEFAULT_COACHES.slice()) : DEFAULT_COACHES.slice();
-    players = uniq(players).sort((a,b)=>a.localeCompare(b,'sv'));
-    coaches = uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'));
-    return {players, coaches};
-  }
-  function saveRegister(players, coaches){
-    localStorage.setItem("nsk_players", JSON.stringify(uniq(players).sort((a,b)=>a.localeCompare(b,'sv'))));
-    localStorage.setItem("nsk_coaches", JSON.stringify(uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'))));
-  }
-  function fillSelect(el, items, placeholder="Välj..."){
-    el.innerHTML = "";
-    const opt0 = document.createElement("option");
-    opt0.value = "";
-    opt0.textContent = placeholder;
-    el.appendChild(opt0);
-    for (const name of items){
-      const o = document.createElement("option");
-      o.value = name;
-      o.textContent = name;
-      el.appendChild(o);
-    }
-  }
-  function fillMultiSelect(el, items){
-    el.innerHTML = "";
-    for (const name of items){
-      const o = document.createElement("option");
-      o.value = name;
-      o.textContent = name;
-      el.appendChild(o);
-    }
-  }
-
-  // ----------------------------
-  // Antal matcher per lag
-  // ----------------------------
-  function matchCountKey(){
-    const team = document.getElementById("teamSelect").value || "1";
-    return `nsk_matchCount_team_${team}`;
-  }
-  function loadMatchCount(){
-    const raw = localStorage.getItem(matchCountKey());
-    const n = raw ? parseInt(raw, 10) : 4;
-    return (Number.isFinite(n) && n >= 1 && n <= 30) ? n : 4;
-  }
-  function saveMatchCount(n){ localStorage.setItem(matchCountKey(), String(n)); }
-  function fillMatchCountDropdown(){
-    const sel = document.getElementById("matchCount");
-    sel.innerHTML = "";
-    for (let i=1; i<=30; i++){
-      const o = document.createElement("option");
-      o.value = String(i);
-      o.textContent = String(i);
-      sel.appendChild(o);
-    }
-  }
-  function applyMatchCount(){
-    const count = loadMatchCount();
-    document.getElementById("matchCount").value = String(count);
-
-    const matchNoSel = document.getElementById("matchNo");
-    const current = parseInt(matchNoSel.value || "1", 10);
-    matchNoSel.innerHTML = "";
-    for (let i=1; i<=count; i++){
-      const o = document.createElement("option");
-      o.value = String(i);
-      o.textContent = `Match ${i}`;
-      matchNoSel.appendChild(o);
-    }
-    matchNoSel.value = String(Math.min(Math.max(current || 1, 1), count));
-  }
-
-  // ----------------------------
-  // Coach per TEAM
-  // ----------------------------
-  function teamCoachKey(teamOverride=null){
-    const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
-    return `nsk_team_coaches_team_${team}`;
-  }
-  function loadTeamCoaches(){
-    const raw = localStorage.getItem(teamCoachKey());
-    const arr = raw ? safeParseJSON(raw, []) : [];
-    return Array.isArray(arr) ? arr : [];
-  }
-  function saveTeamCoaches(values){
-    localStorage.setItem(teamCoachKey(), JSON.stringify(uniq(values)));
-  }
-  function applyTeamCoachesToUI(){
-    const coachSel = document.getElementById("coach");
-    const chosen = new Set(loadTeamCoaches().map(x=>String(x).toLowerCase()));
-    for (const opt of coachSel.options){
-      opt.selected = chosen.has(String(opt.value).toLowerCase());
-    }
-  }
-
-  // ----------------------------
-  // Per (lag + match) state
-  // ----------------------------
-  function stateKey(teamOverride=null, matchOverride=null){
-    const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
-    const matchNo = matchOverride ?? (document.getElementById("matchNo").value || "1");
-    return `nsk_state_team_${team}_match_${matchNo}`;
-  }
-  function defaultsState(){
-    return {
-      matchTime: "",
-      opponent: "",
-      arena: "1",
-      teamSize: "10",
-      onCourt: "3",
-      periodsCount: "1",
-      periodMin: "15",
-      shiftSec: "90",
-      players: [],
-      goalie: ""
-    };
-  }
-
-  function getFormState(){
-    const teamSize = document.getElementById("teamSize").value || "10";
-    const players = [];
-    for (let i=1; i<=parseInt(teamSize,10); i++){
-      const sel = document.getElementById(`p${i}`);
-      players.push(sel ? (sel.value || "") : "");
-    }
-    return {
-      matchTime: document.getElementById("matchTime").value || "",
-      opponent: document.getElementById("opponent").value || "",
-      arena: document.getElementById("arena").value || "1",
-      teamSize: teamSize,
-      onCourt: document.getElementById("onCourt").value || "3",
-      periodsCount: document.getElementById("periodsCount").value || "1",
-      periodMin: document.getElementById("periodMin").value || "15",
-      shiftSec: document.getElementById("shiftSec").value || "90",
-      players: players,
-      goalie: document.getElementById("goalie").value || ""
-    };
-  }
-
-  function setFormState(s){
-    const d = Object.assign(defaultsState(), s || {});
-    document.getElementById("matchTime").value = d.matchTime || "";
-    document.getElementById("opponent").value = d.opponent || "";
-    document.getElementById("arena").value = d.arena || "1";
-    document.getElementById("teamSize").value = d.teamSize || "10";
-    document.getElementById("onCourt").value = d.onCourt || "3";
-    document.getElementById("periodsCount").value = d.periodsCount || "1";
-    document.getElementById("periodMin").value = d.periodMin || "15";
-    document.getElementById("shiftSec").value = d.shiftSec || "90";
-
-    renderPlayerSelectors(parseInt(d.teamSize,10) || 10, Array.isArray(d.players) ? d.players : []);
-    document.getElementById("goalie").value = d.goalie || "";
-  }
-
-  function saveState(){
-    localStorage.setItem(stateKey(), JSON.stringify(getFormState()));
-    setPill("Sparat");
-    window.clearTimeout(window.__savePillTimer);
-    window.__savePillTimer = window.setTimeout(()=>setPill("Redo"), 700);
-  }
-  function loadState(){
-    const raw = localStorage.getItem(stateKey());
-    setFormState(raw ? safeParseJSON(raw, {}) : {});
-    document.getElementById("msg").innerHTML = "";
-  }
-  function clearTeamMatch(){
-    localStorage.removeItem(stateKey());
-    loadState();
-    renderAll();
-  }
-  function loadStateFor(teamNo, matchNo){
-    const raw = localStorage.getItem(stateKey(String(teamNo), String(matchNo)));
-    const st = raw ? safeParseJSON(raw, {}) : {};
-    return Object.assign(defaultsState(), st || {});
-  }
-
-  // ----------------------------
-  // Dynamic player selectors (Spelare 1..N)
-  // ----------------------------
-  function renderPlayerSelectors(n, values){
-    const {players} = loadRegister();
-    const container = document.getElementById("playersContainer");
-    container.innerHTML = "";
-
-    const wanted = Math.min(25, Math.max(1, parseInt(n,10) || 1));
-    const vals = Array.isArray(values) ? values.slice(0, wanted) : [];
-    while (vals.length < wanted) vals.push("");
-
-    for (let i=1; i<=wanted; i++){
-      const wrap = document.createElement("div");
-      const lab = document.createElement("label");
-      lab.textContent = `Spelare ${i}`;
-      const sel = document.createElement("select");
-      sel.id = `p${i}`;
-
-      sel.innerHTML = "";
-      const opt0 = document.createElement("option");
-      opt0.value = "";
-      opt0.textContent = "Välj...";
-      sel.appendChild(opt0);
-      for (const name of players){
-        const o = document.createElement("option");
-        o.value = name;
-        o.textContent = name;
-        sel.appendChild(o);
-      }
-
-      sel.value = vals[i-1] || "";
-      sel.addEventListener("change", ()=>{ saveState(); renderAll(); });
-
-      wrap.appendChild(lab);
-      wrap.appendChild(sel);
-      container.appendChild(wrap);
-    }
-  }
-
-  // ----------------------------
-  // Validation
-  // ----------------------------
-  function validateCurrentMatch(){
-    const s = getFormState();
-    const chosen = (s.players || []).map(x=>(x||"").trim()).filter(Boolean);
-    const set = new Set(chosen.map(x=>x.toLowerCase()));
-    if (set.size !== chosen.length) return "Samma spelare är vald flera gånger.";
-    if (s.goalie && set.has(s.goalie.toLowerCase())) return "Målvakt kan inte vara utespelare.";
-    const onCourt = Math.min(5, Math.max(3, parseInt(s.onCourt,10) || 3));
-    if (chosen.length && chosen.length < onCourt) return `För få spelare valda. Antal på plan är ${onCourt}.`;
-    return "";
-  }
-
-  // ----------------------------
-  // Bytesschema times (utan 00:00)
-  // Total matchtid = periodMin * periodsCount
-  // ----------------------------
-  function formatMMSS(totalSeconds){
-    const s = Math.max(0, Math.floor(totalSeconds));
-    const mm = String(Math.floor(s/60)).padStart(2,"0");
-    const ss = String(s%60).padStart(2,"0");
-    return `${mm}:${ss}`;
-  }
-  function buildShiftTimes(totalMinutes, shiftSec){
-    const totalSeconds = Math.floor(totalMinutes * 60);
-    const step = Math.max(1, Math.floor(shiftSec));
-    const times = [];
-    for (let t = totalSeconds; t > 0; t -= step){
-      times.push(formatMMSS(t));
-    }
-    return [...new Set(times)]; // ingen 00:00
-  }
-
-  // ----------------------------
-  // Rotation: jämn speltid + undvik dubbla byten + "bästa sammansatta byten"
-  //
-  // - Spelare rankas efter slot: Spelare 1 bäst, Spelare 2 näst bäst, osv.
-  // - Vi försöker:
-  //   1) Jämna speltid över alla matcher (minimera skillnader i stint-count)
-  //   2) Undvika dubbla byten (helst 1 förändring mellan två rader)
-  //   3) Starkast möjliga femma/trea/fyra givet (1) och (2)
-  //
-  // Teknik:
-  // - Varje rad i bytesschema = en "stint" för de som är på plan.
-  // - Vi väljer lineup genom att utvärdera ett litet urval kombinationer
-  //   (från en kandidat-pool) och väljer bästa score.
-  // ----------------------------
-  function rosterFromState(st){
-    // Ordningen här är "ranking": index 0 bäst
-    const raw = (st.players || []).map(x=>(x||"").trim()).filter(Boolean);
-
-    // ta bort dubbletter men behåll första (bäst)
-    const out = [];
-    const seen = new Set();
-    for (const n of raw){
-      const k = n.toLowerCase();
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(n);
-    }
-    return out;
-  }
-
-  function makeRatings(roster){
-    // högre rating = bättre (spelare 1 högst)
-    const r = {};
-    const n = roster.length;
-    for (let i=0; i<n; i++){
-      r[roster[i].toLowerCase()] = (n - i); // t.ex. 10..1
-    }
-    return r;
-  }
-
-  function countOverlap(a, b){
-    const setA = new Set((a||[]).map(x=>x.toLowerCase()));
-    let o = 0;
-    for (const x of (b||[])){
-      if (setA.has(x.toLowerCase())) o++;
-    }
-    return o;
-  }
-
-  function pickBestLineup(candidates, k){
-    // candidates: Array<{lineup, score, delta}>
-    candidates.sort((x,y)=>{
-      if (y.score !== x.score) return y.score - x.score;
-      // tie-break: mindre byte
-      if (x.delta !== y.delta) return x.delta - y.delta;
-      return 0;
-    });
-    return candidates.length ? candidates[0].lineup : [];
-  }
-
-  function makeLineupsForMatch(st, globalCounts, shiftTimes){
-    const roster = rosterFromState(st);
-    const kWanted = Math.min(Math.max(3, parseInt(st.onCourt,10) || 3), 5);
-    const k = Math.min(kWanted, roster.length || kWanted);
-
-    const ratings = makeRatings(roster);
-
-    // init counts för roster
-    for (const n of roster){
-      const key = n.toLowerCase();
-      if (globalCounts[key] == null) globalCounts[key] = 0;
-    }
-
-    // om ingen roster
-    if (!roster.length){
-      return shiftTimes.map(()=>[]);
-    }
-
-    // Viktning (tweakbara)
-    const W_FAIR = 8;         // jämn speltid
-    const W_STR  = 3;         // styrka
-    const W_CONT = 6;         // undvik stora förändringar
-    const PENALTY_DOUBLE = 120; // straff för delta >= 2 (dubbla byten)
-
-    let prev = null;
-    const lineups = [];
-
-    for (let i=0; i<shiftTimes.length; i++){
-      // Kandidat-pool: spelare som har spelat minst + starka spelare + prev
-      const countsArr = roster.map(n => ({n, c: globalCounts[n.toLowerCase()]||0, r: ratings[n.toLowerCase()]||0}));
-      countsArr.sort((a,b)=>{
-        if (a.c !== b.c) return a.c - b.c;        // minst spelade först
-        return b.r - a.r;                         // vid lika: starkare först
-      });
-
-      const poolSet = new Set();
-      const pool = [];
-
-      // minst spelade
-      for (const obj of countsArr.slice(0, Math.min(12, roster.length))){
-        const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
-      }
-      // topp starka (för att vinna)
-      const strongArr = countsArr.slice().sort((a,b)=>b.r - a.r);
-      for (const obj of strongArr.slice(0, Math.min(8, roster.length))){
-        const key = obj.n.toLowerCase();
-        if (!poolSet.has(key)){
-          poolSet.add(key); pool.push(obj.n);
-        }
-      }
-      // previous lineup
-      if (prev && prev.length){
-        for (const n of prev){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-        }
-      }
-
-      // om pool för liten
-      if (pool.length < k){
-        for (const n of roster){
-          const key = n.toLowerCase();
-          if (!poolSet.has(key)){
-            poolSet.add(key); pool.push(n);
-          }
-          if (pool.length >= k) break;
-        }
-      }
-
-      // begränsa poolstorlek för att enumerera kombinationer
-      const M = Math.min(pool.length, 12);
-      const P = pool.slice(0, M);
-
-      // Enumerera kombinationer av storlek k från P
-      const candidates = [];
-      const idxs = [];
-      function rec(start, left){
-        if (left === 0){
-          const lineup = idxs.map(j => P[j]);
-
-          const minC = Math.min(...roster.map(n=>globalCounts[n.toLowerCase()]||0));
-          let fairPenalty = 0;
-          let strength = 0;
-          for (const n of lineup){
-            const key = n.toLowerCase();
-            fairPenalty += (globalCounts[key] || 0) - minC;
-            strength += (ratings[key] || 0);
-          }
-          const fairScore = -fairPenalty;
-
-          const overlap = prev ? countOverlap(prev, lineup) : 0;
-          const delta = prev ? (k - overlap) : k; // första raden = "fullt byte"
-          const contScore = overlap;              // mer overlap = bättre
-
-          // Extra straff för "dubbla byten" (delta >=2) om roster > k
-          const rosterGtK = roster.length > k;
-          const doublePenalty = (rosterGtK && prev && delta >= 2) ? -PENALTY_DOUBLE * (delta - 1) : 0;
-
-          // Slut-score
-          const score =
-            W_FAIR * fairScore +
-            W_STR  * strength +
-            W_CONT * contScore +
-            doublePenalty;
-
-          candidates.push({lineup, score, delta});
-          return;
-        }
-        for (let j=start; j<=M-left; j++){
-          idxs.push(j);
-          rec(j+1, left-1);
-          idxs.pop();
-        }
-      }
-      rec(0, k);
-
-      // Om vi har prev och roster > k: försök först hitta alternativ med delta <= 1
-      let best = null;
-      if (prev && roster.length > k){
-        const filtered = candidates.filter(x => x.delta <= 1);
-        if (filtered.length){
-          best = pickBestLineup(filtered, k);
-        } else {
-          best = pickBestLineup(candidates, k);
-        }
-      } else {
-        best = pickBestLineup(candidates, k);
-      }
-
-      // uppdatera counts
-      for (const n of best){
-        const key = n.toLowerCase();
-        globalCounts[key] = (globalCounts[key] || 0) + 1;
-      }
-
-      lineups.push(best);
-      prev = best;
-    }
-
-    return lineups;
-  }
-
-  function lineupToShortText(names){
-    return (names || []).map(shortName).filter(Boolean).join(", ") || "—";
-  }
-
-  function formatInfoLine(st){
-    const time = st.matchTime || "—";
-    const opp  = st.opponent || "—";
-    const arenaLabel = `Plan ${st.arena || "—"}`;
-    return `Start: <b>${escapeHtml(time)}</b><br>
-            Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arenaLabel)}</b>`;
-  }
-  function renderMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
-    const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-    const periodMin = parseInt(st.periodMin, 10) || 15;
-    const shiftSec = parseInt(st.shiftSec, 10) || 90;
-
-    const chosen = rosterFromState(st);
-    const goalie = st.goalie || "—";
-
-    const coaches = loadTeamCoaches();
-    const coachText = coaches.length ? coaches.join(", ") : "—";
-
-    const onCourt = st.onCourt || "3";
-
+function renderPoolList(){
+  const wrap=document.getElementById("poolList");
+  const pools=loadPools().slice().sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
+  if(!pools.length){wrap.innerHTML="<div class='small'>Inga sparade poolspel ännu.</div>"; return;}
+  wrap.innerHTML=pools.map(p=>{
+    const date=escapeHtml(p?.date||"—");
+    const place=escapeHtml(p?.place||"—");
+    const done=p?.completed? "<span class='pill' style='margin-left:6px;'>Klar</span>":"";
     return `
-      <div class="print-card matchBlock">
-        <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
-          <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
-          <div class="small">${formatInfoLine(st)}</div>
+      <div class="card poolCard">
+        <div><b>${date}</b> • ${place}${done}</div>
+        <div class="btnrow" style="margin-top:10px;">
+          <button type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
+          <button class="ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
+          <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
         </div>
+      </div>`;
+  }).join("");
+}
 
-        <div class="small" style="margin-top:6px;">
-          Antal i laget: <b>${escapeHtml(st.teamSize || "—")}</b> • Antal på plan: <b>${escapeHtml(onCourt)}</b>
-          • Perioder: <b>${periodsCount}</b> • Periodtid: <b>${periodMin}:00</b> • Bytestid: <b>${shiftSec}s</b>
+function goHome(){
+  showView("homeView");
+  renderPoolList();
+}
+
+function openNewPool(){
+  const m=document.getElementById("newPoolModal");
+  const d=document.getElementById("poolDate");
+  const pl=document.getElementById("poolPlace");
+  const msg=document.getElementById("poolMsg");
+  const today=new Date();
+  const yyyy=today.getFullYear(), mm=String(today.getMonth()+1).padStart(2,"0"), dd=String(today.getDate()).padStart(2,"0");
+  d.value=`${yyyy}-${mm}-${dd}`;
+  pl.value=localStorage.getItem("nsk_last_place")||"";
+  msg.textContent="";
+  m.style.display="block";
+}
+function closeNewPool(){document.getElementById("newPoolModal").style.display="none";}
+function saveNewPool(){
+  const d=(document.getElementById("poolDate").value||"").trim();
+  const place=(document.getElementById("poolPlace").value||"").trim();
+  const msg=document.getElementById("poolMsg");
+  if(!d||!place){msg.innerHTML="<span class='error'>✖ Fyll i datum och ort.</span>"; return;}
+  localStorage.setItem("nsk_last_place", place);
+  const id=Date.now().toString(36);
+  const pools=loadPools();
+  pools.push({id,date:d,place,createdAt:Date.now(),updatedAt:Date.now(),completed:false});
+  savePools(pools);
+  closeNewPool();
+  startPoolRun(id);
+}
+
+function deletePool(id){
+  if(!confirm("Ta bort poolspel och all sparad data?")) return;
+  const prefix=poolPrefix(id);
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(k && k.startsWith(prefix)) keys.push(k);
+  }
+  keys.forEach(k=>localStorage.removeItem(k));
+  const pools=loadPools().filter(p=>p && p.id!==id);
+  savePools(pools);
+  if(currentPoolId()===id) setCurrentPool("");
+  renderPoolList();
+}
+
+// ---------- team select flow ----------
+let __pendingPoolId = "";
+function openTeamSelect(){
+  // update coach hints
+  for(const t of ["1","2","3"]){
+    const raw=localStorage.getItem(`${poolPrefix(__pendingPoolId)}team_coaches_team_${t}`);
+    const arr=raw?safeParseJSON(raw,[]):[];
+    const txt=(Array.isArray(arr)&&arr.length)?arr.join(", "):"—";
+    document.getElementById("coachHint"+t).textContent = "Tränare: "+txt;
+  }
+  document.getElementById("teamSelectModal").style.display="block";
+}
+function closeTeamSelect(){document.getElementById("teamSelectModal").style.display="none";}
+function startPoolRun(id){
+  __pendingPoolId = String(id||"");
+  openTeamSelect();
+}
+function openTeamSelectForCurrentPool(){
+  const id=currentPoolId();
+  if(!id){goHome();return;}
+  __pendingPoolId=id;
+  openTeamSelect();
+}
+function chooseTeam(teamNo){
+  closeTeamSelect();
+  if(!__pendingPoolId) return;
+  setCurrentPool(__pendingPoolId);
+  document.getElementById("teamSelect").value = String(teamNo||"1");
+  showRun();
+}
+
+// ---------- register ----------
+const DEFAULT_PLAYERS=["Alex Andersson","Benjamin Berg","Carl Carlsson","David Dahl","Elias Eriksson","Filip Friberg","Gustav Gran","Hugo Holm"];
+const DEFAULT_COACHES=["Peter","Olle","Fredrik","Tommy"];
+function loadRegister(){
+  const p=localStorage.getItem("nsk_players");
+  const c=localStorage.getItem("nsk_coaches");
+  let players=p?safeParseJSON(p,DEFAULT_PLAYERS.slice()):DEFAULT_PLAYERS.slice();
+  let coaches=c?safeParseJSON(c,DEFAULT_COACHES.slice()):DEFAULT_COACHES.slice();
+  players=uniq(players).sort((a,b)=>a.localeCompare(b,'sv'));
+  coaches=uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'));
+  return {players,coaches};
+}
+function saveRegister(players,coaches){
+  localStorage.setItem("nsk_players", JSON.stringify(uniq(players).sort((a,b)=>a.localeCompare(b,'sv'))));
+  localStorage.setItem("nsk_coaches", JSON.stringify(uniq(coaches).sort((a,b)=>a.localeCompare(b,'sv'))));
+}
+function openRegister(){document.getElementById("registerModal").style.display="block"; renderRegisterLists();}
+function closeRegister(){document.getElementById("registerModal").style.display="none";}
+function renderRegisterLists(){
+  const {players,coaches}=loadRegister();
+  document.getElementById("playerList").innerHTML = players.map((n,i)=>`
+    <div class="listItem"><div>${escapeHtml(n)}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="ghost" type="button" onclick="editPlayer(${i})">Redigera</button>
+        <button class="ghost" type="button" onclick="removePlayer(${i})">Ta bort</button>
+      </div>
+    </div>`).join("") || "<div class='small'>Inga spelare i registret.</div>";
+  document.getElementById("coachList").innerHTML = coaches.map((n,i)=>`
+    <div class="listItem"><div>${escapeHtml(n)}</div>
+      <div style="display:flex;gap:8px;">
+        <button class="ghost" type="button" onclick="editCoach(${i})">Redigera</button>
+        <button class="ghost" type="button" onclick="removeCoach(${i})">Ta bort</button>
+      </div>
+    </div>`).join("") || "<div class='small'>Inga tränare i registret.</div>";
+}
+function addPlayer(){const inp=document.getElementById("newPlayer"); const name=(inp.value||"").trim(); if(!name) return;
+  const {players,coaches}=loadRegister(); players.push(name); saveRegister(players,coaches); inp.value=""; renderRegisterLists(); refreshAllDropdownsAndPlayers(); renderEditOutput(); renderRunAll();
+}
+function addCoach(){const inp=document.getElementById("newCoach"); const name=(inp.value||"").trim(); if(!name) return;
+  const {players,coaches}=loadRegister(); coaches.push(name); saveRegister(players,coaches); inp.value=""; renderRegisterLists(); refreshAllDropdownsAndPlayers(); applyTeamCoachesToUI(); renderEditOutput(); renderRunAll();
+}
+function removePlayer(i){const {players,coaches}=loadRegister(); players.splice(i,1); saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); renderEditOutput(); renderRunAll();}
+function removeCoach(i){const {players,coaches}=loadRegister(); coaches.splice(i,1); saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); applyTeamCoachesToUI(); renderEditOutput(); renderRunAll();}
+function editPlayer(i){const {players,coaches}=loadRegister(); const cur=players[i]; const next=prompt("Redigera spelare:", cur||""); if(next==null) return;
+  const name=String(next).trim(); if(!name) return; players[i]=name; saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); renderEditOutput(); renderRunAll();
+}
+function editCoach(i){const {players,coaches}=loadRegister(); const cur=coaches[i]; const next=prompt("Redigera tränare:", cur||""); if(next==null) return;
+  const name=String(next).trim(); if(!name) return; coaches[i]=name; saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); applyTeamCoachesToUI(); renderEditOutput(); renderRunAll();
+}
+
+// ---------- per pool + team coaches ----------
+function teamCoachKey(teamOverride=null){
+  const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
+  return `${poolPrefix()}team_coaches_team_${team}`;
+}
+function loadTeamCoaches(){const raw=localStorage.getItem(teamCoachKey()); const arr=raw?safeParseJSON(raw,[]):[]; return Array.isArray(arr)?arr:[];}
+function saveTeamCoaches(vals){localStorage.setItem(teamCoachKey(), JSON.stringify(uniq(vals)));}
+function applyTeamCoachesToUI(){
+  const coachSel=document.getElementById("coach");
+  const chosen=new Set(loadTeamCoaches().map(x=>String(x).toLowerCase()));
+  for(const opt of coachSel.options){opt.selected=chosen.has(String(opt.value).toLowerCase());}
+}
+
+// ---------- match count per team ----------
+function matchCountKey(){const team=document.getElementById("teamSelect").value||"1"; return `${poolPrefix()}matchCount_team_${team}`;}
+function loadMatchCount(){const raw=localStorage.getItem(matchCountKey()); const n=raw?parseInt(raw,10):4; return (Number.isFinite(n)&&n>=1&&n<=30)?n:4;}
+function saveMatchCount(n){localStorage.setItem(matchCountKey(), String(n));}
+function fillMatchCountDropdown(){
+  const sel=document.getElementById("matchCount"); sel.innerHTML="";
+  for(let i=1;i<=30;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); sel.appendChild(o);}
+}
+function applyMatchCount(){
+  const count=loadMatchCount();
+  document.getElementById("matchCount").value=String(count);
+  const matchNoSel=document.getElementById("matchNo");
+  const cur=parseInt(matchNoSel.value||"1",10);
+  matchNoSel.innerHTML="";
+  for(let i=1;i<=count;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=`Match ${i}`; matchNoSel.appendChild(o);}
+  matchNoSel.value=String(Math.min(Math.max(cur||1,1),count));
+}
+
+// ---------- state per pool+team+match ----------
+function stateKey(teamOverride=null, matchOverride=null){
+  const team=teamOverride ?? (document.getElementById("teamSelect").value||"1");
+  const matchNo=matchOverride ?? (document.getElementById("matchNo").value||"1");
+  return `${poolPrefix()}state_team_${team}_match_${matchNo}`;
+}
+function defaultsState(){return {matchDate:"",matchTime:"",opponent:"",arena:"1",teamSize:"10",onCourt:"3",periodsCount:"1",periodMin:"15",shiftSec:"90",players:[],goalie:"",inheritedFromMatch1:true};}
+function loadStateFor(teamNo,matchNo){
+  const raw=localStorage.getItem(stateKey(String(teamNo),String(matchNo)));
+  const st=raw?safeParseJSON(raw,{}):{};
+  return Object.assign(defaultsState(), st||{});
+}
+
+function getFormState(){
+  const teamSize=document.getElementById("teamSize").value||"10";
+  const players=[];
+  for(let i=1;i<=parseInt(teamSize,10);i++){
+    const sel=document.getElementById("p"+i);
+    players.push(sel?(sel.value||""):"");
+  }
+  const raw=localStorage.getItem(stateKey());
+  const prev=raw?safeParseJSON(raw,{}):{};
+  return {
+    matchDate:document.getElementById("matchDate").value||"",
+    matchTime:document.getElementById("matchTime").value||"",
+    opponent:document.getElementById("opponent").value||"",
+    arena:document.getElementById("arena").value||"1",
+    teamSize:teamSize,
+    onCourt:document.getElementById("onCourt").value||"3",
+    periodsCount:document.getElementById("periodsCount").value||"1",
+    periodMin:document.getElementById("periodMin").value||"15",
+    shiftSec:document.getElementById("shiftSec").value||"90",
+    players,
+    goalie:document.getElementById("goalie").value||"",
+    inheritedFromMatch1: (typeof prev.inheritedFromMatch1==="boolean")?prev.inheritedFromMatch1:true
+  };
+}
+function setFormState(s){
+  const d=Object.assign(defaultsState(), s||{});
+  document.getElementById("matchDate").value=d.matchDate||"";
+  document.getElementById("matchTime").value=d.matchTime||"";
+  document.getElementById("opponent").value=d.opponent||"";
+  document.getElementById("arena").value=d.arena||"1";
+  document.getElementById("teamSize").value=d.teamSize||"10";
+  document.getElementById("onCourt").value=d.onCourt||"3";
+  document.getElementById("periodsCount").value=d.periodsCount||"1";
+  document.getElementById("periodMin").value=d.periodMin||"15";
+  document.getElementById("shiftSec").value=d.shiftSec||"90";
+  renderPlayerSelectors(parseInt(d.teamSize,10)||10, Array.isArray(d.players)?d.players:[]);
+  document.getElementById("goalie").value=d.goalie||"";
+}
+
+function ensureInheritanceOnLoad(){
+  const teamNo=document.getElementById("teamSelect").value||"1";
+  const matchNo=document.getElementById("matchNo").value||"1";
+  if(String(matchNo)==="1") return;
+  const key=stateKey();
+  const raw=localStorage.getItem(key);
+  if(!raw){
+    const m1=loadStateFor(teamNo,1);
+    const base=defaultsState();
+    base.teamSize=m1.teamSize||base.teamSize;
+    base.players=Array.isArray(m1.players)?m1.players.slice():[];
+    base.goalie=m1.goalie||"";
+    base.inheritedFromMatch1=true;
+    localStorage.setItem(key, JSON.stringify(base));
+    return;
+  }
+  const cur=safeParseJSON(raw,{});
+  const inherited=(typeof cur.inheritedFromMatch1==="boolean")?cur.inheritedFromMatch1:true;
+  if(inherited){
+    const m1=loadStateFor(teamNo,1);
+    const next=Object.assign(defaultsState(),cur||{});
+    next.teamSize=m1.teamSize||next.teamSize;
+    next.players=Array.isArray(m1.players)?m1.players.slice():[];
+    next.goalie=m1.goalie||"";
+    next.inheritedFromMatch1=true;
+    localStorage.setItem(key, JSON.stringify(next));
+  }
+}
+function setManualOverrideForCurrentMatch(){
+  const matchNo=document.getElementById("matchNo").value||"1";
+  if(String(matchNo)==="1") return;
+  const raw=localStorage.getItem(stateKey());
+  const st=raw?safeParseJSON(raw,{}):{};
+  st.inheritedFromMatch1=false;
+  localStorage.setItem(stateKey(), JSON.stringify(Object.assign(defaultsState(), st)));
+}
+function propagateMatch1ToOtherMatches(){
+  const teamNo=document.getElementById("teamSelect").value||"1";
+  const matchNo=document.getElementById("matchNo").value||"1";
+  if(String(matchNo)!=="1") return;
+  const count=loadMatchCount();
+  const m1=loadStateFor(teamNo,1);
+  for(let m=2;m<=count;m++){
+    const key=stateKey(String(teamNo),String(m));
+    const curRaw=localStorage.getItem(key);
+    const cur=curRaw?safeParseJSON(curRaw,{}):{};
+    const neverSaved=!curRaw;
+    const inherited=(typeof cur.inheritedFromMatch1==="boolean")?cur.inheritedFromMatch1:true;
+    if(neverSaved||inherited){
+      const next=Object.assign(defaultsState(),cur||{});
+      next.teamSize=m1.teamSize||next.teamSize;
+      next.players=Array.isArray(m1.players)?m1.players.slice():[];
+      next.goalie=m1.goalie||"";
+      next.inheritedFromMatch1=true;
+      localStorage.setItem(key, JSON.stringify(next));
+    }
+  }
+}
+function saveState(){
+  localStorage.setItem(stateKey(), JSON.stringify(getFormState()));
+  setPill("Sparat"); clearTimeout(window.__savePillTimer);
+  window.__savePillTimer=setTimeout(()=>setPill("Redo"),700);
+  propagateMatch1ToOtherMatches();
+  touchPoolUpdated();
+}
+function loadState(){
+  ensureInheritanceOnLoad();
+  const raw=localStorage.getItem(stateKey());
+  setFormState(raw?safeParseJSON(raw,{}):{});
+  document.getElementById("msg").innerHTML="";
+}
+function clearTeamMatch(){
+  localStorage.removeItem(stateKey());
+  loadState();
+  renderEditOutput();
+  renderRunAll();
+  touchPoolUpdated();
+}
+function touchPoolUpdated(){
+  const id=currentPoolId(); if(!id) return;
+  const pools=loadPools(); const p=pools.find(x=>x&&x.id===id);
+  if(p){p.updatedAt=Date.now(); savePools(pools);}
+}
+
+// ---------- shift done (per pool+team+match+row) ----------
+function shiftDoneKey(teamNo,matchNo,idx){return `${poolPrefix()}shiftDone_team_${teamNo}_match_${matchNo}_i_${idx}`;}
+function isShiftDone(teamNo,matchNo,idx){return localStorage.getItem(shiftDoneKey(teamNo,matchNo,idx))==="1";}
+function setShiftDone(teamNo,matchNo,idx,done){localStorage.setItem(shiftDoneKey(teamNo,matchNo,idx), done?"1":"0"); touchPoolUpdated();}
+function toggleShiftDone(teamNo,matchNo,idx,done){
+  setShiftDone(teamNo,matchNo,idx,done);
+  const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
+  if(row) row.classList.toggle("doneRow", !!done);
+}
+
+// ---------- selectors ----------
+function fillSelect(el, items, placeholder="Välj..."){
+  el.innerHTML="";
+  const o0=document.createElement("option"); o0.value=""; o0.textContent=placeholder; el.appendChild(o0);
+  for(const name of items){const o=document.createElement("option"); o.value=name; o.textContent=name; el.appendChild(o);}
+}
+function fillMultiSelect(el, items){
+  el.innerHTML="";
+  for(const name of items){const o=document.createElement("option"); o.value=name; o.textContent=name; el.appendChild(o);}
+}
+function renderPlayerSelectors(n, values){
+  const {players}=loadRegister();
+  const cont=document.getElementById("playersContainer"); cont.innerHTML="";
+  const wanted=Math.min(25, Math.max(1, parseInt(n,10)||1));
+  const vals=Array.isArray(values)?values.slice(0,wanted):[];
+  while(vals.length<wanted) vals.push("");
+  for(let i=1;i<=wanted;i++){
+    const wrap=document.createElement("div");
+    const lab=document.createElement("label"); lab.textContent=`Spelare ${i}`;
+    const sel=document.createElement("select"); sel.id=`p${i}`;
+    const o0=document.createElement("option"); o0.value=""; o0.textContent="Välj..."; sel.appendChild(o0);
+    for(const name of players){const o=document.createElement("option"); o.value=name; o.textContent=name; sel.appendChild(o);}
+    sel.value=vals[i-1]||"";
+    sel.addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
+    wrap.appendChild(lab); wrap.appendChild(sel); cont.appendChild(wrap);
+  }
+}
+function refreshAllDropdownsAndPlayers(){
+  const {players,coaches}=loadRegister();
+  const g=document.getElementById("goalie"); const cur=g.value;
+  fillSelect(g, players, "Välj..."); g.value=cur;
+  const c=document.getElementById("coach");
+  fillMultiSelect(c, coaches);
+  applyTeamCoachesToUI();
+  const st=getFormState();
+  renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players||[]);
+}
+
+// ---------- validation ----------
+function validateCurrentMatch(){
+  const s=getFormState();
+  const chosen=(s.players||[]).map(x=>(x||"").trim()).filter(Boolean);
+  const set=new Set(chosen.map(x=>x.toLowerCase()));
+  if(set.size!==chosen.length) return "Samma spelare är vald flera gånger.";
+  if(s.goalie && set.has(s.goalie.toLowerCase())) return "Målvakt kan inte vara utespelare.";
+  const onCourt=Math.min(5, Math.max(3, parseInt(s.onCourt,10)||3));
+  if(chosen.length && chosen.length<onCourt) return `För få spelare valda. Antal på plan är ${onCourt}.`;
+  return "";
+}
+
+// ---------- shift times + lineup ----------
+function formatMMSS(totalSeconds){
+  const s=Math.max(0, Math.floor(totalSeconds));
+  const mm=String(Math.floor(s/60)).padStart(2,"0");
+  const ss=String(s%60).padStart(2,"0");
+  return `${mm}:${ss}`;
+}
+function buildShiftTimes(totalMinutes, shiftSec){
+  const totalSeconds=Math.floor(totalMinutes*60);
+  const step=Math.max(1, Math.floor(shiftSec));
+  const times=[];
+  for(let t=totalSeconds;t>0;t-=step) times.push(formatMMSS(t));
+  return [...new Set(times)];
+}
+function rosterFromState(st){
+  const raw=(st.players||[]).map(x=>(x||"").trim()).filter(Boolean);
+  const out=[],seen=new Set();
+  for(const n of raw){const k=n.toLowerCase(); if(seen.has(k)) continue; seen.add(k); out.push(n);}
+  return out;
+}
+function makeRatings(roster){
+  const r={}, n=roster.length;
+  for(let i=0;i<n;i++) r[roster[i].toLowerCase()] = (n-i);
+  return r;
+}
+function makeLineupsForMatch(st, globalCounts, shiftTimes){
+  const roster=rosterFromState(st);
+  const kWanted=Math.min(Math.max(3, parseInt(st.onCourt,10)||3),5);
+  const k=Math.min(kWanted, roster.length||kWanted);
+  const ratings=makeRatings(roster);
+  for(const n of roster){const key=n.toLowerCase(); if(globalCounts[key]==null) globalCounts[key]=0;}
+  if(!roster.length) return shiftTimes.map(()=>[]);
+  const W_FAIR=10, W_STR=2, W_REST=15, PENALTY_REPEAT=200;
+  let prev=null;
+  const lineups=[];
+  for(let i=0;i<shiftTimes.length;i++){
+    const countsArr=roster.map(n=>({n, c:globalCounts[n.toLowerCase()]||0, r:ratings[n.toLowerCase()]||0}));
+    countsArr.sort((a,b)=>a.c!==b.c? a.c-b.c : b.r-a.r);
+    const pool=countsArr.map(x=>x.n).slice(0, Math.min(10, roster.length));
+    const candidates=[];
+    function rec(start,left,chosen){
+      if(left===0){
+        const lineup=chosen.slice();
+        const minC=Math.min(...roster.map(n=>globalCounts[n.toLowerCase()]||0));
+        let fairPenalty=0,strength=0,repeatCount=0;
+        for(const n of lineup){
+          const key=n.toLowerCase();
+          fairPenalty += (globalCounts[key]||0)-minC;
+          strength += (ratings[key]||0);
+          if(prev && prev.includes(n)) repeatCount++;
+        }
+        const restScore=-repeatCount;
+        const score=(-fairPenalty*W_FAIR)+(strength*W_STR)+(restScore*W_REST)-(repeatCount*PENALTY_REPEAT);
+        candidates.push({lineup,score});
+        return;
+      }
+      for(let j=start;j<=pool.length-left;j++){
+        chosen.push(pool[j]); rec(j+1,left-1,chosen); chosen.pop();
+      }
+    }
+    rec(0,k,[]);
+    candidates.sort((a,b)=>b.score-a.score);
+    const best=candidates[0]?.lineup||[];
+    for(const n of best){const key=n.toLowerCase(); globalCounts[key]=(globalCounts[key]||0)+1;}
+    lineups.push(best); prev=best;
+  }
+  return lineups;
+}
+function lineupToShortText(names){return (names||[]).map(shortName).filter(Boolean).join(", ") || "—";}
+
+// ---------- edit output ----------
+function formatInfoLine(st){
+  const date=st.matchDate||"—"; const time=st.matchTime||"—"; const opp=st.opponent||"—"; const arena=`${st.arena||"—"}`;
+  return `Start: <b>${escapeHtml(time)}</b><br>Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>`;
+}
+function renderEditMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
+  const chosen=rosterFromState(st);
+  const goalie=st.goalie||"—";
+  const coaches=loadTeamCoaches(); const coachText=coaches.length?coaches.join(", "):"—";
+  return `
+    <div class="print-card matchBlock">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
+        <div class="small">${formatInfoLine(st)}</div>
+      </div>
+      <hr>
+      <div style="display:flex; gap:18px; flex-wrap:wrap;">
+        <div style="flex: 1 1 260px;">
+          <div><b>Laguppställning</b></div>
+          <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
+          <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
+          <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
         </div>
-
-        <hr>
-
-        <div style="display:flex; gap:18px; flex-wrap:wrap;">
-          <div style="flex: 1 1 260px;">
-            <div><b>Laguppställning (ranking)</b></div>
-            <ol>${chosen.map(n=>`<li>${escapeHtml(n)}</li>`).join("") || "<li>—</li>"}</ol>
-            <div><b>Målvakt:</b> ${escapeHtml(goalie)}</div>
-            <div><b>Tränare:</b> ${escapeHtml(coachText)}</div>
+        <div style="flex: 1 1 520px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;">
+            <div><b>Bytesschema</b></div>
+            <div class="small"><span class="pill">Bocka av när klart</span></div>
           </div>
-
-          <div style="flex: 1 1 520px;">
-            <div><b>Bytesschema (jämn speltid + bra kombinationer)</b></div>
-            <table>
-              <thead><tr><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
-              <tbody>
-                ${shiftTimes.map((t,i)=>`
-                  <tr>
-                    <td>${i+1}</td>
-                    <td class="nowrap">${escapeHtml(t)}</td>
-                    <td>${escapeHtml(lineupToShortText(lineups[i] || []))}</td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-            <div class="small" style="margin-top:6px;">
-              Målet är att <b>undvika dubbla byten</b> (helst 1 åt gången) och samtidigt hålla <b>så jämn speltid som möjligt</b>.
-              Ranking (Spelare 1 bäst) vägs in för att få <b>starka byten</b>.
-            </div>
-          </div>
+          <table>
+            <thead><tr><th class="chkCell"></th><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+            <tbody>
+              ${shiftTimes.map((t,i)=>{const done=isShiftDone(teamNo,matchNo,i); return `
+                <tr id="shiftRow_${teamNo}_${matchNo}_${i}" class="${done?"doneRow":""}">
+                  <td class="chkCell"><input class="chk" type="checkbox" ${done?"checked":""}
+                    onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked)"></td>
+                  <td>${i+1}</td><td class="nowrap">${escapeHtml(t)}</td><td>${escapeHtml(lineupToShortText(lineups[i]||[]))}</td>
+                </tr>`;}).join("")}
+            </tbody>
+          </table>
         </div>
       </div>
-    `;
+    </div>`;
+}
+function renderEditOutput(){
+  const err=validateCurrentMatch();
+  const msg=document.getElementById("msg");
+  msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
+
+  const teamNo=document.getElementById("teamSelect").value||"1";
+  const matchCount=loadMatchCount();
+  const globalCounts={};
+  let html="";
+  for(let m=1;m<=matchCount;m++){
+    const st=loadStateFor(teamNo,m);
+    const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
+    const periodMin=parseInt(st.periodMin,10)||15;
+    const shiftSec=parseInt(st.shiftSec,10)||90;
+    const shiftTimes=buildShiftTimes(periodMin*periodsCount, shiftSec);
+    const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
+    html += renderEditMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
+  document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
+}
 
-  // ----------------------------
-  // Render ALLA matcher (1..matchCount) för valt lag
-  // ----------------------------
-  function renderAll(){
-    const err = validateCurrentMatch();
-    const msg = document.getElementById("msg");
-    msg.innerHTML = err
-      ? `<span class="error">✖ ${escapeHtml(err)}</span>`
-      : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
-
-    const teamNo = document.getElementById("teamSelect").value || "1";
-    const matchCount = loadMatchCount();
-
-    // globalCounts: hur många "stints" varje spelare fått över ALLA matcher
-    const globalCounts = {};
-
-    let html = "";
-    for (let m=1; m<=matchCount; m++){
-      const st = loadStateFor(teamNo, m);
-
-      const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-      const periodMin = parseInt(st.periodMin, 10) || 15;
-      const shiftSec = parseInt(st.shiftSec, 10) || 90;
-
-      const totalMinutes = periodMin * periodsCount;
-      const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
-
-      const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
-
-      html += renderMatchBlock(teamNo, m, st, shiftTimes, lineups);
-    }
-
-    document.getElementById("output").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
+// ---------- run view ----------
+function updateRunHeader(){
+  const id=currentPoolId();
+  const pools=loadPools();
+  const p=pools.find(x=>x&&x.id===id);
+  const team=document.getElementById("teamSelect").value||"1";
+  document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}` : `Lag ${team}`;
+}
+function renderRunAll(){
+  if(!currentPoolId()) return;
+  updateRunHeader();
+  const teamNo=document.getElementById("teamSelect").value||"1";
+  const matchCount=loadMatchCount();
+  const globalCounts={};
+  let html="";
+  for(let m=1;m<=matchCount;m++){
+    const st=loadStateFor(teamNo,m);
+    const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
+    const periodMin=parseInt(st.periodMin,10)||15;
+    const shiftSec=parseInt(st.shiftSec,10)||90;
+    const shiftTimes=buildShiftTimes(periodMin*periodsCount, shiftSec);
+    const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
+    html += renderRunMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
-
-  function exportPDF(){
-    const help = document.getElementById("exportHelp");
-    help.style.display = "block";
-    help.innerHTML =
-      "📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>" +
-      "📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
-    renderAll();
-    window.print();
-  }
-
-  // ----------------------------
-  // Register modal (inkl. redigera namn)
-  // ----------------------------
-  function openRegister(){
-    document.getElementById("registerModal").style.display = "block";
-    renderRegisterLists();
-  }
-  function closeRegister(){
-    document.getElementById("registerModal").style.display = "none";
-  }
-
-  function renderRegisterLists(){
-    const {players, coaches} = loadRegister();
-
-    const pl = document.getElementById("playerList");
-    pl.innerHTML = players.map((n,i)=>`
-      <div class="listItem">
-        <div>${escapeHtml(n)}</div>
-        <div style="display:flex; gap:8px;">
-          <button class="ghost" onclick="editPlayer(${i})">Redigera</button>
-          <button class="ghost" onclick="removePlayer(${i})">Ta bort</button>
+  document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+}
+function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
+  const goalie=st.goalie||"—";
+  const coaches=loadTeamCoaches(); const coachText=coaches.length?coaches.join(", "):"—";
+  const date=st.matchDate||"—", time=st.matchTime||"—", opp=st.opponent||"—", arena=`${st.arena||"—"}`;
+  return `
+    <div class="print-card matchBlock" style="margin-bottom:12px;">
+      <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
+        <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
+        <div class="small">
+          Start: <b>${escapeHtml(time)}</b> • Datum: <b>${escapeHtml(date)}</b><br>
+          Motståndare: <b>${escapeHtml(opp)}</b> • Plan: <b>${escapeHtml(arena)}</b>
         </div>
       </div>
-    `).join("") || "<div class='small'>Inga spelare i registret.</div>";
-
-    const cl = document.getElementById("coachList");
-    cl.innerHTML = coaches.map((n,i)=>`
-      <div class="listItem">
-        <div>${escapeHtml(n)}</div>
-        <div style="display:flex; gap:8px;">
-          <button class="ghost" onclick="editCoach(${i})">Redigera</button>
-          <button class="ghost" onclick="removeCoach(${i})">Ta bort</button>
-        </div>
+      <div class="small" style="margin-top:8px;">
+        <span class="pill">Tränare</span> ${escapeHtml(coachText)}<br>
+        <span class="pill">Målvakt</span> ${escapeHtml(goalie)}
       </div>
-    `).join("") || "<div class='small'>Inga tränare i registret.</div>";
+      <hr>
+      <table>
+        <thead><tr><th class="chkCell"></th><th>#</th><th>Tid kvar</th><th>På plan</th></tr></thead>
+        <tbody>
+          ${shiftTimes.map((t,i)=>{const done=isShiftDone(teamNo,matchNo,i); return `
+            <tr id="shiftRow_${teamNo}_${matchNo}_${i}" class="${done?"doneRow":""}">
+              <td class="chkCell"><input class="chk" type="checkbox" ${done?"checked":""}
+                onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked); renderRunAll();"></td>
+              <td>${i+1}</td><td class="nowrap">${escapeHtml(t)}</td><td>${escapeHtml(lineupToShortText(lineups[i]||[]))}</td>
+            </tr>`;}).join("")}
+        </tbody>
+      </table>
+    </div>`;
+}
+
+// ---------- navigation edit/run ----------
+function openPoolEdit(id){
+  setCurrentPool(id);
+  showEdit();
+}
+function showEdit(){
+  showView("editView");
+  updateEditHeader();
+  initEditForCurrentPool();
+}
+function showRun(){
+  showView("runView");
+  updateRunHeader();
+  renderRunAll();
+}
+function updateEditHeader(){
+  const id=currentPoolId();
+  const pools=loadPools();
+  const p=pools.find(x=>x&&x.id===id);
+  document.getElementById("editSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"}` : "";
+}
+function setActiveTeamButtons(team){
+  const t=String(team||"1");
+  ["1","2","3"].forEach(x=>{
+    const b=document.getElementById("tbtn"+x);
+    if(!b) return;
+    const active = (x===t);
+    b.classList.toggle("ghost", !active);
+  });
+}
+function switchTeam(team){
+  document.getElementById("teamSelect").value=String(team||"1");
+  setActiveTeamButtons(team);
+  onTeamChanged();
+}
+function onTeamChanged(){
+  applyMatchCount();
+  refreshAllDropdownsAndPlayers();
+  applyTeamCoachesToUI();
+  loadState();
+  renderEditOutput();
+  renderRunAll();
+}
+
+// ---------- init dropdowns ----------
+function initSettingsDropdowns(){
+  const arena=document.getElementById("arena"); arena.innerHTML="";
+  for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
+  const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
+  for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
+  const onCourt=document.getElementById("onCourt"); onCourt.innerHTML="";
+  [3,4,5].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); onCourt.appendChild(o);});
+  const periods=document.getElementById("periodsCount"); periods.innerHTML="";
+  [1,2,3].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); periods.appendChild(o);});
+  const period=document.getElementById("periodMin"); period.innerHTML="";
+  for(let m=8;m<=20;m++){const o=document.createElement("option"); o.value=String(m); o.textContent=String(m); period.appendChild(o);}
+  const shift=document.getElementById("shiftSec"); shift.innerHTML="";
+  for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
+}
+function initEditForCurrentPool(){
+  fillMatchCountDropdown();
+  applyMatchCount();
+  refreshAllDropdownsAndPlayers();
+  applyTeamCoachesToUI();
+  loadState();
+  renderEditOutput();
+  setActiveTeamButtons(document.getElementById("teamSelect").value||"1");
+}
+
+// ---------- events ----------
+function exportPDF(){
+  const help=document.getElementById("exportHelp");
+  help.style.display="block";
+  help.innerHTML="📄 iPhone: Tryck <b>Skriv ut</b> → nyp ut på förhandsvisningen → <b>Dela</b> PDF.<br>📄 Android/Chrome: Välj <b>Spara som PDF</b>.";
+  renderEditOutput();
+  window.print();
+}
+
+// ---------- goalie stats ----------
+function computeGoalieStats(){
+  const stats={};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k) continue;
+    if(k.indexOf("_state_team_")===-1) continue;
+    try{
+      const st=JSON.parse(localStorage.getItem(k)||"{}");
+      const g=(st.goalie||"").trim();
+      if(!g) continue;
+      stats[g]=(stats[g]||0)+1;
+    }catch{}
   }
+  return stats;
+}
+function renderGoalieStats(){
+  const list=document.getElementById("goalieStatsList");
+  const stats=computeGoalieStats();
+  const names=Object.keys(stats).sort((a,b)=>a.localeCompare(b,'sv'));
+  if(!names.length){list.innerHTML="<div class='small'>Ingen statistik ännu.</div>"; return;}
+  list.innerHTML=`<table><thead><tr><th>Spelare</th><th class="nowrap">Matcher som målvakt</th></tr></thead>
+    <tbody>${names.map(n=>`<tr><td>${escapeHtml(n)}</td><td class="nowrap"><b>${stats[n]}</b></td></tr>`).join("")}</tbody></table>`;
+}
+function openGoalieStats(){document.getElementById("goalieStatsModal").style.display="block"; renderGoalieStats();}
+function closeGoalieStats(){document.getElementById("goalieStatsModal").style.display="none";}
 
-  function addPlayer(){
-    const inp = document.getElementById("newPlayer");
-    const name = (inp.value||"").trim();
-    if (!name) return;
-    const {players, coaches} = loadRegister();
-    players.push(name);
-    saveRegister(players, coaches);
-    inp.value = "";
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    renderAll();
+// ---------- backup ----------
+function exportJSON(){
+  const payload={players:loadRegister().players,coaches:loadRegister().coaches,pools:loadPools(),kv:{}};
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i);
+    if(!k) continue;
+    if(k.startsWith("nsk_pool_")) payload.kv[k]=safeParseJSON(localStorage.getItem(k)||"null", localStorage.getItem(k));
   }
-
-  function addCoach(){
-    const inp = document.getElementById("newCoach");
-    const name = (inp.value||"").trim();
-    if (!name) return;
-    const {players, coaches} = loadRegister();
-    coaches.push(name);
-    saveRegister(players, coaches);
-    inp.value = "";
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    renderAll();
-  }
-
-  function removePlayer(idx){
-    const {players, coaches} = loadRegister();
-    players.splice(idx, 1);
-    saveRegister(players, coaches);
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    renderAll();
-  }
-
-  function removeCoach(idx){
-    const {players, coaches} = loadRegister();
-    coaches.splice(idx, 1);
-    saveRegister(players, coaches);
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    renderAll();
-  }
-
-  function editPlayer(idx){
-    const {players, coaches} = loadRegister();
-    const current = players[idx];
-    const next = prompt("Redigera spelare:", current || "");
-    if (next == null) return;
-    const name = String(next).trim();
-    if (!name) return;
-    players[idx] = name;
-    saveRegister(players, coaches);
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    renderAll();
-  }
-
-  function editCoach(idx){
-    const {players, coaches} = loadRegister();
-    const current = coaches[idx];
-    const next = prompt("Redigera tränare:", current || "");
-    if (next == null) return;
-    const name = String(next).trim();
-    if (!name) return;
-
-    coaches[idx] = name;
-
-    // uppdatera team-val om den här coachen var vald
-    const oldLower = String(current || "").toLowerCase();
-    const selected = loadTeamCoaches();
-    const updated = selected.map(x => (String(x).toLowerCase() === oldLower ? name : x));
-
-    saveRegister(players, coaches);
-    saveTeamCoaches(updated);
-
-    renderRegisterLists();
-    refreshAllDropdownsAndPlayers();
-    applyTeamCoachesToUI();
-    renderAll();
-  }
-
-  function refreshAllDropdownsAndPlayers(){
-    const {players, coaches} = loadRegister();
-
-    // goalie
-    const goalieSel = document.getElementById("goalie");
-    const currentGoalie = goalieSel.value;
-    fillSelect(goalieSel, players, "Välj...");
-    goalieSel.value = currentGoalie;
-
-    // coaches multi
-    const coachSel = document.getElementById("coach");
-    const currentTeamCoaches = loadTeamCoaches();
-    fillMultiSelect(coachSel, coaches);
-    const chosen = new Set(currentTeamCoaches.map(x=>String(x).toLowerCase()));
-    for (const opt of coachSel.options){
-      opt.selected = chosen.has(String(opt.value).toLowerCase());
-    }
-
-    // players container (behåll val)
-    const st = getFormState();
-    renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players || []);
-  }
-
-  // ----------------------------
-  // Backup
-  // ----------------------------
-  function exportJSON(){
-    const payload = {
-      players: loadRegister().players,
-      coaches: loadRegister().coaches,
-      matchCounts: {},
-      teamCoaches: {},
-      states: {}
-    };
-
-    for (let t=1; t<=3; t++){
-      const kCount = `nsk_matchCount_team_${t}`;
-      if (localStorage.getItem(kCount) != null){
-        payload.matchCounts[kCount] = localStorage.getItem(kCount);
+  const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a"); a.href=url; a.download="nsk-lag-backup.json"; document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  document.getElementById("importMsg").innerHTML="<span class='ok'>✔ Export klar</span>";
+}
+function wireImport(){
+  const fileInput=document.getElementById("importFile");
+  fileInput.addEventListener("change", async ()=>{
+    const f=fileInput.files && fileInput.files[0];
+    if(!f) return;
+    try{
+      const txt=await f.text();
+      const data=JSON.parse(txt);
+      if(Array.isArray(data.players) || Array.isArray(data.coaches)){
+        saveRegister(Array.isArray(data.players)?data.players:[], Array.isArray(data.coaches)?data.coaches:[]);
       }
-      const kCoach = `nsk_team_coaches_team_${t}`;
-      if (localStorage.getItem(kCoach) != null){
-        payload.teamCoaches[kCoach] = safeParseJSON(localStorage.getItem(kCoach) || "[]", []);
+      if(Array.isArray(data.pools)) savePools(data.pools);
+      if(data.kv && typeof data.kv==="object"){
+        for(const [k,v] of Object.entries(data.kv)){
+          if(!k.startsWith("nsk_pool_")) continue;
+          localStorage.setItem(k, typeof v==="string" ? v : JSON.stringify(v));
+        }
       }
-    }
-
-    for (let i=0; i<localStorage.length; i++){
-      const k = localStorage.key(i);
-      if (k && k.startsWith("nsk_state_")){
-        payload.states[k] = safeParseJSON(localStorage.getItem(k) || "{}", {});
-      }
-    }
-
-    const blob = new Blob([JSON.stringify(payload, null, 2)], {type:"application/json"});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "nsk-lag-backup.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-
-    document.getElementById("importMsg").innerHTML = "<span class='ok'>✔ Export klar</span>";
-  }
-
-  function wireImport(){
-    const fileInput = document.getElementById("importFile");
-    fileInput.addEventListener("change", async ()=>{
-      const f = fileInput.files && fileInput.files[0];
-      if (!f) return;
-      try{
-        const txt = await f.text();
-        const data = JSON.parse(txt);
-
-        if (Array.isArray(data.players) || Array.isArray(data.coaches)){
-          saveRegister(Array.isArray(data.players)?data.players:[], Array.isArray(data.coaches)?data.coaches:[]);
-        }
-        if (data.matchCounts && typeof data.matchCounts === "object"){
-          for (const [k,v] of Object.entries(data.matchCounts)){
-            if (k.startsWith("nsk_matchCount_team_")) localStorage.setItem(k, String(v));
-          }
-        }
-        if (data.teamCoaches && typeof data.teamCoaches === "object"){
-          for (const [k,v] of Object.entries(data.teamCoaches)){
-            if (k.startsWith("nsk_team_coaches_team_")) localStorage.setItem(k, JSON.stringify(Array.isArray(v)?v:[]));
-          }
-        }
-        if (data.states && typeof data.states === "object"){
-          for (const [k,v] of Object.entries(data.states)){
-            if (k.startsWith("nsk_state_")) localStorage.setItem(k, JSON.stringify(v));
-          }
-        }
-
-        refreshAllDropdownsAndPlayers();
-        applyMatchCount();
-        applyTeamCoachesToUI();
-        loadState();
-        renderAll();
-        document.getElementById("importMsg").innerHTML = "<span class='ok'>✔ Import klar</span>";
-      } catch(e){
-        document.getElementById("importMsg").innerHTML = "<span class='error'>✖ Import misslyckades</span>";
-      } finally {
-        fileInput.value = "";
-      }
-    });
-  }
-
-  // ----------------------------
-  // Init dropdowns
-  // ----------------------------
-  function initSettingsDropdowns(){
-    // 1-4
-    const arena = document.getElementById("arena");
-    arena.innerHTML = "";
-    for (let i=1; i<=4; i++){
-      const o = document.createElement("option");
-      o.value = String(i);
-      o.textContent = `Plan ${i}`;
-      arena.appendChild(o);
-    }
-    arena.value = "1";
-
-    // teamSize 1-25 (default 10)
-    const teamSize = document.getElementById("teamSize");
-    teamSize.innerHTML = "";
-    for (let i=1; i<=25; i++){
-      const o = document.createElement("option");
-      o.value = String(i);
-      o.textContent = String(i);
-      teamSize.appendChild(o);
-    }
-    teamSize.value = "10";
-
-    // onCourt 3-5 (default 3)
-    const onCourt = document.getElementById("onCourt");
-    onCourt.innerHTML = "";
-    [3,4,5].forEach(n=>{
-      const o = document.createElement("option");
-      o.value = String(n);
-      o.textContent = String(n);
-      onCourt.appendChild(o);
-    });
-    onCourt.value = "3";
-
-    // Perioder 1-3 default 1
-    const periodsCount = document.getElementById("periodsCount");
-    periodsCount.innerHTML = "";
-    [1,2,3].forEach(n=>{
-      const o = document.createElement("option");
-      o.value = String(n);
-      o.textContent = String(n);
-      periodsCount.appendChild(o);
-    });
-    periodsCount.value = "1";
-
-    // Periodtid 8-20 default 15
-    const period = document.getElementById("periodMin");
-    period.innerHTML = "";
-    for (let m=8; m<=20; m++){
-      const o = document.createElement("option");
-      o.value = String(m);
-      o.textContent = String(m);
-      period.appendChild(o);
-    }
-    period.value = "15";
-
-    // Bytestid 30-180 default 90
-    const shift = document.getElementById("shiftSec");
-    shift.innerHTML = "";
-    for (let s=30; s<=180; s+=5){
-      const o = document.createElement("option");
-      o.value = String(s);
-      o.textContent = String(s);
-      shift.appendChild(o);
-    }
-    shift.value = "90";
-  }
-
-  // ----------------------------
-  // Init + events
-  // ----------------------------
-  function init(){
-    initSettingsDropdowns();
-    wireImport();
-
-    fillMatchCountDropdown();
-    applyMatchCount();
-
-    refreshAllDropdownsAndPlayers();
-    loadState();
-    applyTeamCoachesToUI();
-
-    // autosave match meta + settings
-    const ids = [
-      "matchTime","opponent","arena",
-      "onCourt","periodsCount","periodMin","shiftSec",
-      "goalie"
-    ];
-    ids.forEach(id=>{
-      const el = document.getElementById(id);
-      el.addEventListener("change", ()=>{ saveState(); renderAll(); });
-      el.addEventListener("input", ()=>{ saveState(); });
-    });
-
-    // team size changes how many player selects exist
-    document.getElementById("teamSize").addEventListener("change", ()=>{
-      const newN = parseInt(document.getElementById("teamSize").value || "10", 10);
-      const st = getFormState();
-      st.teamSize = String(newN);
-      renderPlayerSelectors(newN, st.players || []);
-      saveState();
-      renderAll();
-    });
-
-    // coach multiselect: save per TEAM only
-    document.getElementById("coach").addEventListener("change", ()=>{
-      saveTeamCoaches(selectedValues(document.getElementById("coach")));
-      renderAll();
-    });
-
-    // antal matcher per lag
-    document.getElementById("matchCount").addEventListener("change", ()=>{
-      const n = parseInt(document.getElementById("matchCount").value || "4", 10);
-      saveMatchCount(n);
-      applyMatchCount();
-      loadState();
-      renderAll();
-    });
-
-    // byt lag
-    document.getElementById("teamSelect").addEventListener("change", ()=>{
-      applyMatchCount();
       refreshAllDropdownsAndPlayers();
-      applyTeamCoachesToUI();
-      loadState();
-      renderAll();
-    });
+      renderPoolList();
+      renderGoalieStats();
+      document.getElementById("importMsg").innerHTML="<span class='ok'>✔ Import klar</span>";
+    }catch(e){
+      document.getElementById("importMsg").innerHTML="<span class='error'>✖ Import misslyckades</span>";
+    }finally{fileInput.value="";}
+  });
+}
 
-    // byt match
-    document.getElementById("matchNo").addEventListener("change", ()=>{
-      loadState();
-      renderAll();
-    });
-
-    // modal close on outside click
-    document.getElementById("registerModal").addEventListener("click", (e)=>{
-      if (e.target.id === "registerModal") closeRegister();
-    });
-
-    renderAll();
-  }
-
-  window.addEventListener("load", init);
-</script>
-
-</body>
-</html>
-
-
-<!-- FIX: Navigation override to ensure start page and correct pool run flow -->
-<script>
-(function(){
-
-  function showView(id){
-    const views = ["homeView","mainView","teamSelectView","runView"];
-    views.forEach(v=>{
-      const el = document.getElementById(v);
-      if(el) el.style.display = (v===id ? "block" : "none");
-    });
-  }
-
-  window.goHome = function(){
-    showView("homeView");
-  };
-
-  window.openPoolRunTeamSelect = function(poolId){
-    try{
-      localStorage.setItem("nsk_current_pool", poolId || "");
-    }catch(e){}
-    showView("teamSelectView");
-  };
-
-  window.selectRunTeam = function(teamNo){
-    try{
-      localStorage.setItem("nsk_run_team", String(teamNo||"1"));
-    }catch(e){}
-    showView("runView");
-    if (typeof renderRun === "function") renderRun();
-  };
-
-  // Ensure start page visible on load
-  window.addEventListener("load", function(){
-    const home = document.getElementById("homeView");
-    if(home){
-      showView("homeView");
-    }
+// ---------- init ----------
+function init(){
+  initSettingsDropdowns();
+  wireImport();
+  // Close modals on backdrop click
+  ["newPoolModal","registerModal","goalieStatsModal","teamSelectModal"].forEach(id=>{
+    const m=document.getElementById(id);
+    m.addEventListener("click",(e)=>{ if(e.target.id===id) m.style.display="none"; });
   });
 
-})();
+  // edit listeners
+  ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
+    const el=document.getElementById(id);
+    el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
+    el.addEventListener("input", ()=>{saveState();});
+  });
+  document.getElementById("goalie").addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
+  document.getElementById("teamSize").addEventListener("change", ()=>{
+    const newN=parseInt(document.getElementById("teamSize").value||"10",10);
+    const st=getFormState(); st.teamSize=String(newN);
+    renderPlayerSelectors(newN, st.players||[]);
+    setManualOverrideForCurrentMatch();
+    saveState(); renderEditOutput(); renderRunAll();
+  });
+  document.getElementById("coach").addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
+  document.getElementById("matchCount").addEventListener("change", ()=>{
+    const n=parseInt(document.getElementById("matchCount").value||"4",10);
+    saveMatchCount(n); applyMatchCount(); loadState(); renderEditOutput(); renderRunAll();
+  });
+  document.getElementById("matchNo").addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
+
+  // Start
+  renderPoolList();
+  goHome();
+}
+window.addEventListener("load", init);
 </script>
+</body>
+</html>
