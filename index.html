@@ -52,7 +52,6 @@
     /* Checklist UI */
     .doneRow td{ background: #f5fff5; }
     .doneRow td:not(.chkCell){ text-decoration: line-through; }
-    .doneRow td:not(.chkCell){ text-decoration: line-through; }
     .chk{
       width:22px; height:22px;
       accent-color: #111;
@@ -90,6 +89,9 @@
     .poolList .listItem{ align-items:flex-start; }
     .poolMeta{ font-size:14px; }
     .poolMeta .small{ display:block; margin-top:2px; }
+    .poolCard{ flex-direction:column; align-items:stretch; }
+    .poolActions{ display:flex; gap:8px; flex-wrap:wrap; }
+    .poolActions button{ flex: 1 1 160px; }
     .topbar{
       display:flex; gap:10px; align-items:center; justify-content:space-between; flex-wrap:wrap;
     }
@@ -287,10 +289,8 @@
         <div>
           <b id="currentRunTitle">Poolspel</b>
           <div class="small" id="currentRunSub"></div>
-          <div class="small" id="currentRunTeamSub"></div>
         </div>
         <div class="btnrow" style="margin:0;">
-          <button type="button" class="ghost" onclick="chooseRunTeam()">Byt lag</button>
           <button type="button" class="ghost" onclick="goHome()">Till startsida</button>
           <button type="button" class="ghost" onclick="openPool(currentPoolId())">Redigera</button>
           <button type="button" onclick="finishPool()">Spara som klar</button>
@@ -469,15 +469,6 @@
     return `nsk_pool_${safe}_`;
   }
 
-
-  // Run-läge: vilket lag som valts i poolspelet
-  function runTeamKey(){ return `${poolPrefix()}run_team`; }
-  function loadRunTeam(){ return localStorage.getItem(runTeamKey()) || "1"; }
-  function saveRunTeam(team){ localStorage.setItem(runTeamKey(), String(team||"1")); }
-
-  // Team-select används i två lägen: "edit" (vanliga sidan) och "run" (poolspel-läge)
-  let TEAM_SELECT_MODE = "edit";
-
   function goHome(){
     document.getElementById("homeView").classList.add("active");
     document.getElementById("mainView").classList.remove("active");
@@ -501,8 +492,7 @@
 
   function finishPool(){
     const id = currentPoolId();
-    if (!id) { TEAM_SELECT_MODE = "edit";
-    goHome(); return; }
+    if (!id) { goHome(); return; }
     const pools = loadPools();
     const idx = pools.findIndex(p=>p && p.id===id);
     if (idx >= 0){
@@ -541,41 +531,44 @@
     document.getElementById("mainView").classList.remove("active");
     document.getElementById("runView").classList.add("active");
     updateCurrentRunHeader();
-    renderRunSelectedTeam();
+    renderRunAll();
   }
 
   function startPool(id){
     setCurrentPool(id);
-    TEAM_SELECT_MODE = \"run\";
-    window.__pendingPoolId = id;
-    openTeamSelect();
+    showRunView();
   }
 function renderPoolList(){
     const wrap = document.getElementById("poolList");
     if (!wrap) return;
-    const pools = loadPools().slice().sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
+
+    const pools = loadPools()
+      .slice()
+      .sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
+
     if (!pools.length){
       wrap.innerHTML = "<div class='small'>Inga sparade poolspel ännu.</div>";
       return;
     }
-    
+
     wrap.innerHTML = pools.map(p=>{
       const date = escapeHtml(p?.date || "—");
       const place = escapeHtml(p?.place || "—");
       const done = p?.completed ? "<span class='pill' style='margin-left:6px;'>Klar</span>" : "";
+
       return `
-        <div class="listItem" style="display:block;">
+        <div class="listItem poolCard">
           <div class="poolMeta"><b>${date}</b> • ${place}${done}</div>
-          <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-            <button class="ghost" type="button" onclick="openPool('${escapeHtml(p.id)}')">Öppna</button>
-            <button class="ghost" type="button" onclick="startPool('${escapeHtml(p.id)}')">Påbörja poolspel</button>
+          <div class="small" style="margin-top:2px;">Sparat poolspel</div>
+
+          <div class="poolActions" style="margin-top:10px;">
+            <button type="button" onclick="startPool('${escapeHtml(p.id)}')">Påbörja poolspel</button>
             <button class="ghost" type="button" onclick="editPool('${escapeHtml(p.id)}')">Redigera</button>
             <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
           </div>
         </div>
       `;
     }).join("");
-
   }
 
   function openNewPool(){
@@ -1200,11 +1193,6 @@ function renderPoolList(){
       <div class="print-card matchBlock">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
           <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
-        <div class="small">
-          Start: <b>${escapeHtml(st.matchTime || "—")}</b> • 
-          Motståndare: <b>${escapeHtml(st.opponent || "—")}</b> • 
-          Plan: <b>${escapeHtml(st.arena || "—")}</b>
-        </div>
           <div class="small">${formatInfoLine(st)}</div>
         </div>
 
@@ -1275,11 +1263,6 @@ function renderPoolList(){
       <div class="print-card matchBlock">
         <div style="display:flex;justify-content:space-between;gap:10px;align-items:flex-end;flex-wrap:wrap;">
           <div><b>Match ${escapeHtml(matchNo)} • Lag ${escapeHtml(teamNo)}</b></div>
-        <div class="small">
-          Start: <b>${escapeHtml(st.matchTime || "—")}</b> • 
-          Motståndare: <b>${escapeHtml(st.opponent || "—")}</b> • 
-          Plan: <b>${escapeHtml(st.arena || "—")}</b>
-        </div>
         </div>
         <div class="small" style="margin-top:6px;">
           <b>Tränare:</b> ${escapeHtml(coachText)}<br>
@@ -1324,42 +1307,27 @@ function renderPoolList(){
     `;
   }
 
-  function renderRunSelectedTeam(){
-    const teamNo = loadRunTeam();
-    renderRunForTeam(teamNo);
-  }
-
-  function renderRunForTeam(teamNo){
+  function renderRunAll(){
     const out = document.getElementById("runOutput");
     if (!out) return;
 
-    const team = String(teamNo || "1");
-    const matchCount = loadMatchCount(team);
-    const globalCounts = {};
-
+    // Renderar alla lag (1..3) och deras matcher för aktuellt poolspel
     let html = "";
-    for (let m=1; m<=matchCount; m++){
-      const st = loadStateFor(team, m);
-
-      const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-      const periodMin = parseInt(st.periodMin, 10) || 15;
-      const shiftSec = parseInt(st.shiftSec, 10) || 90;
-
-      const totalMinutes = periodMin * periodsCount;
-      const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
-
-      const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
-      html += renderRunMatchBlock(team, m, st, shiftTimes, lineups);
+    for (let teamNo=1; teamNo<=3; teamNo++){
+      const matchCount = loadMatchCount(String(teamNo));
+      const globalCounts = {};
+      for (let m=1; m<=matchCount; m++){
+        const st = loadStateFor(String(teamNo), String(m));
+        const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
+        const periodMin = parseInt(st.periodMin, 10) || 15;
+        const shiftSec = parseInt(st.shiftSec, 10) || 90;
+        const totalMinutes = periodMin * periodsCount;
+        const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
+        const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
+        html += renderRunMatchBlock(String(teamNo), String(m), st, shiftTimes, lineups);
+      }
     }
-
-    out.innerHTML = html || "<div class='small'>Inga matcher i detta lag.</div>";
-
-    const teamSub = document.getElementById("currentRunTeamSub");
-    if (teamSub){
-      const coaches = loadTeamCoaches(team);
-      const coachText = coaches.length ? coaches.join(", ") : "—";
-      teamSub.textContent = `Lag ${team} • Tränare: ${coachText}`;
-    }
+    out.innerHTML = html || "<b>Poolspel</b><div class='small'>Inga matcher ännu.</div>";
   }
 
 function renderAll(){
@@ -1841,89 +1809,7 @@ function renderAll(){
   }
 
   window.addEventListener("load", init);
-
-  let __pendingPoolId = null;
-
-  function startPool(id){
-    __pendingPoolId = id;
-    openTeamSelect();
-  }
-
-  function chooseRunTeam(){
-    TEAM_SELECT_MODE = "run";
-    window.__pendingPoolId = currentPoolId();
-    openTeamSelect();
-  }
-  function chooseEditTeam(poolId){
-    TEAM_SELECT_MODE = "edit";
-    window.__pendingPoolId = poolId;
-    openTeamSelect();
-  }
-
-  function openTeamSelect(){
-    const modal = document.getElementById("teamSelectModal");
-    const list = document.getElementById("teamSelectList");
-    if (!modal || !list) return;
-
-    const teams = [1,2,3];
-    list.innerHTML = teams.map(t=>{
-      const coaches = loadTeamCoachesForPool(t) || [];
-      const coachText = coaches.length ? coaches.join(", ") : "—";
-      return `
-        <div class="listItem" style="cursor:pointer;" onclick="chooseTeam(${t})">
-          <div>
-            <div><b>Lag ${t}</b></div>
-            <div class="small">Tränare: ${escapeHtml(coachText)}</div>
-          </div>
-        </div>
-      `;
-    }).join("");
-
-    modal.style.display = "block";
-  }
-
-  function closeTeamSelect(){
-    const modal = document.getElementById("teamSelectModal");
-    if (modal) modal.style.display = "none";
-  }
-
-  function chooseTeam(teamNo){
-    closeTeamSelect();
-    const poolId = __pendingPoolId;
-    if (!poolId) return;
-
-    if (TEAM_SELECT_MODE === "run"){
-      setCurrentPool(poolId);
-      saveRunTeam(teamNo);
-      showRunView();
-      renderRunSelectedTeam();
-      return;
-    }
-
-    openPool(poolId);
-    switchTeam(teamNo);
-  }
-
-  function loadTeamCoachesForPool(teamNo){
-    const key = `${poolPrefix()}team_coaches_team_${teamNo}`;
-    const raw = localStorage.getItem(key);
-    const arr = raw ? safeParseJSON(raw, []) : [];
-    return Array.isArray(arr) ? arr : [];
-  }
-
 </script>
-
-
-  <!-- TEAM SELECT MODAL -->
-  <div id="teamSelectModal" class="no-print" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,.52); padding:14px; z-index:9999;">
-    <div class="modalPanel">
-      <div class="modalHeader">
-        <b>Välj lag</b>
-        <button class="ghost" type="button" onclick="closeTeamSelect()">Stäng</button>
-      </div>
-      <div id="teamSelectList" class="card" style="margin:0;"></div>
-    </div>
-  </div>
 
 </body>
 </html>
