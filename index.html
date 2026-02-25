@@ -52,6 +52,7 @@
     /* Checklist UI */
     .doneRow td{ background: #f5fff5; }
     .doneRow td:not(.chkCell){ text-decoration: line-through; }
+    .doneRow td:not(.chkCell){ text-decoration: line-through; }
     .chk{
       width:22px; height:22px;
       accent-color: #111;
@@ -286,8 +287,10 @@
         <div>
           <b id="currentRunTitle">Poolspel</b>
           <div class="small" id="currentRunSub"></div>
+          <div class="small" id="currentRunTeamSub"></div>
         </div>
         <div class="btnrow" style="margin:0;">
+          <button type="button" class="ghost" onclick="chooseRunTeam()">Byt lag</button>
           <button type="button" class="ghost" onclick="goHome()">Till startsida</button>
           <button type="button" class="ghost" onclick="openPool(currentPoolId())">Redigera</button>
           <button type="button" onclick="finishPool()">Spara som klar</button>
@@ -466,6 +469,15 @@
     return `nsk_pool_${safe}_`;
   }
 
+
+  // Run-läge: vilket lag som valts i poolspelet
+  function runTeamKey(){ return `${poolPrefix()}run_team`; }
+  function loadRunTeam(){ return localStorage.getItem(runTeamKey()) || "1"; }
+  function saveRunTeam(team){ localStorage.setItem(runTeamKey(), String(team||"1")); }
+
+  // Team-select används i två lägen: "edit" (vanliga sidan) och "run" (poolspel-läge)
+  let TEAM_SELECT_MODE = "edit";
+
   function goHome(){
     document.getElementById("homeView").classList.add("active");
     document.getElementById("mainView").classList.remove("active");
@@ -489,7 +501,8 @@
 
   function finishPool(){
     const id = currentPoolId();
-    if (!id) { goHome(); return; }
+    if (!id) { TEAM_SELECT_MODE = "edit";
+    goHome(); return; }
     const pools = loadPools();
     const idx = pools.findIndex(p=>p && p.id===id);
     if (idx >= 0){
@@ -528,12 +541,14 @@
     document.getElementById("mainView").classList.remove("active");
     document.getElementById("runView").classList.add("active");
     updateCurrentRunHeader();
-    renderRunAll();
+    renderRunSelectedTeam();
   }
 
   function startPool(id){
     setCurrentPool(id);
-    showRunView();
+    TEAM_SELECT_MODE = \"run\";
+    window.__pendingPoolId = id;
+    openTeamSelect();
   }
 function renderPoolList(){
     const wrap = document.getElementById("poolList");
@@ -1309,27 +1324,42 @@ function renderPoolList(){
     `;
   }
 
-  function renderRunAll(){
+  function renderRunSelectedTeam(){
+    const teamNo = loadRunTeam();
+    renderRunForTeam(teamNo);
+  }
+
+  function renderRunForTeam(teamNo){
     const out = document.getElementById("runOutput");
     if (!out) return;
 
-    // Renderar alla lag (1..3) och deras matcher för aktuellt poolspel
+    const team = String(teamNo || "1");
+    const matchCount = loadMatchCount(team);
+    const globalCounts = {};
+
     let html = "";
-    for (let teamNo=1; teamNo<=3; teamNo++){
-      const matchCount = loadMatchCount(String(teamNo));
-      const globalCounts = {};
-      for (let m=1; m<=matchCount; m++){
-        const st = loadStateFor(String(teamNo), String(m));
-        const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
-        const periodMin = parseInt(st.periodMin, 10) || 15;
-        const shiftSec = parseInt(st.shiftSec, 10) || 90;
-        const totalMinutes = periodMin * periodsCount;
-        const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
-        const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
-        html += renderRunMatchBlock(String(teamNo), String(m), st, shiftTimes, lineups);
-      }
+    for (let m=1; m<=matchCount; m++){
+      const st = loadStateFor(team, m);
+
+      const periodsCount = Math.min(3, Math.max(1, parseInt(st.periodsCount, 10) || 1));
+      const periodMin = parseInt(st.periodMin, 10) || 15;
+      const shiftSec = parseInt(st.shiftSec, 10) || 90;
+
+      const totalMinutes = periodMin * periodsCount;
+      const shiftTimes = buildShiftTimes(totalMinutes, shiftSec);
+
+      const lineups = makeLineupsForMatch(st, globalCounts, shiftTimes);
+      html += renderRunMatchBlock(team, m, st, shiftTimes, lineups);
     }
-    out.innerHTML = html || "<b>Poolspel</b><div class='small'>Inga matcher ännu.</div>";
+
+    out.innerHTML = html || "<div class='small'>Inga matcher i detta lag.</div>";
+
+    const teamSub = document.getElementById("currentRunTeamSub");
+    if (teamSub){
+      const coaches = loadTeamCoaches(team);
+      const coachText = coaches.length ? coaches.join(", ") : "—";
+      teamSub.textContent = `Lag ${team} • Tränare: ${coachText}`;
+    }
   }
 
 function renderAll(){
@@ -1819,6 +1849,17 @@ function renderAll(){
     openTeamSelect();
   }
 
+  function chooseRunTeam(){
+    TEAM_SELECT_MODE = "run";
+    window.__pendingPoolId = currentPoolId();
+    openTeamSelect();
+  }
+  function chooseEditTeam(poolId){
+    TEAM_SELECT_MODE = "edit";
+    window.__pendingPoolId = poolId;
+    openTeamSelect();
+  }
+
   function openTeamSelect(){
     const modal = document.getElementById("teamSelectModal");
     const list = document.getElementById("teamSelectList");
@@ -1848,8 +1889,18 @@ function renderAll(){
 
   function chooseTeam(teamNo){
     closeTeamSelect();
-    if (!__pendingPoolId) return;
-    openPool(__pendingPoolId);
+    const poolId = __pendingPoolId;
+    if (!poolId) return;
+
+    if (TEAM_SELECT_MODE === "run"){
+      setCurrentPool(poolId);
+      saveRunTeam(teamNo);
+      showRunView();
+      renderRunSelectedTeam();
+      return;
+    }
+
+    openPool(poolId);
     switchTeam(teamNo);
   }
 
