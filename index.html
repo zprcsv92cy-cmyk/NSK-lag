@@ -126,7 +126,7 @@ th{font-size:12px;color:var(--muted);font-weight:800}
       </div>
       <div><label>Antal matcher</label><select id="matchCount"></select></div>
       <div><label>Match</label><select id="matchNo"></select></div>
-      
+      <div><label>Datum</label><input id="matchDate" type="date"></div>
       <div><label>Starttid</label><input id="matchTime" type="time"></div>
     </div>
     <div class="row" style="margin-top:10px;">
@@ -544,7 +544,7 @@ function getFormState(){
   const raw=localStorage.getItem(stateKey());
   const prev=raw?safeParseJSON(raw,{}):{};
   return {
-    matchDate:document.getElementById().value||"",
+    matchDate:document.getElementById("matchDate").value||"",
     matchTime:document.getElementById("matchTime").value||"",
     opponent:document.getElementById("opponent").value||"",
     arena:document.getElementById("arena").value||"1",
@@ -560,7 +560,7 @@ function getFormState(){
 }
 function setFormState(s){
   const d=Object.assign(defaultsState(), s||{});
-  document.getElementById().value=d.matchDate||"";
+  document.getElementById("matchDate").value=d.matchDate||"";
   document.getElementById("matchTime").value=d.matchTime||"";
   document.getElementById("opponent").value=d.opponent||"";
   document.getElementById("arena").value=d.arena||"1";
@@ -1067,7 +1067,7 @@ function init(){
   });
 
   // edit listeners
-  ["matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
+  ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
     el.addEventListener("input", ()=>{saveState();});
