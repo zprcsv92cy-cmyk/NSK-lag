@@ -479,6 +479,18 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   background: transparent !important;
 }
 
+
+/* Finish pool footer button */
+.finishPoolFooter{
+  margin-top:14px;
+  display:flex;
+  justify-content:center;
+}
+.finishPoolFooter button{
+  width:100%;
+  max-width:520px;
+}
+
 </style>
 </head>
 <body>
@@ -605,11 +617,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
-      <div id="finishPoolWrap" class="small" style="margin-top:8px;display:none;">
-        <span class="pill">Alla byten avbockade</span>
-        <button type="button" onclick="finishPool()" style="margin-left:8px;">Avsluta poolspel</button>
-      </div>
-    </div>
+</div>
     <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
 
@@ -910,7 +918,10 @@ const Actions = {
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
   startPoolRun(id, target="run"){
-    App.state.pendingPoolId = String(id||"");
+    const pid = String(id||"");
+    if(!pid) return;
+    if(!requireCode2018ForCompletedPool(pid)) return;
+    App.state.pendingPoolId = pid;
     App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
     Actions.openTeamSelect();
   },
@@ -936,7 +947,10 @@ const Actions = {
 
   // ----- navigation edit/run -----
   openPoolEdit(id){
-    Storage.setCurrentPool(id);
+    const pid=String(id||"");
+    if(!pid) return;
+    if(!requireCode2018ForCompletedPool(pid)) return;
+    Storage.setCurrentPool(pid);
     Actions.showEdit();
   },
   showEdit(){
@@ -1373,8 +1387,20 @@ function renderRunAll(){
     const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
     html += renderRunMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
+  
+  // Append finish button at bottom when all shifts are done (and pool not already completed)
+  const id=Storage.currentPoolId();
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===id);
+  const completed=!!p?.completed;
+  if(html && !completed && allShiftsDoneForCurrentTeam()){
+    html += `
+      <div class="finishPoolFooter">
+        <button type="button" onclick="finishPool()">Avsluta poolspel</button>
+      </div>`;
+  }
+
   document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
-  updateFinishPoolUI();
 }
 
 function allShiftsDoneForCurrentTeam(){
@@ -1399,19 +1425,6 @@ function allShiftsDoneForCurrentTeam(){
   return true;
 }
 
-function updateFinishPoolUI(){
-  const wrap=document.getElementById("finishPoolWrap");
-  if(!wrap) return;
-
-  // Already completed? hide UI.
-  const id=Storage.currentPoolId();
-  const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===id);
-  const completed=!!p?.completed;
-
-  const done = allShiftsDoneForCurrentTeam();
-  wrap.style.display = (!completed && done) ? "block" : "none";
-}
 
 function finishPool(){
   const id=Storage.currentPoolId();
@@ -1422,6 +1435,21 @@ function finishPool(){
     return;
   }
 
+
+function requireCode2018ForCompletedPool(poolId){
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===poolId);
+  if(!p || !p.completed) return true;
+  const code=prompt("Poolspelet är avslutat. Ange kod för att öppna:");
+  if(code===null) return false;
+  if(String(code).trim()!=="2018"){
+    alert("Fel kod.");
+    return false;
+  }
+  return true;
+}
+
+
   if(!confirm("Avsluta poolspelet? Det markeras som Klar på startsidan.")) return;
 
   const pools=Storage.loadPools();
@@ -1431,7 +1459,6 @@ function finishPool(){
     p.updatedAt=Date.now();
     Storage.savePools(pools);
   }
-  updateFinishPoolUI();
   UI.renderPoolList();
   alert("Poolspelet är markerat som Klar.");
 }
@@ -1676,7 +1703,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.5</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
