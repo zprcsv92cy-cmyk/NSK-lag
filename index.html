@@ -695,7 +695,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 const App = {
   state: {
-    pendingPoolId: ""
+    pendingPoolId: "",
+    teamSelectTarget: "run" // "run" or "edit"
   }
 };
 
@@ -820,7 +821,7 @@ const Actions = {
     pools.push({id,date:d,place,createdAt:Date.now(),updatedAt:Date.now(),completed:false});
     Storage.savePools(pools);
     Actions.closeNewPool();
-    Actions.startPoolRun(id);
+    Actions.startPoolRun(id, "edit");
   },
 
   deletePool(id){
@@ -851,14 +852,16 @@ const Actions = {
   },
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
-  startPoolRun(id){
+  startPoolRun(id, target="run"){
     App.state.pendingPoolId = String(id||"");
+    App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
     Actions.openTeamSelect();
   },
   openTeamSelectForCurrentPool(){
     const id=Storage.currentPoolId();
     if(!id){ Actions.goHome(); return; }
     App.state.pendingPoolId = id;
+    App.state.teamSelectTarget = "run";
     Actions.openTeamSelect();
   },
   chooseTeam(teamNo){
@@ -866,7 +869,12 @@ const Actions = {
     if(!App.state.pendingPoolId) return;
     Storage.setCurrentPool(App.state.pendingPoolId);
     document.getElementById("teamSelect").value = String(teamNo||"1");
-    Actions.showRun();
+    // New pool -> go directly to edit. Otherwise keep current behavior.
+    if(App.state.teamSelectTarget==="edit"){
+      Actions.showEdit();
+    }else{
+      Actions.showRun();
+    }
   },
 
   // ----- navigation edit/run -----
@@ -1550,7 +1558,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.2</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
