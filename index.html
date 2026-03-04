@@ -537,6 +537,23 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   .matchHdrLine2{ font-size:13px; }
 }
 
+
+/* Edit view tweaks: smaller Starttid, bigger Motståndare */
+#editView #matchTime{ max-width:140px; }
+
+/* Motståndare / Plan row proportions */
+#editView #opponent{ width:100%; }
+#editView #arena{ max-width:120px; }
+#editView .row > div:first-child{ flex:3; }
+#editView .row > div:last-child{ flex:1; }
+
+
+/* Finish button disabled state */
+.finishPoolFooter button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
 </style>
 </head>
 <body>
@@ -779,6 +796,16 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
+
+function hideMatchDateInEdit(){
+  try{
+    var el=document.getElementById("matchDate");
+    if(el && el.parentElement) el.parentElement.style.display="none";
+  }catch(e){}
+}
+
+
 
 
 
@@ -1545,19 +1572,22 @@ function renderRunAll(){
     html += renderRunMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
   
-  // Append finish button at bottom when all shifts are done (and pool not already completed)
+  // Finish pool footer: always show button at bottom (disabled until all shifts are checked)
   const id=Storage.currentPoolId();
   const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===id);
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===id){ p=pools[i]; break; } }
   const completed=!!(p && p.completed);
-  if(html && !completed && !App.state.readOnly && allShiftsDoneForCurrentTeam()){
+  if(html && !completed && !App.state.readOnly){
+    const doneNow = allShiftsDoneForCurrentTeam();
     html += `
       <div class="finishPoolFooter">
-        <button type="button" onclick="finishPool()">Avsluta poolspel</button>
+        <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>
+          ${doneNow ? "Avsluta poolspel" : "Avsluta poolspel (kräver alla byten avbockade)"}
+        </button>
       </div>`;
   }
-
-  document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
 }
 
 function allShiftsDoneForCurrentTeam(){
@@ -1795,6 +1825,7 @@ function showRun(){ Actions.showRun(); }
 
 // ---------- init ----------
 function init(){
+  hideMatchDateInEdit();
   initSettingsDropdowns();
   wireImport();
 
@@ -1838,6 +1869,8 @@ window.addEventListener("load", init);
 
 
 
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1861,7 +1894,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.3</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
