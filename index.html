@@ -491,6 +491,32 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   max-width:520px;
 }
 
+
+/* Completed pool visual state */
+.poolCard.completed button.startBtn,
+.poolCard.completed button.editBtn{
+  opacity:0.45;
+  filter:grayscale(0.4);
+}
+
+
+/* Pool status badges */
+.status-completed{
+  border:2px solid #d41f34;
+  color:#d41f34;
+  padding:2px 8px;
+  border-radius:12px;
+  font-size:12px;
+}
+
+.status-active{
+  border:2px solid #2ecc71;
+  color:#2ecc71;
+  padding:2px 8px;
+  border-radius:12px;
+  font-size:12px;
+}
+
 </style>
 </head>
 <body>
@@ -812,7 +838,7 @@ const UI = {
     wrap.innerHTML=pools.map(p=>{
       const date=escapeHtml(p?.date||"—");
       const place=escapeHtml(p?.place||"—");
-      const done=p?.completed? "<span class='pill' style='margin-left:6px;'>Klar</span>":"";
+      const done=p?.completed? "<span class='pill' style='margin-left:6px;'><span class="status-completed">Avslutat</span></span>":"";
       return `
         <div class="card poolCard">
           <div><b>${date}</b> • ${place}${done}</div>
@@ -1450,7 +1476,7 @@ function requireCode2018ForCompletedPool(poolId){
 }
 
 
-  if(!confirm("Avsluta poolspelet? Det markeras som Klar på startsidan.")) return;
+  if(!confirm("Avsluta poolspelet? Det markeras som Avslutat på startsidan.")) return;
 
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===id);
@@ -1460,7 +1486,7 @@ function requireCode2018ForCompletedPool(poolId){
     Storage.savePools(pools);
   }
   UI.renderPoolList();
-  alert("Poolspelet är markerat som Klar.");
+  alert("Poolspelet är markerat som Avslutat.");
 }
 
 function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
