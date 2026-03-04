@@ -826,6 +826,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1653,6 +1654,15 @@ function renderEditOutput(){
       </div>`;
   }
 
+  
+  const doneNow = allShiftsDoneForCurrentTeam();
+  html += `
+    <div class="finishPoolFooter">
+      <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>
+        Avsluta poolspel
+      </button>
+    </div>`;
+
   document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
 }
 
@@ -2016,6 +2026,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2039,7 +2050,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.2</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
