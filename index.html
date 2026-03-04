@@ -554,6 +554,24 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   cursor:not-allowed;
 }
 
+
+/* NSK confirm modal */
+#nskConfirmModal{ position:fixed; inset:0; z-index:100000; }
+#nskConfirmModal .nskConfirmBackdrop{ position:absolute; inset:0; background:rgba(0,0,0,.55); backdrop-filter: blur(6px); }
+#nskConfirmModal .nskConfirmCard{
+  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
+  width:min(520px, calc(100vw - 28px));
+  background:rgba(25,26,30,.96);
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:18px;
+  box-shadow: 0 18px 50px rgba(0,0,0,.55);
+  padding:16px 14px;
+}
+#nskConfirmModal .nskConfirmTitle{ font-weight:900; font-size:16px; margin-bottom:8px; }
+#nskConfirmModal .nskConfirmMsg{ font-size:14px; line-height:1.35; opacity:.95; }
+#nskConfirmModal .nskConfirmBtns{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
+#nskConfirmModal .nskConfirmBtns button{ min-width:110px; }
+
 </style>
 </head>
 <body>
@@ -796,6 +814,58 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
+function nskConfirm(message, title){
+  return new Promise(function(resolve){
+    try{
+      var modal=document.getElementById("nskConfirmModal");
+      var msg=document.getElementById("nskConfirmMsg");
+      var ttl=document.getElementById("nskConfirmTitle");
+      var btnOk=document.getElementById("nskConfirmOk");
+      var btnCancel=document.getElementById("nskConfirmCancel");
+      if(!modal||!msg||!ttl||!btnOk||!btnCancel){
+        resolve(window.confirm(message));
+        return;
+      }
+      ttl.textContent = title || "Bekräfta";
+      msg.textContent = message || "";
+      modal.style.display="block";
+
+      var done=false;
+      var backdrop = modal.querySelector(".nskConfirmBackdrop");
+
+      function cleanup(){
+        btnOk.removeEventListener("click", onOk);
+        btnCancel.removeEventListener("click", onCancel);
+        document.removeEventListener("keydown", onKey);
+        if(backdrop) backdrop.removeEventListener("click", onBackdrop);
+      }
+      function close(ok){
+        if(done) return;
+        done=true;
+        modal.style.display="none";
+        cleanup();
+        resolve(!!ok);
+      }
+      function onOk(){ close(true); }
+      function onCancel(){ close(false); }
+      function onBackdrop(){ close(false); }
+      function onKey(e){
+        if(e.key==="Escape") close(false);
+        if(e.key==="Enter") close(true);
+      }
+
+      btnOk.addEventListener("click", onOk);
+      btnCancel.addEventListener("click", onCancel);
+      document.addEventListener("keydown", onKey);
+      if(backdrop) backdrop.addEventListener("click", onBackdrop);
+    }catch(e){
+      resolve(window.confirm(message));
+    }
+  });
+}
+
+
 let finishingPool = false;
 
 
@@ -1658,49 +1728,45 @@ function finishPool(){
   if(finishingPool) return;
   finishingPool = true;
 
-  const btn = document.querySelector(".finishPoolFooter button");
+  var btn = document.querySelector(".finishPoolFooter button");
   if(btn) btn.disabled = true;
 
-  if(!confirm("Avsluta poolspelet?")){
+  nskConfirm("Avsluta poolspelet?", "Avsluta").then(function(ok){
+    if(!ok){
+      finishingPool = false;
+      if(btn) btn.disabled = false;
+      return;
+    }
+
+    var id = Storage.currentPoolId();
+    if(!id){
+      finishingPool = false;
+      if(btn) btn.disabled = false;
+      return;
+    }
+
+    if(!allShiftsDoneForCurrentTeam()){
+      alert("Alla byten måste vara avbockade innan poolspelet kan avslutas.");
+      finishingPool = false;
+      if(btn) btn.disabled = false;
+      return;
+    }
+
+    var pools = Storage.loadPools() || [];
+    var p = null;
+    for(var i=0;i<pools.length;i++){
+      if(pools[i] && pools[i].id===id){ p=pools[i]; break; }
+    }
+    if(p){
+      p.completed = true;
+      p.updatedAt = Date.now();
+      Storage.savePools(pools);
+    }
+    try{ UI.renderPoolList(); }catch(e){}
+    try{ Actions.showHome && Actions.showHome(); }catch(e){}
+
     finishingPool = false;
-    if(btn) btn.disabled = false;
-    return;
-  }
-
-  if(!confirm("Avsluta poolspelet?")){
-    return;
-  }
-
-
-  const id=Storage.currentPoolId();
-  if(!id) return;
-
-  if(!allShiftsDoneForCurrentTeam()){
-    alert("Alla byten måste vara avbockade innan poolspelet kan avslutas.");
-    return;
-  }
-
-
-
-
-
-
-  if(!confirm("Avsluta poolspelet?")) return;
-
-  const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===id);
-  if(p){
-    p.completed=true;
-  // go to start page after finishing
-  try{ Actions.showHome && Actions.showHome(); }catch(e){}
-
-    p.updatedAt=Date.now();
-    Storage.savePools(pools);
-  finishingPool = false;
-
-  }
-  UI.renderPoolList();
-  alert("Poolspelet är markerat som Avslutad.");
+  });
 }
 
 function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
@@ -1939,6 +2005,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1962,12 +2029,26 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
   <div style="font-weight:900;margin-bottom:6px;">JavaScript-fel (klicka för att kopiera)</div>
   <div id="jsErrorText" style="opacity:.95;word-break:break-word;"></div>
+</div>
+
+
+<!-- NSK confirm modal -->
+<div id="nskConfirmModal" style="display:none;">
+  <div class="nskConfirmBackdrop"></div>
+  <div class="nskConfirmCard" role="dialog" aria-modal="true" aria-labelledby="nskConfirmTitle">
+    <div id="nskConfirmTitle" class="nskConfirmTitle">Bekräfta</div>
+    <div id="nskConfirmMsg" class="nskConfirmMsg"></div>
+    <div class="nskConfirmBtns">
+      <button id="nskConfirmCancel" class="ghost" type="button">Avbryt</button>
+      <button id="nskConfirmOk" type="button">OK</button>
+    </div>
+  </div>
 </div>
 
 </body>
