@@ -1427,9 +1427,6 @@ function init(){
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
     el.addEventListener("input", ()=>{saveState();});
   });
-
-    el.addEventListener("input", ()=>{saveState();});
-  });
   document.getElementById("goalie").addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
   document.getElementById("teamSize").addEventListener("change", ()=>{
     const newN=parseInt(document.getElementById("teamSize").value||"10",10);
