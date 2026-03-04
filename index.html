@@ -780,7 +780,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 const App = {
   state: {
     pendingPoolId: "",
-    teamSelectTarget: "run" // "run" or "edit"
+    teamSelectTarget: "run", // "run" or "edit"
+    readOnly: false // archive mode for completed pools
   }
 };
 
@@ -1240,6 +1241,7 @@ function isShiftDone(teamNo,matchNo,idx){return localStorage.getItem(shiftDoneKe
 function setShiftDone(teamNo,matchNo,idx,done){localStorage.setItem(shiftDoneKey(teamNo,matchNo,idx), done?"1":"0"); Storage.touchPoolUpdated();}
 function toggleShiftDone(teamNo,matchNo,idx,done){
   if(App.state.readOnly) return;
+  if(App.state.readOnly) return;
   setShiftDone(teamNo,matchNo,idx,done);
   const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
   if(row) row.classList.toggle("doneRow", !!done);
@@ -1501,6 +1503,12 @@ function isPoolCompleted(poolId){
   return !!p?.completed;
 }
 
+function isPoolCompleted(poolId){
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===poolId);
+  return !!p?.completed;
+}
+
 function requireCode2018ForCompletedPool(poolId){
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===poolId);
@@ -1702,7 +1710,7 @@ function openNewPool(){ Actions.openNewPool(); }
 function closeNewPool(){ Actions.closeNewPool(); }
 function saveNewPool(){ Actions.saveNewPool(); }
 function deletePool(id){ Actions.deletePool(id); }
-function startPoolRun(id){ Actions.startPoolRun(id); }
+function startPoolRun(id, target="run"){ Actions.startPoolRun(id); }
 function openTeamSelectForCurrentPool(){ Actions.openTeamSelectForCurrentPool(); }
 function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
@@ -1772,7 +1780,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.6</div>
 
 </body>
 </html>
