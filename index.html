@@ -768,6 +768,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 <script>
 
 
+
 /*
   ============================
   LÄTTARE ATT REDIGERA
@@ -968,7 +969,8 @@ const Actions = {
   },
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
-  startPoolRun(id, target="run"){
+  startPoolRun(id, target){
+    target = target || "run";
     const pid = String(id||"");
     if(!pid) return;
     const completed = isPoolCompleted(pid);
@@ -1712,7 +1714,7 @@ function openNewPool(){ Actions.openNewPool(); }
 function closeNewPool(){ Actions.closeNewPool(); }
 function saveNewPool(){ Actions.saveNewPool(); }
 function deletePool(id){ Actions.deletePool(id); }
-function startPoolRun(id, target="run"){ Actions.startPoolRun(id); }
+function startPoolRun(id, target){ Actions.startPoolRun(id, target); }
 function openTeamSelectForCurrentPool(){ Actions.openTeamSelectForCurrentPool(); }
 function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
@@ -1761,6 +1763,7 @@ function init(){
 window.addEventListener("load", init);
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1784,7 +1787,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.8</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
