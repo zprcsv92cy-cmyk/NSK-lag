@@ -829,6 +829,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1456,7 +1457,8 @@ function toggleShiftDone(teamNo,matchNo,idx,done){
   if(App.state.readOnly) return;
   if(App.state.readOnly) return;
   setShiftDone(teamNo,matchNo,idx,done);
-    markPoolActiveIfNeeded(Storage.currentPoolId());
+      updateFinishButtons();
+markPoolActiveIfNeeded(Storage.currentPoolId());
 const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
   if(row) row.classList.toggle("doneRow", !!done);
 }
@@ -2040,6 +2042,19 @@ window.addEventListener("load", init);
 
 
 
+
+
+// keep finish button state in sync without needing a full re-render
+document.addEventListener("change", function(e){
+  try{
+    var t=e && e.target;
+    if(t && t.classList && t.classList.contains("chk")){
+      updateFinishButtons();
+    }
+  }catch(err){}
+});
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2063,7 +2078,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 2.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
