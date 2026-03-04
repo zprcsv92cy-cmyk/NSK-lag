@@ -833,6 +833,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -930,6 +931,23 @@ function hideMatchDateInEdit(){
 })()
 
 
+
+function setRouteHash(route, poolId, team){
+  try{
+    var parts=[route||"home", poolId||"", team||""];
+    // encode to keep safe
+    location.hash = parts.map(function(x){ return encodeURIComponent(String(x)); }).join("|");
+  }catch(e){}
+}
+function getRouteHash(){
+  try{
+    var h=(location.hash||"").replace(/^#/,"");
+    if(!h) return null;
+    var parts=h.split("|").map(function(x){ return decodeURIComponent(x||""); });
+    return { route: parts[0]||"home", poolId: parts[1]||"", team: parts[2]||"" };
+  }catch(e){ return null; }
+}
+
 function saveLastRoute(route, extra){
   try{
     var obj = extra || {};
@@ -956,7 +974,10 @@ function persistCurrentView(){
         view = (ids[i]==="homeView") ? "home" : (ids[i]==="runView" ? "run" : "edit");
       }
     }
-    saveLastRoute(view, { poolId: Storage.currentPoolId(), team: (Storage.currentTeam ? Storage.currentTeam() : null) });
+    var pid=Storage.currentPoolId();
+    var tm=(Storage.currentTeam ? Storage.currentTeam() : "");
+    saveLastRoute(view, { poolId: pid, team: tm });
+    setRouteHash(view, pid, tm);
   }catch(e){}
 }
 
@@ -2095,7 +2116,7 @@ document.addEventListener("change", function(e){
 
 
 function restoreLastRouteOnLoad(){
-  var r = loadLastRoute();
+  var r = getRouteHash() || loadLastRoute();
   if(!r || !r.route) return false;
 
   try{
@@ -2140,6 +2161,7 @@ window.addEventListener("beforeunload", function(){
   try{ persistCurrentView(); }catch(e){}
 });
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2163,7 +2185,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.2</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
