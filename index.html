@@ -766,6 +766,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
 /*
   ============================
   LÄTTARE ATT REDIGERA
@@ -816,7 +817,7 @@ const Storage = {
     localStorage.setItem("nsk_current_pool", String(id||""));
   },
   poolPrefix(idOverride=null){
-    const id = idOverride ?? Storage.currentPoolId();
+    const id = ((idOverride)!=null ? (idOverride) : (Storage.currentPoolId()));
     const safe = id ? String(id) : "default";
     return `nsk_pool_${safe}_`;
   },
@@ -844,10 +845,10 @@ const UI = {
 
     // Sort: active first, completed last; newest first within groups
     pools.sort((a,b)=>{
-      const ac=a?.completed ? 1 : 0;
-      const bc=b?.completed ? 1 : 0;
+      const ac=(a && a.completed) ? 1 : 0;
+      const bc=(b && b.completed) ? 1 : 0;
       if(ac!==bc) return ac-bc;
-      return (b?.updatedAt||b?.createdAt||0) - (a?.updatedAt||a?.createdAt||0);
+      return ((b && b.updatedAt)||(b && b.createdAt)||0) - ((a && a.updatedAt)||(a && a.createdAt)||0);
     });
 
     if(!pools.length){
@@ -856,13 +857,13 @@ const UI = {
     }
 
     wrap.innerHTML=pools.map(p=>{
-      const date=escapeHtml(p?.date||"—");
-      const place=escapeHtml(p?.place||"—");
-      const status = p?.completed
+      const date=escapeHtml((p && p.date)||"—");
+      const place=escapeHtml((p && p.place)||"—");
+      const status = (p && p.completed)
         ? `<span class="status-completed" style="margin-left:8px;">Avslutat</span>`
         : `<span class="status-active" style="margin-left:8px;">Aktiv</span>`;
       return `
-        <div class="card poolCard ${p?.completed ? "completed" : ""}">
+        <div class="card poolCard ${(p && p.completed) ? "completed" : ""}">
           <div><b>${date}</b> • ${place} ${status}</div>
           <div class="btnrow" style="margin-top:10px;">
             <button class="startBtn" type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
@@ -1077,7 +1078,7 @@ function editCoach(i){const {players,coaches}=loadRegister(); const cur=coaches[
 
 // ---------- per pool + team coaches ----------
 function teamCoachKey(teamOverride=null){
-  const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
+  const team = ((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value || "1");
   return `${Storage.poolPrefix()}team_coaches_team_${team}`;
 }
 function loadTeamCoaches(){const raw=localStorage.getItem(teamCoachKey()); const arr=raw?safeParseJSON(raw,[]):[]; return Array.isArray(arr)?arr:[];}
@@ -1108,8 +1109,8 @@ function applyMatchCount(){
 
 // ---------- state per pool+team+match ----------
 function stateKey(teamOverride=null, matchOverride=null){
-  const team=teamOverride ?? (document.getElementById("teamSelect").value||"1");
-  const matchNo=matchOverride ?? (document.getElementById("matchNo").value||"1");
+  const team=((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value||"1");
+  const matchNo=((matchOverride)!=null ? (matchOverride) : ((document.getElementById("matchNo"))).value||"1");
   return `${Storage.poolPrefix()}state_team_${team}_match_${matchNo}`;
 }
 function defaultsState(){return {matchDate:"",matchTime:"",opponent:"",arena:"1",teamSize:"10",onCourt:"3",periodsCount:"1",periodMin:"15",shiftSec:"90",players:[],goalie:"",inheritedFromMatch1:true};}
@@ -1453,7 +1454,7 @@ function renderRunAll(){
   const id=Storage.currentPoolId();
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===id);
-  const completed=!!p?.completed;
+  const completed=!!(p && p.completed);
   if(html && !completed && !App.state.readOnly && allShiftsDoneForCurrentTeam()){
     html += `
       <div class="finishPoolFooter">
@@ -1500,13 +1501,13 @@ function finishPool(){
 function isPoolCompleted(poolId){
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===poolId);
-  return !!p?.completed;
+  return !!(p && p.completed);
 }
 
 function isPoolCompleted(poolId){
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===poolId);
-  return !!p?.completed;
+  return !!(p && p.completed);
 }
 
 function requireCode2018ForCompletedPool(poolId){
@@ -1757,6 +1758,7 @@ function init(){
   Actions.goHome();
 }
 window.addEventListener("load", init);
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1780,7 +1782,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.6</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
