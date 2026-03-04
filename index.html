@@ -800,6 +800,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function hideMatchDateInEdit(){
   try{
     var el=document.getElementById("matchDate");
@@ -976,7 +977,7 @@ const UI = {
     pools.forEach(function(p){
       if(!p || !p.id) return;
       var status = p.completed
-        ? "<span class='status-completed'>Avslutat</span>"
+        ? "<span class='status-completed'>Avslutad</span>"
         : "<span class='status-active'>Aktiv</span>";
 
       html += `
@@ -1368,7 +1369,8 @@ function toggleShiftDone(teamNo,matchNo,idx,done){
   if(App.state.readOnly) return;
   if(App.state.readOnly) return;
   setShiftDone(teamNo,matchNo,idx,done);
-  const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
+    markPoolActiveIfNeeded(Storage.currentPoolId());
+const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
   if(row) row.classList.toggle("doneRow", !!done);
 }
 
@@ -1553,6 +1555,22 @@ function renderEditOutput(){
     const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
     html += renderEditMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
+  // Finish pool footer in edit view (always visible)
+  const id=Storage.currentPoolId();
+  const pools=Storage.loadPools();
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===id){ p=pools[i]; break; } }
+  const completed=!!(p && p.completed);
+  if(html && !completed){
+    const doneNow = allShiftsDoneForCurrentTeam();
+    html += `
+      <div class="finishPoolFooter">
+        <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>
+          ${doneNow ? "Avsluta poolspel" : "Avsluta poolspel (kräver alla byten avbockade)"}
+        </button>
+      </div>`;
+  }
+
   document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
 }
 
@@ -1614,9 +1632,27 @@ function allShiftsDoneForCurrentTeam(){
   return true;
 }
 
+function markPoolActiveIfNeeded(poolId){
+  if(!poolId) return;
+  var pools=Storage.loadPools()||[];
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; } }
+  if(!p || !p.completed) return;
+
+  // If ANY shift is not done for current team, re-activate the pool
+  if(!allShiftsDoneForCurrentTeam()){
+    p.completed=false;
+    p.updatedAt=Date.now();
+    Storage.savePools(pools);
+    try{ UI.renderPoolList(); }catch(e){}
+  }
+}
+
+
+
 
 function finishPool(){
-  if(!confirm("Är du säker på att du vill avsluta poolspelet?")){
+  if(!confirm("Avsluta poolspelet?")){
     return;
   }
 
@@ -1634,7 +1670,7 @@ function finishPool(){
 
 
 
-  if(!confirm("Avsluta poolspelet? Det markeras som Avslutat på startsidan.")) return;
+  if(!confirm("Avsluta poolspelet?")) return;
 
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===id);
@@ -1647,7 +1683,7 @@ function finishPool(){
     Storage.savePools(pools);
   }
   UI.renderPoolList();
-  alert("Poolspelet är markerat som Avslutat.");
+  alert("Poolspelet är markerat som Avslutad.");
 }
 
 function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
@@ -1883,6 +1919,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1906,7 +1943,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.6</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
