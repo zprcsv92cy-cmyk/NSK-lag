@@ -359,6 +359,30 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   z-index:1;
 }
 
+
+/* Modal close button: always visible + X icon */
+.modalHeader button.ghost{
+  width:44px;
+  height:44px;
+  padding:0;
+  border-radius:14px;
+  border:1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.35);
+  box-shadow: none;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:0; /* hide text, keep for screen readers via aria-label */
+}
+.modalHeader button.ghost::before{
+  content:"×";
+  font-size:28px;
+  line-height:1;
+  color:#fff;
+}
+.modalHeader button.ghost:hover{ filter: brightness(1.08); }
+.modalHeader button.ghost:active{ transform: translateY(1px); filter: brightness(.98); }
+
 </style>
 </head>
 <body>
@@ -499,7 +523,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   <div class="modalPanel">
     <div class="modalHeader">
       <b>Välj lag</b>
-      <button class="ghost" type="button" onclick="closeTeamSelect()">Stäng</button>
+      <button aria-label="Stäng" class="ghost" type="button" onclick="closeTeamSelect()">Stäng</button>
     </div>
     <div class="row">
       <div>
@@ -526,7 +550,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   <div class="modalPanel">
     <div class="modalHeader">
       <b>Skapa nytt poolspel</b>
-      <button class="ghost" type="button" onclick="closeNewPool()">Stäng</button>
+      <button aria-label="Stäng" class="ghost" type="button" onclick="closeNewPool()">Stäng</button>
     </div>
     <div class="card" style="margin:0;">
       <div class="row">
@@ -546,7 +570,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   <div class="modalPanel">
     <div class="modalHeader">
       <b>Truppen team 18</b>
-      <button class="ghost" type="button" onclick="closeRegister()">Stäng</button>
+      <button aria-label="Stäng" class="ghost" type="button" onclick="closeRegister()">Stäng</button>
     </div>
     <div class="twoCols">
       <div class="card" style="margin:0;">
@@ -589,7 +613,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   <div class="modalPanel">
     <div class="modalHeader">
       <b>Statistik målvakter</b>
-      <button class="ghost" type="button" onclick="closeGoalieStats()">Stäng</button>
+      <button aria-label="Stäng" class="ghost" type="button" onclick="closeGoalieStats()">Stäng</button>
     </div>
     <div class="card" style="margin:0;">
       <div class="small" style="margin-bottom:8px;">
