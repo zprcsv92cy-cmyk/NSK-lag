@@ -1,11 +1,12 @@
 /* NSK Lag - offline cache */
-const CACHE_NAME = 'nsk-lag-v1';
+const CACHE_NAME = 'nsk-lag-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.webmanifest',
   './icon-192.png',
-  './icon-512.png'
+  './icon-512.png',
+  './nsk-wallpaper-portrait.png'
 ];
 
 self.addEventListener('install', (event) => {
