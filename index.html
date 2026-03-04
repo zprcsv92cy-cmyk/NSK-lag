@@ -827,6 +827,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1647,12 +1648,7 @@ function renderEditOutput(){
   for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===id){ p=pools[i]; break; } }
   const completed=!!(p && p.completed);
   if(html && !completed){
-    const doneNow = allShiftsDoneForCurrentTeam();
-    html += `
-      <div class="finishPoolFooter">
-        <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>Avsluta poolspel</button>
-      </div>`;
-  }
+}
 
   
   const doneNow = allShiftsDoneForCurrentTeam();
@@ -2027,6 +2023,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2050,7 +2047,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 2.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
