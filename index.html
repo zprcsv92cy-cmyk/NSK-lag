@@ -360,19 +360,19 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 }
 
 
-/* Modal close button: always visible + X icon */
+/* NSK-red modal close button */
 .modalHeader button.ghost{
   width:44px;
   height:44px;
   padding:0;
   border-radius:14px;
-  border:1px solid rgba(255,255,255,.12);
-  background: rgba(0,0,0,.35);
-  box-shadow: none;
+  border:1px solid #5e0913;
+  background: linear-gradient(180deg,#d41f34,#7a0c18);
+  box-shadow: 0 6px 14px rgba(0,0,0,.35);
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  font-size:0; /* hide text, keep for screen readers via aria-label */
+  font-size:0;
 }
 .modalHeader button.ghost::before{
   content:"×";
