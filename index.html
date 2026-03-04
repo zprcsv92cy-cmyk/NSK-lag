@@ -441,6 +441,24 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   font-weight:700;
 }
 
+
+/* Team select: make team cards larger even when coach text is visible */
+#teamSelectModal:not(.hide-coach) .row button{
+  min-height:86px;
+  padding:20px 18px;
+}
+
+#teamSelectModal:not(.hide-coach) .row button b{
+  font-size:18px;
+  display:block;
+  margin-bottom:4px;
+}
+
+#teamSelectModal:not(.hide-coach) .row button .small{
+  font-size:13px;
+  opacity:.9;
+}
+
 </style>
 </head>
 <body>
@@ -1561,7 +1579,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.4</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
