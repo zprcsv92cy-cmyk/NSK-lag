@@ -272,6 +272,86 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 }
 
 
+
+/* Better mobile touch buttons on home screen */
+.homeActions button{
+  min-height:56px;
+  font-size:16px;
+  padding:18px 18px;
+  border-radius:18px;
+}
+
+.homeActions{
+  gap:14px;
+}
+
+@media (max-width:600px){
+  .homeActions button{
+    flex:1 1 100%;
+  }
+}
+
+
+/* =========================
+   Poolspel-läge: bättre läsbarhet live
+   ========================= */
+#runView .print-card{
+  border-left-width:6px !important;
+}
+
+#runView .print-card b{
+  font-size:16px;
+}
+
+#runView .small{
+  font-size:13px;
+  line-height:1.35;
+}
+
+#runView table td,
+#runView table th{
+  padding:10px 8px;
+  font-size:15px;
+}
+
+#runView .chk{
+  width:26px;
+  height:26px;
+}
+
+/* Sticky match-header inside each matchblock */
+#runView .matchBlock > div:first-child{
+  position:sticky;
+  top:8px;
+  z-index:2;
+  padding:10px 10px;
+  margin:-6px -6px 10px -6px;
+  border-radius:12px;
+  background: rgba(0,0,0,.32);
+  backdrop-filter: blur(3px);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+/* Bättre “tap space” på raderna */
+#runView tbody tr td{
+  vertical-align:middle;
+}
+#runView tbody tr{
+  touch-action:manipulation;
+}
+
+/* På små skärmar: lite större text */
+@media (max-width:600px){
+  #runView table td,
+  #runView table th{
+    padding:12px 8px;
+    font-size:16px;
+  }
+  #runView .small{
+    font-size:14px;
+  }
+}
+
 </style>
 </head>
 <body>
