@@ -629,6 +629,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
   <div class="card no-print">
     <div class="row">
+
       <div><label>Lag</label>
         <div class="btnrow">
           <button class="ghost" type="button" onclick="switchTeam('1')" id="tbtn1">Lag 1</button>
@@ -739,6 +740,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
         </button>
       </div>
     </div>
+    <div id="teamSelectFooter" style="margin-top:12px;"></div>
   </div>
 </div>
 
@@ -836,6 +838,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -851,6 +855,7 @@ function nskConfirm(message, title){
       ttl.textContent = title || "Bekräfta";
       msg.textContent = message || "";
       modal.style.display="block";
+    refreshTeamSelectUI();
 
       var done=false;
       var backdrop = modal.querySelector(".nskConfirmBackdrop");
@@ -1078,22 +1083,36 @@ const Storage = {
 
 // ---- per-team completion helpers (supports any number of teams) ----
 function getTeamKeys(){
+  // Prefer teams stored on the current pool (supports 1..N teams)
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    if(pid){
+      var p = getPoolById(pid);
+      if(p && p.teams && p.teams.length){
+        // normalize to strings and unique
+        var keys=[];
+        for(var i=0;i<p.teams.length;i++){
+          var v=String(p.teams[i]||"").trim();
+          if(v && keys.indexOf(v)===-1) keys.push(v);
+        }
+        if(keys.length) return keys;
+      }
+    }
+  }catch(e){}
+
+  // Fallback to teamSelect options in UI
   try{
     var sel=document.getElementById("teamSelect");
     if(sel && sel.options && sel.options.length){
-      var keys=[];
-      for(var i=0;i<sel.options.length;i++){
-        var v=String(sel.options[i].value||"").trim();
-        if(v) keys.push(v);
+      var keys2=[];
+      for(var j=0;j<sel.options.length;j++){
+        var vv=String(sel.options[j].value||"").trim();
+        if(vv && keys2.indexOf(vv)===-1) keys2.push(vv);
       }
-      // unique
-      var uniq=[];
-      for(var j=0;j<keys.length;j++){
-        if(uniq.indexOf(keys[j])===-1) uniq.push(keys[j]);
-      }
-      return uniq.length?uniq:["1","2","3"];
+      if(keys2.length) return keys2;
     }
   }catch(e){}
+
   return ["1","2","3"];
 }
 
@@ -1160,6 +1179,140 @@ function setTeamCompleted(poolId, teamNo, completed){
 
 
 
+
+
+function setTeamsAndContinue(count){
+  try{
+    var n = parseInt(count,10);
+    if(!n || n<1) n=1;
+    if(n>6) n=6; // safety
+    var poolId = App.state.pendingPoolId || Storage.currentPoolId();
+    if(!poolId) return;
+
+    var pools = Storage.loadPools() || [];
+    var p=null;
+    for(var i=0;i<pools.length;i++){
+      if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; }
+    }
+    if(!p) return;
+
+    // store participating teams for this pool
+    p.teams = [];
+    for(var t=1;t<=n;t++){ p.teams.push(String(t)); }
+
+    // init team status for participating teams
+    ensureTeamStatus(p);
+
+    p.updatedAt = Date.now();
+    Storage.savePools(pools);
+
+    UI.closeModal("teamCountModal");
+
+    // proceed to team selection for running
+    App.state.teamSelectTarget = "run";
+    App.state.readOnly = false;
+    Actions.openTeamSelect();
+  }catch(e){}
+}
+
+
+function refreshTeamSelectUI(){
+  try{
+    var modal=document.getElementById("teamSelectModal");
+    var footer=document.getElementById("teamSelectFooter");
+    var pid = App.state.pendingPoolId || Storage.currentPoolId();
+    var p = pid ? getPoolById(pid) : null;
+
+    // buttons (1..3)
+    var btn1 = modal.querySelector('button[onclick="chooseTeam(\'1\')"]') || modal.querySelector('#coachHint1')?.closest('button');
+    var btn2 = modal.querySelector('button[onclick="chooseTeam(\'2\')"]') || modal.querySelector('#coachHint2')?.closest('button');
+    var btn3 = modal.querySelector('button[onclick="chooseTeam(\'3\')"]') || modal.querySelector('#coachHint3')?.closest('button');
+    var buttons=[{t:"1",btn:btn1,hint:document.getElementById("coachHint1")},
+                 {t:"2",btn:btn2,hint:document.getElementById("coachHint2")},
+                 {t:"3",btn:btn3,hint:document.getElementById("coachHint3")}];
+    // determine participating teams (if saved)
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : ["1","2","3"];
+
+    if(App.state.teamSetupMode){
+      modal.classList.add("hide-coach");
+      if(!App.state.teamSetupSelected) App.state.teamSetupSelected=[];
+      // show all buttons for selection
+      for(var i=0;i<buttons.length;i++){
+        var t=buttons[i].t;
+        var b=buttons[i].btn;
+        if(!b) continue;
+        b.parentElement.style.display="block";
+        b.setAttribute("onclick", "toggleSetupTeam('"+t+"')");
+        var on = App.state.teamSetupSelected.indexOf(t)!==-1;
+        b.innerHTML = (on? "✓ " : "") + "Lag " + t;
+        b.classList.toggle("selected-team", on);
+      }
+      if(footer){
+        footer.innerHTML = `
+          <div class="small" style="opacity:.85;">Välj vilka lag som deltar i detta poolspel.</div>
+          <div class="btnrow" style="margin-top:10px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" class="ghost" onclick="closeTeamSelect()">Avbryt</button>
+            <button type="button" onclick="continueTeamSetup()">Fortsätt</button>
+          </div>`;
+      }
+      return;
+    }
+
+    // normal mode: show only participating teams
+    modal.classList.toggle("hide-coach", App.state.teamSelectTarget==="edit");
+    for(var j=0;j<buttons.length;j++){
+      var tt=buttons[j].t;
+      var bb=buttons[j].btn;
+      if(!bb) continue;
+      var show = teams.indexOf(tt)!==-1;
+      bb.parentElement.style.display = show ? "block" : "none";
+      bb.setAttribute("onclick", "chooseTeam('"+tt+"')");
+      // restore label with coach hint
+      var hintTxt = buttons[j].hint ? buttons[j].hint.textContent : "Tränare: —";
+      bb.innerHTML = "Lag " + tt + "<br><span class='small' id='coachHint"+tt+"'>"+hintTxt.replace(/</g,"&lt;")+"</span>";
+      bb.classList.remove("selected-team");
+    }
+    if(footer) footer.innerHTML = "";
+  }catch(e){}
+}
+
+function toggleSetupTeam(teamNo){
+  try{
+    var t=String(teamNo);
+    if(!App.state.teamSetupSelected) App.state.teamSetupSelected=[];
+    var arr=App.state.teamSetupSelected;
+    var i=arr.indexOf(t);
+    if(i===-1) arr.push(t); else arr.splice(i,1);
+    arr.sort(function(a,b){ return parseInt(a,10)-parseInt(b,10); });
+    refreshTeamSelectUI();
+  }catch(e){}
+}
+
+function continueTeamSetup(){
+  try{
+    var pid = App.state.pendingPoolId || Storage.currentPoolId();
+    if(!pid) return;
+    var sel = App.state.teamSetupSelected || [];
+    if(!sel.length){
+      alert("Välj minst ett lag.");
+      return;
+    }
+    var pools=Storage.loadPools()||[];
+    var p=null;
+    for(var i=0;i<pools.length;i++){
+      if(pools[i] && pools[i].id===pid){ p=pools[i]; break; }
+    }
+    if(!p) return;
+    p.teams = sel.slice();
+    ensureTeamStatus(p);
+    p.updatedAt = Date.now();
+    Storage.savePools(pools);
+
+    App.state.teamSetupMode = false;
+    App.state.teamSetupSelected = null;
+    refreshTeamSelectUI();
+  }catch(e){}
+}
 
 function getCurrentPoolDate(){
   var id = Storage.currentPoolId();
@@ -1326,6 +1479,7 @@ const Actions = {
     const modal=document.getElementById("teamSelectModal");
     modal.classList.toggle("hide-coach", App.state.teamSelectTarget==="edit");
     modal.style.display="block";
+    refreshTeamSelectUI();
   },
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
@@ -2267,6 +2421,8 @@ function markTeamActiveIfNeeded(){
 }
 
 
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2290,7 +2446,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.4</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
@@ -2308,6 +2464,28 @@ if ("serviceWorker" in navigator) {
     <div class="nskConfirmBtns">
       <button id="nskConfirmCancel" class="ghost" type="button">Avbryt</button>
       <button id="nskConfirmOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Select number of teams after creating a pool -->
+<div id="teamCountModal" class="modal" style="display:none;">
+  <div class="modalContent" style="max-width:520px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <h3 style="margin:0;">Välj antal lag</h3>
+      <button type="button" class="closeX" onclick="UI.closeModal('teamCountModal')">✕</button>
+    </div>
+    <div class="small" style="margin-top:6px;opacity:.9;">
+      Hur många lag ska spela i detta poolspel?
+    </div>
+    <div class="btnrow" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="button" onclick="setTeamsAndContinue(1)">1 lag</button>
+      <button type="button" onclick="setTeamsAndContinue(2)">2 lag</button>
+      <button type="button" onclick="setTeamsAndContinue(3)">3 lag</button>
+    </div>
+    <div class="small" style="margin-top:10px;opacity:.75;">
+      Du kan ändra detta senare genom att redigera poolspelet och justera lag (om vi lägger till det).
     </div>
   </div>
 </div>
