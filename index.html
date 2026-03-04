@@ -524,6 +524,19 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   cursor:not-allowed;
 }
 
+
+/* Remove match date field in edit view */
+#editView label[for="matchDate"],
+#editView #matchDate{ display:none !important; }
+
+/* Mobile-friendly match header lines */
+.matchHdrLine1{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.matchHdrLine2{ margin-top:6px; opacity:.9; }
+@media (max-width:600px){
+  .matchHdrLine1 b{ font-size:18px; }
+  .matchHdrLine2{ font-size:13px; }
+}
+
 </style>
 </head>
 <body>
@@ -769,6 +782,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 // ---- diagnostics: show JS errors on screen ----
 (function(){
   function showErr(msg){
@@ -887,6 +901,19 @@ const Storage = {
     if(p){p.updatedAt=Date.now(); Storage.savePools(pools);}
   }
 };
+
+function getCurrentPoolDate(){
+  var id = Storage.currentPoolId();
+  if(!id) return "—";
+  var pools = Storage.loadPools() || [];
+  for(var i=0;i<pools.length;i++){
+    var p=pools[i];
+    if(p && p.id===id) return p.date || "—";
+  }
+  return "—";
+}
+
+
 
 // ---------- UI ----------
 const UI = {
@@ -1810,6 +1837,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1833,7 +1861,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
