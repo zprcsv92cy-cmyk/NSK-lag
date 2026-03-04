@@ -3,8 +3,8 @@
   "short_name": "NSK",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#111111",
+  "background_color": "#0f0f10",
+  "theme_color": "#b11226",
   "icons": [
     {
       "src": "icon-192.png",
