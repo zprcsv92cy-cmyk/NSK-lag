@@ -830,6 +830,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -925,6 +926,22 @@ function hideMatchDateInEdit(){
     showErr(msg);
   });
 })()
+
+
+function saveLastRoute(route, extra){
+  try{
+    var obj = extra || {};
+    obj.route = route;
+    obj.ts = Date.now();
+    localStorage.setItem("nsk_last_route", JSON.stringify(obj));
+  }catch(e){}
+}
+function loadLastRoute(){
+  try{
+    var s = localStorage.getItem("nsk_last_route");
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
 
 // ---- globals used by multiple handlers (must exist on window) ----
 window.isPoolCompleted = function(poolId){
@@ -1793,7 +1810,8 @@ function finishPool(){
       Storage.savePools(pools);
     }
     try{ UI.renderPoolList(); }catch(e){}
-    try{ if(Actions && Actions.showHome) Actions.showHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
+    try{ if(Actions && Actions.showHome) if(!restoreLastRouteOnLoad()) Actions.showHome();
+else if(typeof goHome==="function") goHome(); }catch(e){}
 
     finishingPool = false;
   });
@@ -2055,6 +2073,44 @@ document.addEventListener("change", function(e){
 });
 
 
+
+
+function restoreLastRouteOnLoad(){
+  var r = loadLastRoute();
+  if(!r || !r.route) return false;
+
+  try{
+    if(r.poolId) Storage.setCurrentPool(r.poolId);
+    if(r.team) Storage.setCurrentTeam(r.team);
+  }catch(e){}
+
+  try{
+    if(r.route==="run"){
+      Actions.showRun();
+      return true;
+    }
+    if(r.route==="edit"){
+      Actions.showEdit();
+      return true;
+    }
+    if(r.route==="teamSelect"){
+      try{
+        App.state.pendingPoolId = r.pendingPoolId || "";
+        App.state.teamSelectTarget = (r.target==="edit") ? "edit" : "run";
+        App.state.readOnly = !!r.readOnly;
+      }catch(e){}
+      Actions.openTeamSelect();
+      return true;
+    }
+    if(r.route==="home"){
+      Actions.showHome();
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2078,7 +2134,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 2.0</div>
+<div class="app-version">V 2,1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
