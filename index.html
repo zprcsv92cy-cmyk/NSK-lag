@@ -768,6 +768,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 <script>
 
 
+
 // ---- diagnostics: show JS errors on screen ----
 (function(){
   function showErr(msg){
@@ -791,7 +792,35 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     var msg = "Promise-fel: " + (e && e.reason ? (e.reason.message||String(e.reason)) : "okänt");
     showErr(msg);
   });
-})();
+})()
+
+// ---- globals used by multiple handlers (must exist on window) ----
+window.isPoolCompleted = function(poolId){
+  var pools = (window.Storage && Storage.loadPools) ? (Storage.loadPools() || []) : [];
+  for(var i=0;i<pools.length;i++){
+    var p=pools[i];
+    if(p && p.id===poolId) return !!p.completed;
+  }
+  return false;
+};
+
+window.requireCode2018ForCompletedPool = function(poolId){
+  var pools = (window.Storage && Storage.loadPools) ? (Storage.loadPools() || []) : [];
+  var p=null;
+  for(var i=0;i<pools.length;i++){
+    if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; }
+  }
+  if(!p || !p.completed) return true;
+  var code = prompt("Poolspelet är avslutat. Ange kod:");
+  if(code===null) return false;
+  if(String(code).trim()!=="2018"){
+    alert("Fel kod.");
+    return false;
+  }
+  return true;
+};
+
+;
 
 
 
@@ -1009,13 +1038,13 @@ const Actions = {
     target = target || "run";
     const pid = String(id||"");
     if(!pid) return;
-    const completed = isPoolCompleted(pid);
+    const completed = window.isPoolCompleted(pid);
     if(completed && target!=="edit"){
       // archive: allow opening without code
       App.state.readOnly = true;
     }else{
       App.state.readOnly = false;
-      if(!requireCode2018ForCompletedPool(pid)) return;
+      if(!window.requireCode2018ForCompletedPool(pid)) return;
     }
     App.state.pendingPoolId = pid;
     App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
@@ -1047,7 +1076,7 @@ const Actions = {
   openPoolEdit(id){
     const pid=String(id||"");
     if(!pid) return;
-    if(!requireCode2018ForCompletedPool(pid)) return;
+    if(!window.requireCode2018ForCompletedPool(pid)) return;
     App.state.readOnly = false;
     Storage.setCurrentPool(pid);
     Actions.showEdit();
@@ -1537,30 +1566,8 @@ function finishPool(){
   }
 
 
-function isPoolCompleted(poolId){
-  const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===poolId);
-  return !!(p && p.completed);
-}
 
-function isPoolCompleted(poolId){
-  const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===poolId);
-  return !!(p && p.completed);
-}
 
-function requireCode2018ForCompletedPool(poolId){
-  const pools=Storage.loadPools();
-  const p=pools.find(x=>x&&x.id===poolId);
-  if(!p || !p.completed) return true;
-  const code=prompt("Poolspelet är avslutat. Ange kod för att öppna:");
-  if(code===null) return false;
-  if(String(code).trim()!=="2018"){
-    alert("Fel kod.");
-    return false;
-  }
-  return true;
-}
 
 
   if(!confirm("Avsluta poolspelet? Det markeras som Avslutat på startsidan.")) return;
@@ -1802,6 +1809,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1825,7 +1833,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.9</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
