@@ -837,18 +837,32 @@ const UI = {
       el.style.display = (v===id) ? "block" : "none";
     });
   },
-
   renderPoolList(){
     const wrap=document.getElementById("poolList");
-    const pools=Storage.loadPools().slice().sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
-    if(!pools.length){wrap.innerHTML="<div class='small'>Inga sparade poolspel ännu.</div>"; return;}
+    const pools=Storage.loadPools().slice();
+
+    // Sort: active first, completed last; newest first within groups
+    pools.sort((a,b)=>{
+      const ac=a?.completed ? 1 : 0;
+      const bc=b?.completed ? 1 : 0;
+      if(ac!==bc) return ac-bc;
+      return (b?.updatedAt||b?.createdAt||0) - (a?.updatedAt||a?.createdAt||0);
+    });
+
+    if(!pools.length){
+      wrap.innerHTML="<div class='small'>Inga sparade poolspel ännu.</div>";
+      return;
+    }
+
     wrap.innerHTML=pools.map(p=>{
       const date=escapeHtml(p?.date||"—");
       const place=escapeHtml(p?.place||"—");
-      const done=p?.completed? "<span class='pill' style='margin-left:6px;'><span class="status-completed">Avslutat</span></span>":"";
+      const status = p?.completed
+        ? `<span class="status-completed" style="margin-left:8px;">Avslutat</span>`
+        : `<span class="status-active" style="margin-left:8px;">Aktiv</span>`;
       return `
-        <div class="card poolCard">
-          <div><b>${date}</b> • ${place}${done}</div>
+        <div class="card poolCard ${p?.completed ? "completed" : ""}">
+          <div><b>${date}</b> • ${place} ${status}</div>
           <div class="btnrow" style="margin-top:10px;">
             <button class="startBtn" type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
             <button class="editBtn ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
@@ -857,6 +871,7 @@ const UI = {
         </div>`;
     }).join("");
   },
+
 
   updateEditHeader(){
     const id=Storage.currentPoolId();
