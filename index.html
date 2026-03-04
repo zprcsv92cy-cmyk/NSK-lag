@@ -767,6 +767,33 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 <script>
 
+// ---- diagnostics: show JS errors on screen ----
+(function(){
+  function showErr(msg){
+    try{
+      var b=document.getElementById("jsErrorBanner");
+      var t=document.getElementById("jsErrorText");
+      if(!b||!t) return;
+      t.textContent = msg;
+      b.style.display = "block";
+      b.onclick=function(){
+        try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
+      };
+    }catch(e){}
+  }
+  window.addEventListener("error", function(e){
+    var msg = (e && e.message ? e.message : "Okänt fel");
+    if(e && e.filename) msg += " @ " + e.filename + ":" + (e.lineno||0) + ":" + (e.colno||0);
+    showErr(msg);
+  });
+  window.addEventListener("unhandledrejection", function(e){
+    var msg = "Promise-fel: " + (e && e.reason ? (e.reason.message||String(e.reason)) : "okänt");
+    showErr(msg);
+  });
+})();
+
+
+
 
 
 /*
@@ -842,38 +869,46 @@ const UI = {
     });
   },
   renderPoolList(){
-    const wrap=document.getElementById("poolList");
-    const pools=Storage.loadPools().slice();
+    const el=document.getElementById("poolList");
+    if(!el) return;
+    const pools=Storage.loadPools()||[];
 
-    // Sort: active first, completed last; newest first within groups
-    pools.sort((a,b)=>{
-      const ac=(a && a.completed) ? 1 : 0;
-      const bc=(b && b.completed) ? 1 : 0;
+    // Sort: active first, then completed; newest updated first
+    pools.sort(function(a,b){
+      var ac = (a && a.completed) ? 1 : 0;
+      var bc = (b && b.completed) ? 1 : 0;
       if(ac!==bc) return ac-bc;
-      return ((b && b.updatedAt)||(b && b.createdAt)||0) - ((a && a.updatedAt)||(a && a.createdAt)||0);
+      return (b && b.updatedAt ? b.updatedAt : 0) - (a && a.updatedAt ? a.updatedAt : 0);
     });
 
     if(!pools.length){
-      wrap.innerHTML="<div class='small'>Inga sparade poolspel ännu.</div>";
+      el.innerHTML = "<div class='small'>Inga sparade poolspel ännu.</div>";
       return;
     }
 
-    wrap.innerHTML=pools.map(p=>{
-      const date=escapeHtml((p && p.date)||"—");
-      const place=escapeHtml((p && p.place)||"—");
-      const status = (p && p.completed)
-        ? `<span class="status-completed" style="margin-left:8px;">Avslutat</span>`
-        : `<span class="status-active" style="margin-left:8px;">Aktiv</span>`;
-      return `
-        <div class="card poolCard ${(p && p.completed) ? "completed" : ""}">
-          <div><b>${date}</b> • ${place} ${status}</div>
+    var html="";
+    pools.forEach(function(p){
+      if(!p || !p.id) return;
+      var status = p.completed
+        ? "<span class='status-completed'>Avslutat</span>"
+        : "<span class='status-active'>Aktiv</span>";
+
+      html += `
+        <div class="poolCard ${p.completed ? "completed" : ""}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <b>${escapeHtml(p.date||"—")} • ${escapeHtml(p.place||"—")}</b>
+            ${status}
+          </div>
+          ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}
           <div class="btnrow" style="margin-top:10px;">
-            <button class="startBtn" type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
-            <button class="editBtn ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
-            <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
+            <button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>
+            <button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>
+            <button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>
           </div>
         </div>`;
-    }).join("");
+    });
+
+    el.innerHTML = html;
   },
 
 
@@ -1764,6 +1799,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1787,7 +1823,13 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.1</div>
+
+
+<div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
+  <div style="font-weight:900;margin-bottom:6px;">JavaScript-fel (klicka för att kopiera)</div>
+  <div id="jsErrorText" style="opacity:.95;word-break:break-word;"></div>
+</div>
 
 </body>
 </html>
