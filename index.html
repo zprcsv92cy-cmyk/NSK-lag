@@ -755,6 +755,15 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
       <div class="row">
         <div><label>Datum</label><input id="poolDate" type="date"/></div>
         <div><label>Ort</label><input id="poolPlace" placeholder="Ort"/></div>
+
+    <div>
+      <label>Antal lag</label>
+      <select id="teamCount">
+        <option value="1">1 lag</option>
+        <option value="2" selected>2 lag</option>
+        <option value="3">3 lag</option>
+      </select>
+    </div>
       </div>
       <div class="btnrow" style="margin-top:12px;">
         <button type="button" onclick="saveNewPool()">Spara</button>
@@ -824,6 +833,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
 
 
 
@@ -1432,24 +1442,44 @@ const Actions = {
   },
   closeNewPool(){ document.getElementById("newPoolModal").style.display="none"; },
   saveNewPool(){
-    const d=(document.getElementById("poolDate").value||"").trim();
+    const date=(document.getElementById("poolDate").value||"").trim();
     const place=(document.getElementById("poolPlace").value||"").trim();
-    const msg=document.getElementById("poolMsg");
-    if(!d||!place){msg.innerHTML="<span class='error'>✖ Fyll i datum och ort.</span>"; return;}
-    localStorage.setItem("nsk_last_place", place);
-    const id=Date.now().toString(36);
+    if(!date){ alert("Välj datum."); return; }
+    if(!place){ alert("Skriv ort."); return; }
+
+    // antal lag
+    let n=parseInt((document.getElementById("teamCount")||{}).value||"2",10);
+    if(!n||n<1) n=1;
+    if(n>3) n=3;
+
     const pools=Storage.loadPools();
-    pools.push({id,date:d,place,createdAt:Date.now(),updatedAt:Date.now(),completed:false});
+    const id=Storage.newId();
+    const newPool={
+      id:id,
+      date:date,
+      place:place,
+      createdAt:Date.now(),
+      updatedAt:Date.now(),
+      completed:false,
+      teamStatus:{},
+      teams: []
+    };
+
+    for(let t=1;t<=n;t++){ newPool.teams.push(String(t)); }
+    ensureTeamStatus(newPool);
+
+    pools.push(newPool);
     Storage.savePools(pools);
-    Actions.closeNewPool();
-    // After creating pool: select participating teams (multi-select)
+
+    // close modal and go directly to Edit for Lag 1
     App.state.pendingPoolId = id;
-    App.state.teamSelectTarget = "edit";
+    Storage.setCurrentPool(id);
+    Storage.setCurrentTeam("1");
     App.state.readOnly = false;
-    App.state.teamSetupMode = true;
-    App.state.teamSetupSelected = [];
-    Actions.openTeamSelect();
-},
+    App.state.teamSelectTarget = "edit";
+    Actions.closeNewPool();
+    Actions.showEdit();
+  },
 
   deletePool(id){
     if(!confirm("Ta bort poolspel och all sparad data?")) return;
@@ -2435,6 +2465,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2458,7 +2489,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
