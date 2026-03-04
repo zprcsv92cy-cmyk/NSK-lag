@@ -796,6 +796,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+let finishingPool = false;
+
 
 
 
@@ -1653,6 +1655,18 @@ function markPoolActiveIfNeeded(poolId){
 
 
 function finishPool(){
+  if(finishingPool) return;
+  finishingPool = true;
+
+  const btn = document.querySelector(".finishPoolFooter button");
+  if(btn) btn.disabled = true;
+
+  if(!confirm("Avsluta poolspelet?")){
+    finishingPool = false;
+    if(btn) btn.disabled = false;
+    return;
+  }
+
   if(!confirm("Avsluta poolspelet?")){
     return;
   }
@@ -1682,6 +1696,8 @@ function finishPool(){
 
     p.updatedAt=Date.now();
     Storage.savePools(pools);
+  finishingPool = false;
+
   }
   UI.renderPoolList();
   alert("Poolspelet är markerat som Avslutad.");
@@ -1922,6 +1938,7 @@ window.addEventListener("load", init);
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -1945,7 +1962,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
