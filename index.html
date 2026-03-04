@@ -459,6 +459,26 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   opacity:.9;
 }
 
+
+/* Fix: done (avbockad) rad ska inte bli ljus/vit i mörkt tema */
+#runView table td,
+#runView table th,
+#editView table td,
+#editView table th{
+  background: transparent;
+}
+
+#runView .doneRow td,
+#editView .doneRow td{
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(245,245,247,.9) !important;
+}
+
+#runView .doneRow td.chkCell,
+#editView .doneRow td.chkCell{
+  background: transparent !important;
+}
+
 </style>
 </head>
 <body>
