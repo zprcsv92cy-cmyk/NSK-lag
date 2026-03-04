@@ -517,6 +517,13 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   font-size:12px;
 }
 
+
+/* Read-only (Arkiv) checkboxes look */
+.chk:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
 </style>
 </head>
 <body>
@@ -843,8 +850,8 @@ const UI = {
         <div class="card poolCard">
           <div><b>${date}</b> • ${place}${done}</div>
           <div class="btnrow" style="margin-top:10px;">
-            <button type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
-            <button class="ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
+            <button class="startBtn" type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
+            <button class="editBtn ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
             <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
           </div>
         </div>`;
@@ -863,7 +870,7 @@ const UI = {
     const pools=Storage.loadPools();
     const p=pools.find(x=>x&&x.id===id);
     const team=document.getElementById("teamSelect").value||"1";
-    document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}` : `Lag ${team}`;
+    document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
   }
 };
 
@@ -946,7 +953,14 @@ const Actions = {
   startPoolRun(id, target="run"){
     const pid = String(id||"");
     if(!pid) return;
-    if(!requireCode2018ForCompletedPool(pid)) return;
+    const completed = isPoolCompleted(pid);
+    if(completed && target!=="edit"){
+      // archive: allow opening without code
+      App.state.readOnly = true;
+    }else{
+      App.state.readOnly = false;
+      if(!requireCode2018ForCompletedPool(pid)) return;
+    }
     App.state.pendingPoolId = pid;
     App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
     Actions.openTeamSelect();
@@ -956,6 +970,7 @@ const Actions = {
     if(!id){ Actions.goHome(); return; }
     App.state.pendingPoolId = id;
     App.state.teamSelectTarget = "run";
+    // keep current readOnly state
     Actions.openTeamSelect();
   },
   chooseTeam(teamNo){
@@ -965,6 +980,7 @@ const Actions = {
     document.getElementById("teamSelect").value = String(teamNo||"1");
     // New pool -> go directly to edit. Otherwise keep current behavior.
     if(App.state.teamSelectTarget==="edit"){
+      App.state.readOnly = false;
       Actions.showEdit();
     }else{
       Actions.showRun();
@@ -976,6 +992,7 @@ const Actions = {
     const pid=String(id||"");
     if(!pid) return;
     if(!requireCode2018ForCompletedPool(pid)) return;
+    App.state.readOnly = false;
     Storage.setCurrentPool(pid);
     Actions.showEdit();
   },
@@ -1207,6 +1224,7 @@ function shiftDoneKey(teamNo,matchNo,idx){return `${Storage.poolPrefix()}shiftDo
 function isShiftDone(teamNo,matchNo,idx){return localStorage.getItem(shiftDoneKey(teamNo,matchNo,idx))==="1";}
 function setShiftDone(teamNo,matchNo,idx,done){localStorage.setItem(shiftDoneKey(teamNo,matchNo,idx), done?"1":"0"); Storage.touchPoolUpdated();}
 function toggleShiftDone(teamNo,matchNo,idx,done){
+  if(App.state.readOnly) return;
   setShiftDone(teamNo,matchNo,idx,done);
   const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
   if(row) row.classList.toggle("doneRow", !!done);
@@ -1419,7 +1437,7 @@ function renderRunAll(){
   const pools=Storage.loadPools();
   const p=pools.find(x=>x&&x.id===id);
   const completed=!!p?.completed;
-  if(html && !completed && allShiftsDoneForCurrentTeam()){
+  if(html && !completed && !App.state.readOnly && allShiftsDoneForCurrentTeam()){
     html += `
       <div class="finishPoolFooter">
         <button type="button" onclick="finishPool()">Avsluta poolspel</button>
@@ -1461,6 +1479,12 @@ function finishPool(){
     return;
   }
 
+
+function isPoolCompleted(poolId){
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===poolId);
+  return !!p?.completed;
+}
 
 function requireCode2018ForCompletedPool(poolId){
   const pools=Storage.loadPools();
@@ -1512,8 +1536,12 @@ function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
         <tbody>
           ${shiftTimes.map((t,i)=>{const done=isShiftDone(teamNo,matchNo,i); return `
             <tr id="shiftRow_${teamNo}_${matchNo}_${i}" class="${done?"doneRow":""}">
-              <td class="chkCell"><input class="chk" type="checkbox" ${done?"checked":""}
-                onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked); renderRunAll();"></td>
+              <td class="chkCell">${
+              App.state.readOnly
+                ? `<input class="chk" type="checkbox" ${done?"checked":""} disabled>`
+                : `<input class="chk" type="checkbox" ${done?"checked":""}
+                    onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked); renderRunAll();">`
+            }</td>
               <td>${i+1}</td><td class="nowrap">${escapeHtml(t)}</td><td>${escapeHtml(lineupToShortText(lineups[i]||[]))}</td>
             </tr>`;}).join("")}
         </tbody>
