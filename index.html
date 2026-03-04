@@ -424,13 +424,14 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 }
 
 
-/* Hide coach text only in team select view */
-#teamSelectModal .small{
+
+/* Team select: hide coach ONLY when creating a new pool (we add .hide-coach to the modal) */
+#teamSelectModal.hide-coach .small{
   display:none;
 }
 
-/* Improve team button layout in team select view */
-#teamSelectModal .row button{
+/* Team select: big centered team cards ONLY in hide-coach mode */
+#teamSelectModal.hide-coach .row button{
   min-height:80px;
   font-size:18px;
   display:flex;
@@ -848,7 +849,9 @@ const Actions = {
       const hint=document.getElementById("coachHint"+t);
       if(hint) hint.textContent = "Tränare: "+txt;
     }
-    document.getElementById("teamSelectModal").style.display="block";
+    const modal=document.getElementById("teamSelectModal");
+    modal.classList.toggle("hide-coach", App.state.teamSelectTarget==="edit");
+    modal.style.display="block";
   },
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
@@ -1558,7 +1561,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.3</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
