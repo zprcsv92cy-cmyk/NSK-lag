@@ -1315,9 +1315,14 @@ function init(){
   });
 
   // edit listeners
+  
   ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
+    if(!el) return;
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
+    el.addEventListener("input", ()=>{saveState();});
+  });
+
     el.addEventListener("input", ()=>{saveState();});
   });
   document.getElementById("goalie").addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
