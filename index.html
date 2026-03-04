@@ -409,6 +409,20 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   filter:brightness(.98);
 }
 
+
+/* Highlight selected team button */
+#teamSelectModal .row button.selected-team{
+  box-shadow:
+    0 0 0 3px rgba(255,255,255,.35),
+    0 10px 24px rgba(0,0,0,.45);
+  transform: scale(1.02);
+}
+
+/* quick press feedback */
+#teamSelectModal .row button:active{
+  transform: scale(0.98);
+}
+
 </style>
 </head>
 <body>
@@ -1519,7 +1533,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
