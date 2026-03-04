@@ -605,6 +605,10 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
+      <div id="finishPoolWrap" class="small" style="margin-top:8px;display:none;">
+        <span class="pill">Alla byten avbockade</span>
+        <button type="button" onclick="finishPool()" style="margin-left:8px;">Avsluta poolspel</button>
+      </div>
     </div>
     <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
@@ -865,6 +869,18 @@ const Actions = {
 
   deletePool(id){
     if(!confirm("Ta bort poolspel och all sparad data?")) return;
+
+    // If the pool is marked as completed, require code 2018 to delete
+    const poolsBefore=Storage.loadPools();
+    const poolObj=poolsBefore.find(p=>p && p.id===id);
+    if(poolObj && poolObj.completed){
+      const code=prompt("Poolspelet är avslutat. Ange kod för att ta bort:");
+      if(code===null) return;
+      if(String(code).trim()!=="2018"){
+        alert("Fel kod. Poolspelet kan inte tas bort.");
+        return;
+      }
+    }
     const prefix=Storage.poolPrefix(id);
     const keys=[];
     for(let i=0;i<localStorage.length;i++){
@@ -1358,7 +1374,68 @@ function renderRunAll(){
     html += renderRunMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
   document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+  updateFinishPoolUI();
 }
+
+function allShiftsDoneForCurrentTeam(){
+  if(!Storage.currentPoolId()) return false;
+  const teamNo=document.getElementById("teamSelect").value||"1";
+  const matchCount=loadMatchCount();
+  if(!matchCount || matchCount<1) return false;
+
+  for(let m=1;m<=matchCount;m++){
+    const st=loadStateFor(teamNo,m);
+    const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
+    const periodMin=parseInt(st.periodMin,10)||15;
+    const shiftSec=parseInt(st.shiftSec,10)||90;
+    const shiftTimes=buildShiftTimes(periodMin*periodsCount, shiftSec);
+
+    if(!shiftTimes.length) return false;
+
+    for(let i=0;i<shiftTimes.length;i++){
+      if(!isShiftDone(teamNo,m,i)) return false;
+    }
+  }
+  return true;
+}
+
+function updateFinishPoolUI(){
+  const wrap=document.getElementById("finishPoolWrap");
+  if(!wrap) return;
+
+  // Already completed? hide UI.
+  const id=Storage.currentPoolId();
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===id);
+  const completed=!!p?.completed;
+
+  const done = allShiftsDoneForCurrentTeam();
+  wrap.style.display = (!completed && done) ? "block" : "none";
+}
+
+function finishPool(){
+  const id=Storage.currentPoolId();
+  if(!id) return;
+
+  if(!allShiftsDoneForCurrentTeam()){
+    alert("Alla byten måste vara avbockade innan poolspelet kan avslutas.");
+    return;
+  }
+
+  if(!confirm("Avsluta poolspelet? Det markeras som Klar på startsidan.")) return;
+
+  const pools=Storage.loadPools();
+  const p=pools.find(x=>x&&x.id===id);
+  if(p){
+    p.completed=true;
+    p.updatedAt=Date.now();
+    Storage.savePools(pools);
+  }
+  updateFinishPoolUI();
+  UI.renderPoolList();
+  alert("Poolspelet är markerat som Klar.");
+}
+
 function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
   const goalie=st.goalie||"—";
   const coaches=loadTeamCoaches(); const coachText=coaches.length?coaches.join(", "):"—";
@@ -1599,7 +1676,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 </body>
 </html>
