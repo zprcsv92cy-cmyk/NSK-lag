@@ -832,6 +832,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -943,6 +944,23 @@ function loadLastRoute(){
     return s ? JSON.parse(s) : null;
   }catch(e){ return null; }
 }
+
+function persistCurrentView(){
+  try{
+    // Determine which main view is visible
+    var view="home";
+    var ids=["homeView","runView","editView"];
+    for(var i=0;i<ids.length;i++){
+      var el=document.getElementById(ids[i]);
+      if(el && el.style.display!=="none"){
+        view = (ids[i]==="homeView") ? "home" : (ids[i]==="runView" ? "run" : "edit");
+      }
+    }
+    saveLastRoute(view, { poolId: Storage.currentPoolId(), team: (Storage.currentTeam ? Storage.currentTeam() : null) });
+  }catch(e){}
+}
+
+
 
 // ---- globals used by multiple handlers (must exist on window) ----
 window.isPoolCompleted = function(poolId){
@@ -2082,16 +2100,18 @@ function restoreLastRouteOnLoad(){
 
   try{
     if(r.poolId) Storage.setCurrentPool(r.poolId);
-    if(r.team) Storage.setCurrentTeam(r.team);
+    if(r.team && Storage.setCurrentTeam) Storage.setCurrentTeam(r.team);
   }catch(e){}
 
   try{
     if(r.route==="run"){
-      Actions.showRun();
+      UI.show("run");
+      renderRunAll();
       return true;
     }
     if(r.route==="edit"){
-      Actions.showEdit();
+      UI.show("edit");
+      renderEditAll();
       return true;
     }
     if(r.route==="teamSelect"){
@@ -2100,11 +2120,13 @@ function restoreLastRouteOnLoad(){
         App.state.teamSelectTarget = (r.target==="edit") ? "edit" : "run";
         App.state.readOnly = !!r.readOnly;
       }catch(e){}
-      Actions.openTeamSelect();
+      UI.openModal("teamSelectModal");
+      renderTeamSelectButtons();
       return true;
     }
     if(r.route==="home"){
-      Actions.showHome();
+      UI.show("home");
+      UI.renderPoolList();
       return true;
     }
   }catch(e){}
@@ -2112,6 +2134,11 @@ function restoreLastRouteOnLoad(){
 }
 
 
+
+
+window.addEventListener("beforeunload", function(){
+  try{ persistCurrentView(); }catch(e){}
+});
 
 </script>
 <script>
@@ -2136,7 +2163,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 2.0</div>
+<div class="app-version">V 1.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
