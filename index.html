@@ -4,7 +4,7 @@
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#111111">
+<meta name="theme-color" content="#b11226">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NSK Lag">
@@ -13,9 +13,28 @@
 <title>NSK Lag</title>
 <style>
 :root{
-  --bg:#fff;--card:#fff;--text:#111;--muted:#666;--line:#e7e7e7;
-  --btn:#111;--btnText:#fff;--ghost:#f4f4f4;--ghostText:#111;
-  --danger:#b00020;--ok:#0b7a0b;--radius:14px;
+  /* Bas */
+  --bg:#0f0f10;
+  --card:#17181b;
+  --text:#f5f5f7;
+  --muted:#a7a7ad;
+  --line:#2a2b30;
+  --radius:14px;
+
+  /* NSK */
+  --nsk-red:#b11226;
+  --nsk-darkred:#7a0c18;
+  --nsk-metal:#c9c9c9;
+  --nsk-black:#0f0f10;
+
+  /* UI */
+  --btn:var(--nsk-red);
+  --btnText:#fff;
+  --ghost:#22232a;
+  --ghostText:#fff;
+
+  --danger:#ff3b3b;
+  --ok:#00b050;
 }
 *{box-sizing:border-box}
 body{margin:14px;font-family:-apple-system,system-ui,Segoe UI,Roboto,Arial;color:var(--text);background:var(--bg)}
@@ -77,6 +96,164 @@ th{font-size:12px;color:var(--muted);font-weight:800}
   .print-card{border:1px solid var(--line)!important;padding:12px!important;margin:10px 0!important;border-radius:12px!important}
   .chkCell,.chkCell *{display:none!important}
 }
+
+/* =========================
+   NSK PRO THEME (endast design)
+   ========================= */
+
+/* Bakgrund (mörk NSK) */
+body{
+  background: radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.20), transparent 55%),
+              radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.12), transparent 55%),
+              var(--bg);
+}
+
+/* NSK watermark i mitten */
+body{
+  position: relative;
+  overflow-x: hidden;
+}
+body::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  background: url("./nsk-wallpaper-portrait.png") no-repeat center;
+  background-size: 700px;
+  opacity: 0.30;
+  pointer-events: none;
+  z-index: -1;
+}
+
+/* =========================
+   NSK HEADER BANNER
+   ========================= */
+.nsk-top{
+  position:relative;
+  padding:14px 16px;
+  border-radius:16px;
+  background: linear-gradient(90deg,#7a0c18,#b11226 40%,#7a0c18);
+  border:2px solid rgba(0,0,0,.6);
+  box-shadow:
+    inset 0 2px 6px rgba(255,255,255,.15),
+    0 8px 25px rgba(0,0,0,.4);
+  margin-bottom:14px;
+}
+.nsk-top::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background: linear-gradient(120deg, transparent 20%, rgba(255,255,255,.25), transparent 80%);
+  opacity:.25;
+  pointer-events:none;
+}
+.nsk-logo{
+  width:60px;
+  height:60px;
+  border-radius:14px;
+  background:#000;
+  border:2px solid #fff;
+  box-shadow:
+    0 0 0 3px rgba(177,18,38,.8),
+    0 6px 16px rgba(0,0,0,.6);
+}
+.nsk-top h1{
+  color:#fff;
+  font-weight:900;
+  letter-spacing:.5px;
+}
+.nsk-top .small{
+  color:rgba(255,255,255,.85);
+}
+
+/* Kort: “metall”-känsla */
+.card{
+  border:1px solid var(--line);
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)),
+    var(--card);
+  box-shadow: 0 10px 26px rgba(0,0,0,.35);
+}
+
+/* Inputs/selects */
+select,input{
+  background: rgba(255,255,255,.04);
+  border:1px solid var(--line);
+  color: var(--text);
+}
+select:focus,input:focus{
+  border-color: rgba(177,18,38,.8);
+  box-shadow: 0 0 0 3px rgba(177,18,38,.18);
+}
+
+/* 1) NSK glow buttons */
+button{
+  border:1px solid rgba(122,12,24,.9);
+  background: linear-gradient(180deg, #d41f34, #7a0c18);
+  color:#fff;
+  font-weight:900;
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.30),
+    0 0 0 1px rgba(0,0,0,.35),
+    0 0 18px rgba(177,18,38,.25);
+}
+button.ghost{
+  background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.02));
+  color: var(--ghostText);
+  border:1px solid var(--line);
+  box-shadow:none;
+}
+button:hover{ filter:brightness(1.05); }
+button:active{ filter:brightness(.98); transform: translateY(1px); }
+
+/* Pills & status */
+.pill{
+  background: rgba(255,255,255,.06);
+  border:1px solid var(--line);
+  color: var(--muted);
+}
+.ok{ color:#35d07f; }
+.error{ color:#ff5a5a; }
+
+/* Checklist checkbox accent */
+.chk{ accent-color: var(--nsk-red); }
+
+/* 2) Matchblad-kort */
+.print-card{
+  border:1px solid rgba(255,255,255,.08) !important;
+  border-left:5px solid rgba(177,18,38,.9) !important;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)),
+    rgba(23,24,27,.92) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.45);
+}
+.print-card table{
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+  overflow:hidden;
+}
+.print-card thead th{ background: rgba(0,0,0,.25); }
+.print-card tbody tr:hover td{ background: rgba(177,18,38,.07); }
+
+/* 3) Home/dashboard-känsla */
+.homeActions button{
+  border-radius:16px;
+  padding:16px 16px;
+}
+.poolCard{
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0)),
+    rgba(23,24,27,.92);
+}
+.poolCard b{ color:#fff; }
+
+/* Print: håll det läsbart */
+@media print{
+  body::before{ display:none!important; }
+  body{ background:#fff!important; color:#111!important; }
+  .print-card{ background:#fff!important; }
+}
+
 </style>
 </head>
 <body>
