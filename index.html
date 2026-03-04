@@ -121,7 +121,7 @@ body::before{
   background-size: 700px;
   opacity: 0.30;
   pointer-events: none;
-  z-index: -1;
+  z-index: -10;
 }
 
 /* =========================
@@ -350,6 +350,13 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   #runView .small{
     font-size:14px;
   }
+}
+
+
+/* Safety: ensure UI is always above wallpaper */
+#homeView,#editView,#runView{
+  position:relative;
+  z-index:1;
 }
 
 </style>
