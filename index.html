@@ -767,6 +767,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 <script>
 
+
 /*
   ============================
   LÄTTARE ATT REDIGERA
@@ -1360,7 +1361,7 @@ function makeLineupsForMatch(st, globalCounts, shiftTimes){
     }
     rec(0,k,[]);
     candidates.sort((a,b)=>b.score-a.score);
-    const best=candidates[0]?.lineup||[];
+    const best=(candidates[0] && candidates[0].lineup)||[];
     for(const n of best){const key=n.toLowerCase(); globalCounts[key]=(globalCounts[key]||0)+1;}
     lineups.push(best); prev=best;
   }
@@ -1758,6 +1759,7 @@ function init(){
   Actions.goHome();
 }
 window.addEventListener("load", init);
+
 
 </script>
 <script>
