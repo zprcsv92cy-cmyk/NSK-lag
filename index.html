@@ -840,6 +840,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1308,11 +1309,15 @@ function continueTeamSetup(){
     p.updatedAt = Date.now();
     Storage.savePools(pools);
 
+    // Switch to normal team picker (single-select) to open Edit for a team
     App.state.teamSetupMode = false;
     App.state.teamSetupSelected = null;
+    App.state.teamSelectTarget = "edit";
+    App.state.readOnly = false;
     refreshTeamSelectUI();
   }catch(e){}
 }
+
 
 function getCurrentPoolDate(){
   var id = Storage.currentPoolId();
@@ -1437,8 +1442,14 @@ const Actions = {
     pools.push({id,date:d,place,createdAt:Date.now(),updatedAt:Date.now(),completed:false});
     Storage.savePools(pools);
     Actions.closeNewPool();
-    Actions.startPoolRun(id, "edit");
-  },
+    // After creating pool: select participating teams (multi-select)
+    App.state.pendingPoolId = id;
+    App.state.teamSelectTarget = "edit";
+    App.state.readOnly = false;
+    App.state.teamSetupMode = true;
+    App.state.teamSetupSelected = [];
+    Actions.openTeamSelect();
+},
 
   deletePool(id){
     if(!confirm("Ta bort poolspel och all sparad data?")) return;
@@ -2423,6 +2434,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2446,7 +2458,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
