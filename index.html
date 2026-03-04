@@ -572,6 +572,14 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 #nskConfirmModal .nskConfirmBtns{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
 #nskConfirmModal .nskConfirmBtns button{ min-width:110px; }
 
+
+/* Clear disabled look for finish button */
+.finishPoolFooter button:disabled{
+  opacity:.35 !important;
+  cursor:not-allowed !important;
+  filter: grayscale(.4);
+}
+
 </style>
 </head>
 <body>
@@ -814,6 +822,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
+
 
 
 function nskConfirm(message, title){
@@ -1639,7 +1649,7 @@ function renderEditOutput(){
     const doneNow = allShiftsDoneForCurrentTeam();
     html += `
       <div class="finishPoolFooter">
-        <button type="button" onclick="finishPool()">Avsluta poolspel</button>
+        <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>Avsluta poolspel</button>
       </div>`;
   }
 
@@ -1674,7 +1684,7 @@ function renderRunAll(){
     const doneNow = allShiftsDoneForCurrentTeam();
     html += `
       <div class="finishPoolFooter">
-        <button type="button" onclick="finishPool()">Avsluta poolspel</button>
+        <button type="button" onclick="finishPool()" ${doneNow ? "" : "disabled"}>Avsluta poolspel</button>
       </div>`;
   }
 document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
@@ -1760,7 +1770,7 @@ function finishPool(){
       Storage.savePools(pools);
     }
     try{ UI.renderPoolList(); }catch(e){}
-    try{ Actions.showHome && Actions.showHome(); }catch(e){}
+    try{ if(Actions && Actions.showHome) Actions.showHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
 
     finishingPool = false;
   });
@@ -2004,6 +2014,8 @@ window.addEventListener("load", init);
 
 
 
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2027,7 +2039,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.3</div>
+<div class="app-version">V 1.2</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
