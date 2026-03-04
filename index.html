@@ -834,6 +834,8 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -984,23 +986,19 @@ function persistCurrentView(){
 
 
 // ---- globals used by multiple handlers (must exist on window) ----
-window.isPoolCompleted = function(poolId){
-  var pools = (window.Storage && Storage.loadPools) ? (Storage.loadPools() || []) : [];
-  for(var i=0;i<pools.length;i++){
-    var p=pools[i];
-    if(p && p.id===poolId) return !!p.completed;
-  }
-  return false;
-};
+window.isPoolCompleted = function(poolId){ return isPoolFullyCompleted(poolId); };
 
 window.requireCode2018ForCompletedPool = function(poolId){
-  var pools = (window.Storage && Storage.loadPools) ? (Storage.loadPools() || []) : [];
-  var p=null;
-  for(var i=0;i<pools.length;i++){
-    if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; }
+  var p = getPoolById(poolId);
+  if(!p) return true;
+  ensureTeamStatus(p);
+  var keys=getTeamKeys();
+  var anyCompleted=false;
+  for(var i=0;i<keys.length;i++){
+    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed){ anyCompleted=true; break; }
   }
-  if(!p || !p.completed) return true;
-  var code = prompt("Poolspelet är avslutat. Ange kod:");
+  if(!anyCompleted) return true;
+  var code = prompt("Poolspelet har avslutade lag. Ange kod:");
   if(code===null) return false;
   if(String(code).trim()!=="2018"){
     alert("Fel kod.");
@@ -1077,6 +1075,92 @@ const Storage = {
   }
 };
 
+
+// ---- per-team completion helpers (supports any number of teams) ----
+function getTeamKeys(){
+  try{
+    var sel=document.getElementById("teamSelect");
+    if(sel && sel.options && sel.options.length){
+      var keys=[];
+      for(var i=0;i<sel.options.length;i++){
+        var v=String(sel.options[i].value||"").trim();
+        if(v) keys.push(v);
+      }
+      // unique
+      var uniq=[];
+      for(var j=0;j<keys.length;j++){
+        if(uniq.indexOf(keys[j])===-1) uniq.push(keys[j]);
+      }
+      return uniq.length?uniq:["1","2","3"];
+    }
+  }catch(e){}
+  return ["1","2","3"];
+}
+
+function ensureTeamStatus(p){
+  if(!p) return p;
+  if(!p.teamStatus) p.teamStatus = {};
+  var keys=getTeamKeys();
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
+    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = !!p.teamStatus[k].completed;
+  }
+  return p;
+}
+
+function getPoolById(poolId){
+  var pools=Storage.loadPools()||[];
+  for(var i=0;i<pools.length;i++){
+    if(pools[i] && pools[i].id===poolId){
+      ensureTeamStatus(pools[i]);
+      return pools[i];
+    }
+  }
+  return null;
+}
+
+function isTeamCompleted(poolId, teamNo){
+  var p=getPoolById(poolId);
+  if(!p) return false;
+  var k=String(teamNo||"");
+  return !!(p.teamStatus[k] && p.teamStatus[k].completed);
+}
+
+function isPoolFullyCompleted(poolId){
+  var p=getPoolById(poolId);
+  if(!p) return false;
+  ensureTeamStatus(p);
+  var keys=getTeamKeys();
+  for(var i=0;i<keys.length;i++){
+    if(!(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed)) return false;
+  }
+  return true;
+}
+
+function setTeamCompleted(poolId, teamNo, completed){
+  var pools=Storage.loadPools()||[];
+  for(var i=0;i<pools.length;i++){
+    var p=pools[i];
+    if(p && p.id===poolId){
+      ensureTeamStatus(p);
+      var k=String(teamNo||"");
+      if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
+      p.teamStatus[k].completed = !!completed;
+      p.teamStatus[k].completedAt = completed ? Date.now() : null;
+
+      // pool is completed only when ALL teams are completed
+      p.completed = isPoolFullyCompleted(poolId);
+      p.updatedAt = Date.now();
+      Storage.savePools(pools);
+      return;
+    }
+  }
+}
+
+
+
+
 function getCurrentPoolDate(){
   var id = Storage.currentPoolId();
   if(!id) return "—";
@@ -1121,9 +1205,18 @@ const UI = {
     var html="";
     pools.forEach(function(p){
       if(!p || !p.id) return;
-      var status = p.completed
+      ensureTeamStatus(p);
+      var fully = isPoolFullyCompleted(p.id);
+      var status = fully
         ? "<span class='status-completed'>Avslutad</span>"
         : "<span class='status-active'>Aktiv</span>";
+      var keys=getTeamKeys();
+      var parts=[];
+      for(var ti=0;ti<keys.length;ti++){
+        var k=keys[ti];
+        parts.push(`Lag ${k}: ${p.teamStatus[k] && p.teamStatus[k].completed ? "Avslutad" : "Aktiv"}`);
+      }
+      var teamLine = `<div class="small">${parts.join(" • ")}</div>`;
 
       html += `
         <div class="poolCard ${p.completed ? "completed" : ""}">
@@ -1131,7 +1224,7 @@ const UI = {
             <b>${escapeHtml(p.date||"—")} • ${escapeHtml(p.place||"—")}</b>
             ${status}
           </div>
-          ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}
+          ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
             <button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>
             <button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>
@@ -1265,6 +1358,7 @@ const Actions = {
     if(!App.state.pendingPoolId) return;
     Storage.setCurrentPool(App.state.pendingPoolId);
     document.getElementById("teamSelect").value = String(teamNo||"1");
+    App.state.readOnly = (App.state.teamSelectTarget!=="edit") && isTeamCompleted(App.state.pendingPoolId, teamNo);
     // New pool -> go directly to edit. Otherwise keep current behavior.
     if(App.state.teamSelectTarget==="edit"){
       App.state.readOnly = false;
@@ -1818,7 +1912,7 @@ function finishPool(){
   var btn = document.querySelector(".finishPoolFooter button");
   if(btn) btn.disabled = true;
 
-  nskConfirm("Avsluta poolspelet?", "Avsluta").then(function(ok){
+  nskConfirm("Avsluta poolspelet för detta lag?", "Avsluta").then(function(ok){
     if(!ok){
       finishingPool = false;
       if(btn) btn.disabled = false;
@@ -1826,32 +1920,28 @@ function finishPool(){
     }
 
     var id = Storage.currentPoolId();
-    if(!id){
+    var team = document.getElementById("teamSelect").value || "1";
+    if(!id || !team){
       finishingPool = false;
       if(btn) btn.disabled = false;
       return;
     }
 
     if(!allShiftsDoneForCurrentTeam()){
-      alert("Alla byten måste vara avbockade innan poolspelet kan avslutas.");
+      alert("Alla byten måste vara avbockade innan laget kan avslutas.");
       finishingPool = false;
       if(btn) btn.disabled = false;
       return;
     }
 
-    var pools = Storage.loadPools() || [];
-    var p = null;
-    for(var i=0;i<pools.length;i++){
-      if(pools[i] && pools[i].id===id){ p=pools[i]; break; }
-    }
-    if(p){
-      p.completed = true;
-      p.updatedAt = Date.now();
-      Storage.savePools(pools);
-    }
+    setTeamCompleted(id, team, true);
+
+    // If the other team is not finished, keep pool active overall
     try{ UI.renderPoolList(); }catch(e){}
-    try{ if(Actions && Actions.showHome) if(!restoreLastRouteOnLoad()) Actions.showHome();
-else if(typeof goHome==="function") goHome(); }catch(e){}
+    try{
+      if(Actions && Actions.showHome) Actions.showHome();
+      else if(typeof goHome==="function") goHome();
+    }catch(e){}
 
     finishingPool = false;
   });
@@ -2162,6 +2252,21 @@ window.addEventListener("beforeunload", function(){
 });
 
 
+
+function markTeamActiveIfNeeded(){
+  try{
+    var id=Storage.currentPoolId();
+    var team=document.getElementById("teamSelect").value || "1";
+    if(!id || !team) return;
+    if(!isTeamCompleted(id, team)) return;
+    if(!allShiftsDoneForCurrentTeam()){
+      setTeamCompleted(id, team, false);
+      try{ UI.renderPoolList(); }catch(e){}
+    }
+  }catch(e){}
+}
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2185,7 +2290,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.2</div>
+<div class="app-version">V 1.4</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
