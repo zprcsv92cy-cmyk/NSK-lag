@@ -835,6 +835,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 <script>
 
 
+
 function requireCode2018(){
   var code = prompt("Ange kod:");
   if(code===null) return false;
@@ -844,6 +845,27 @@ function requireCode2018(){
   }
   return true;
 }
+
+function gateEditIfTeamCompleted(){
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    var team = "";
+    try{
+      var sel=document.getElementById("teamSelect");
+      team = sel ? sel.value : (Storage.currentTeam ? Storage.currentTeam() : (localStorage.getItem("nsk_current_team")||"1"));
+    }catch(e){ team = "1"; }
+    if(pid && isTeamCompleted(pid, team)){
+      if(!requireCode2018()){
+        // bounce back to home if code not provided
+        try{ if(Actions && Actions.showHome) Actions.showHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
+        return false;
+      }
+    }
+  }catch(e){}
+  return true;
+}
+
+
 
 
 
@@ -2555,7 +2577,8 @@ function restoreLastRouteOnLoad(){
     if(r.route==="edit"){
       UI.show("edit");
       syncTeamUIForPool(Storage.currentPoolId());
-      renderEditAll();
+      if(!gateEditIfTeamCompleted()) return;
+    renderEditAll();
       return true;
     }
     if(r.route==="teamSelect"){
@@ -2614,6 +2637,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2637,7 +2661,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
