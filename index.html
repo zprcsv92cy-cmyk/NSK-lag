@@ -715,7 +715,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
-      <button type="button" class="ghost" data-perm="admin" onclick="UI.showView('adminView'); Admin.reload();">Behörigheter</button>
+      <button type="button" class="ghost" data-perm="admin" style="display:none" onclick="openAdmin()">Behörigheter</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -2895,6 +2895,17 @@ function wireImport(){
       document.getElementById("importMsg").innerHTML="<span class='error'>✖ Import misslyckades</span>";
     }finally{fileInput.value="";}
   });
+}
+
+
+function openAdmin(){
+  // AUTH_GUARD_adminView
+  if(window.Auth && !(Auth.isAdmin && Auth.isAdmin())){
+    alert("Endast admin kan öppna behörigheter.");
+    return;
+  }
+  UI.showView('adminView');
+  Admin.reload();
 }
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
