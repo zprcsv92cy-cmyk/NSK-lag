@@ -715,7 +715,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
-      <button type="button" class="ghost" data-perm="admin" onclick="UI.show('adminView'); Admin.reload();">Behörigheter</button>
+      <button type="button" class="ghost" data-perm="admin" onclick="UI.showView('adminView'); Admin.reload();">Behörigheter</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -958,7 +958,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
       <b style="font-size:20px;">Behörigheter</b>
       <div class="btnrow" style="display:flex;gap:10px;flex-wrap:wrap;">
-        <button type="button" class="ghost" onclick="UI.show('homeView')">Till startsidan</button>
+        <button type="button" class="ghost" onclick="UI.showView('homeView')">Till startsidan</button>
         <button type="button" onclick="Admin.reload()">Uppdatera</button>
       </div>
     </div>
@@ -967,6 +967,13 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     </div>
 
     <div id="adminMsg" class="small" style="margin-top:10px;opacity:.95;"></div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <input id="adminSearch" type="text" placeholder="Sök e‑post eller user id..." style="flex:1;min-width:240px;height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
+      <button type="button" class="ghost" onclick="Admin.clearSearch()">Rensa</button>
+    </div>
+
+    <div id="adminSetupHint" class="small" style="margin-top:10px;opacity:.85;display:none;"></div>
 
     <div style="overflow:auto;margin-top:12px;">
       <table class="tbl" style="width:100%;min-width:680px;">
@@ -989,6 +996,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
 
 
 // ===== AUTH + ROLES (Supabase Magic Link) =====
@@ -1027,8 +1035,22 @@ const Auth = {
 
       if(!this.user){
         this.role = null;
-        UI.show("loginView");
+        UI.showView("loginView");
         this.updateLoginUI();
+      try{
+        const hint=document.getElementById('adminSetupHint');
+        if(hint){
+          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
+          if(isAdminEmail && this.role!=='admin'){
+            hint.style.display='block';
+            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
+          }else{
+            hint.style.display='none';
+            hint.textContent='';
+          }
+        }
+      }catch(e){}
+
         return;
       }
 
@@ -1047,12 +1069,26 @@ const Auth = {
 
 
       this.updateLoginUI();
+      try{
+        const hint=document.getElementById('adminSetupHint');
+        if(hint){
+          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
+          if(isAdminEmail && this.role!=='admin'){
+            hint.style.display='block';
+            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
+          }else{
+            hint.style.display='none';
+            hint.textContent='';
+          }
+        }
+      }catch(e){}
+
       this.applyRoleUI();
 
       const active = document.querySelector(".view.active");
       if(active && active.id && active.id !== "loginView") return;
 
-      UI.show("homeView");
+      UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
     }catch(e){}
   },
@@ -2930,13 +2966,13 @@ function restoreLastRouteOnLoad(){
 
   try{
     if(r.route==="run"){
-      UI.show("run");
+      UI.showView("run");
       syncTeamUIForPool(Storage.currentPoolId());
       renderRunAll();
       return true;
     }
     if(r.route==="edit"){
-      UI.show("edit");
+      UI.showView("edit");
       syncTeamUIForPool(Storage.currentPoolId());
       if(!gateEditIfTeamCompleted()) return;
     renderEditAll();
@@ -2953,7 +2989,7 @@ function restoreLastRouteOnLoad(){
       return true;
     }
     if(r.route==="home"){
-      UI.show("home");
+      UI.showView("home");
       UI.renderPoolList();
       return true;
     }
@@ -3164,11 +3200,36 @@ const Admin = {
     }
   },
 
+  clearSearch(){
+    const inp=document.getElementById("adminSearch");
+    if(inp) inp.value="";
+    this.filter();
+  },
+
+  filter(){
+    const q=(document.getElementById("adminSearch")?.value||"").trim().toLowerCase();
+    const tbody=document.getElementById("adminUsersTbody");
+    if(!tbody) return;
+    [...tbody.querySelectorAll("tr")].forEach(tr=>{
+      const txt=(tr.getAttribute("data-search")||"").toLowerCase();
+      tr.style.display = (!q || txt.includes(q)) ? "" : "none";
+    });
+  },
+
   async saveRole(userId){
     try{
       if(!Auth.isAdmin()) return;
       const sel=document.querySelector(`#adminUsersTbody select[data-userid="${CSS.escape(userId)}"]`);
       const role=sel ? sel.value : null;
+      // Skydd: admin kan inte råka ta bort sin egen admin-roll
+      try{
+        if(Auth.user && userId===Auth.user.id && role!=='admin'){
+          alert('Du kan inte ta bort admin-behörighet på dig själv.');
+          sel.value='admin';
+          return;
+        }
+      }catch(e){}
+
       if(!role) return;
 
       const msg=document.getElementById("adminMsg");
@@ -3190,6 +3251,7 @@ const Admin = {
     }
   }
 };
+
 
 
 </script>
