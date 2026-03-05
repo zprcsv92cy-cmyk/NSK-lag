@@ -834,6 +834,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 <script>
 
+
 function requireCode2018(){
   var code = prompt("Ange kod:");
   if(code===null) return false;
@@ -1031,7 +1032,7 @@ window.requireCode2018ForCompletedPool = function(poolId){
   var keys=getTeamKeys();
   var anyCompleted=false;
   for(var i=0;i<keys.length;i++){
-    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed){ anyCompleted=true; break; }
+    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed === true){ anyCompleted=true; break; }
   }
   if(!anyCompleted) return true;
   var code = prompt("Poolspelet har avslutade lag. Ange kod:");
@@ -1182,7 +1183,7 @@ function ensureTeamStatus(p){
   for(var i=0;i<keys.length;i++){
     var k=keys[i];
     if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
-    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = !!p.teamStatus[k].completed;
+    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = (String(p.teamStatus[k].completed).toLowerCase()==="true");
   }
   return p;
 }
@@ -1202,7 +1203,7 @@ function isTeamCompleted(poolId, teamNo){
   var p=getPoolById(poolId);
   if(!p) return false;
   var k=String(teamNo||"");
-  return !!(p.teamStatus[k] && p.teamStatus[k].completed);
+  return (p.teamStatus[k] && p.teamStatus[k].completed === true);
 }
 
 function isPoolFullyCompleted(poolId){
@@ -1624,8 +1625,7 @@ const Actions = {
       App.state.readOnly = true;
     }else{
       App.state.readOnly = false;
-      if(!window.requireCode2018ForCompletedPool(pid)) return;
-    }
+          }
     App.state.pendingPoolId = pid;
     App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
     Actions.openTeamSelect();
@@ -1665,8 +1665,7 @@ document.getElementById("teamSelect").value = String(teamNo||"1");
   openPoolEdit(id){
     const pid=String(id||"");
     if(!pid) return;
-    if(!window.requireCode2018ForCompletedPool(pid)) return;
-    App.state.readOnly = false;
+        App.state.readOnly = false;
     Storage.setCurrentPool(pid);
     syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit();
@@ -2587,6 +2586,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2610,7 +2610,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 4.2</div>
+<div class="app-version">V 4.3</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
