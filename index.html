@@ -802,8 +802,11 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 /* ===== COACH-LÄGE (V18) ===== */
 body.coach-mode{ overflow:hidden; }
+body.coach-mode .nsk-top{ display:none !important; }
+body.coach-mode #runOutput{ display:none !important; }
 body.coach-mode #runHeaderCard{ display:none !important; }
 body.coach-mode .runNowBar{
+  display:block !important;
   position:fixed !important;
   inset:0 !important;
   margin:0 !important;
@@ -2296,7 +2299,8 @@ const Actions = {
     }else{
       try{ syncTeamUIForPool(pid); }catch(e){}
       Actions.showRun();
-    }
+}
+
   },
 
   // ----- navigation edit/run -----
@@ -2319,6 +2323,8 @@ const Actions = {
     UI.showView("runView");
     UI.updateRunHeader();
     renderRunAll();
+    try{ var b=document.getElementById("runNowBar"); if(b) b.style.display="block"; }catch(e){}
+    try{ setTimeout(function(){ try{ updateRunProUI(); }catch(e){} }, 50); }catch(e){}
   }
 };
 
@@ -3373,7 +3379,8 @@ function updateRunProUI(){
     // Collect ALL shift rows across all matches (DOM order)
     var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
     if(!rows.length){
-      bar.style.display="none";
+      bar.innerHTML = `<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Välj lag</div><div class="runNowHint">Öppna ett poolspel → Påbörja poolspel → välj lag.</div></div></div>`;
+      bar.style.display="block";
       return;
     }
 
@@ -3714,7 +3721,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.18");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.20");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3747,7 +3754,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.18</div>
+<div class="app-version">V 1.9.20</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
