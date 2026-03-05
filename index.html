@@ -892,7 +892,7 @@ body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
 </div>
 
 <!-- HOME -->
-<div id="homeView" class="view no-print">
+<div id="homeView" class="view no-print active" style="display:block;">
   <div class="card">
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
@@ -3760,7 +3760,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.23");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.24");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3793,7 +3793,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.23</div>
+<div class="app-version">V 1.9.24</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
