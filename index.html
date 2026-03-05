@@ -834,7 +834,6 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 <script>
 
-
 function requireCode2018(){
   var code = prompt("Ange kod:");
   if(code===null) return false;
@@ -1032,7 +1031,7 @@ window.requireCode2018ForCompletedPool = function(poolId){
   var keys=getTeamKeys();
   var anyCompleted=false;
   for(var i=0;i<keys.length;i++){
-    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed === true){ anyCompleted=true; break; }
+    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed){ anyCompleted=true; break; }
   }
   if(!anyCompleted) return true;
   var code = prompt("Poolspelet har avslutade lag. Ange kod:");
@@ -1183,7 +1182,7 @@ function ensureTeamStatus(p){
   for(var i=0;i<keys.length;i++){
     var k=keys[i];
     if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
-    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = (String(p.teamStatus[k].completed).toLowerCase()==="true");
+    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = !!p.teamStatus[k].completed;
   }
   return p;
 }
@@ -1203,7 +1202,7 @@ function isTeamCompleted(poolId, teamNo){
   var p=getPoolById(poolId);
   if(!p) return false;
   var k=String(teamNo||"");
-  return (p.teamStatus[k] && p.teamStatus[k].completed === true);
+  return !!(p.teamStatus[k] && p.teamStatus[k].completed);
 }
 
 function isPoolFullyCompleted(poolId){
@@ -1572,7 +1571,9 @@ const Actions = {
     Actions.showEdit();
   },
 
-  deletePool(id){
+  deletePool(poolId){
+    if(!requireCode2018()) return;
+
     if(!confirm("Ta bort poolspel och all sparad data?")) return;
 
     // If the pool is marked as completed, require code 2018 to delete
@@ -1641,22 +1642,37 @@ const Actions = {
   chooseTeam(teamNo){
     Actions.closeTeamSelect();
     if(!App.state.pendingPoolId) return;
-    Storage.setCurrentPool(App.state.pendingPoolId);
-    
-    // Require code only for completed team
-    if(isTeamCompleted(App.state.pendingPoolId, teamNo)){
-      if(!requireCode2018()){
-        return;
+
+    const pid = String(App.state.pendingPoolId||"");
+    const tno = String(teamNo||"1");
+
+    // set current pool + team
+    try{ Storage.setCurrentPool(pid); }catch(e){}
+    try{
+      if(Storage.setCurrentTeam) Storage.setCurrentTeam(tno);
+      else localStorage.setItem("nsk_current_team", tno);
+    }catch(e){}
+
+    // Kod krävs bara om valt lag är avslutat (gäller både Påbörja och Redigera)
+    try{
+      if(isTeamCompleted(pid, tno)){
+        if(!requireCode2018()) return;
       }
-    }
-document.getElementById("teamSelect").value = String(teamNo||"1");
+    }catch(e){}
+
+    // keep select in sync if present
+    try{
+      var sel=document.getElementById("teamSelect");
+      if(sel) sel.value = tno;
+    }catch(e){}
+
     App.state.readOnly = false;
-// New pool -> go directly to edit. Otherwise keep current behavior.
+
     if(App.state.teamSelectTarget==="edit"){
-      App.state.readOnly = false;
-      syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
-    Actions.showEdit();
+      try{ syncTeamUIForPool(pid); }catch(e){}
+      Actions.showEdit();
     }else{
+      try{ syncTeamUIForPool(pid); }catch(e){}
       Actions.showRun();
     }
   },
@@ -2586,7 +2602,6 @@ function markTeamActiveIfNeeded(){
 
 
 
-
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2610,7 +2625,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 4.3</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
