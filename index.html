@@ -715,7 +715,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
-      <button type="button" class="ghost" data-perm="admin" style="display:none" onclick="openAdmin()">Behörigheter</button>
+      <button type="button" class="ghost" data-perm="admin" onclick="UI.showView('adminView'); Admin.reload();">Behörigheter</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -969,11 +969,39 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div id="adminMsg" class="small" style="margin-top:10px;opacity:.95;"></div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
-      <input id="adminSearch" type="text" placeholder="Sök e‑post eller user id..." style="flex:1;min-width:240px;height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
+      <input id="adminSearch" type="text" placeholder="Sök e‑post eller user id..." oninput="Admin.filter()" style="flex:1;min-width:240px;height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
       <button type="button" class="ghost" onclick="Admin.clearSearch()">Rensa</button>
     </div>
 
     <div id="adminSetupHint" class="small" style="margin-top:10px;opacity:.85;display:none;"></div>
+    <div class="card" style="margin-top:12px;">
+      <b>Ge behörighet via e‑post (innan första inloggning)</b>
+      <div class="small" style="margin-top:6px;opacity:.9;">
+        Spara en “inbjudan” i tabellen <code>invites</code>. När personen loggar in första gången får den rollen automatiskt.
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div style="flex:2;min-width:220px;">
+          <label>E‑post</label>
+          <input id="inviteEmail" type="email" placeholder="namn@exempel.se" style="height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label>Roll</label>
+          <select id="inviteRole">
+            <option value="coach_run">coach_run</option>
+            <option value="coach_full">coach_full</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div style="flex:0 0 auto;align-self:flex-end;">
+          <button type="button" onclick="Admin.saveInvite()">Spara inbjudan</button>
+        </div>
+      </div>
+      <div id="inviteMsg" class="small" style="margin-top:8px;opacity:.95;"></div>
+      <div class="small" style="margin-top:8px;opacity:.85;">
+        Kräver att du har satt upp Supabase-tabellen <code>invites</code> + RLS-policy för admin (se instruktion längst ned i filen).
+      </div>
+    </div>
+
 
     <div style="overflow:auto;margin-top:12px;">
       <table class="tbl" style="width:100%;min-width:680px;">
@@ -1058,6 +1086,23 @@ const Auth = {
         role = await this.fetchRole();
       }
       this.role = role || "coach_run";
+      // If there is an invite role for this email, ensure profile role matches it (useful for pre-setting roles)
+      try{
+        if(this.user && this.user.email){
+          const invited = await this.fetchInviteRole(this.user.email);
+          if(invited && invited !== (this.role||"")){
+            // Only auto-upgrade (never downgrade) unless profile missing
+            const order = { "coach_run": 1, "coach_full": 2, "admin": 3 };
+            const cur = order[this.role||"coach_run"] || 1;
+            const wanted = order[invited] || cur;
+            if(wanted > cur){
+              await this.supabase.from("profiles").update({ role: invited }).eq("id", this.user.id);
+              this.role = invited;
+            }
+          }
+        }
+      }catch(e){}
+
 
       // (Admin email hint handled in updateLoginUI below)
       this.updateLoginUI();
@@ -1108,20 +1153,44 @@ const Auth = {
       if(error) return null;
       return data && data.role ? data.role : null;
     }catch(e){ return null; }
+  
+  async fetchInviteRole(email){
+    try{
+      const em = String(email||"").trim().toLowerCase();
+      if(!em) return null;
+      const { data, error } = await this.supabase
+        .from("invites")
+        .select("role")
+        .eq("email", em)
+        .single();
+      if(error) return null;
+      return data && data.role ? data.role : null;
+    }catch(e){ return null; }
   },
+
+},
 
   async ensureProfileRow(){
     try{
-      // Try insert with email column (if exists)
-      let payload = { id: this.user.id, role: "coach_run" };
+      // Optional: apply invited role (from invites table) on first login
+      let invitedRole = null;
+      try{
+        if(this.user && this.user.email){
+          invitedRole = await this.fetchInviteRole(this.user.email);
+        }
+      }catch(e){ invitedRole = null; }
+
+      let payload = { id: this.user.id, role: invitedRole || "coach_run" };
       if(this.user && this.user.email) payload.email = this.user.email;
 
       let res = await this.supabase.from("profiles").insert(payload);
+
       // If email column doesn't exist, retry without it
       if(res && res.error && payload.email){
-        await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
+        await this.supabase.from("profiles").insert({ id: this.user.id, role: payload.role });
       }
     }catch(e){}
+  }
   },
 
   async sendMagicLink(email){
@@ -2897,17 +2966,6 @@ function wireImport(){
   });
 }
 
-
-function openAdmin(){
-  // AUTH_GUARD_adminView
-  if(window.Auth && !(Auth.isAdmin && Auth.isAdmin())){
-    alert("Endast admin kan öppna behörigheter.");
-    return;
-  }
-  UI.showView('adminView');
-  Admin.reload();
-}
-
 // ---------- public wrappers (onclick-kompatibelt) ----------
 function goHome(){ Actions.goHome(); }
 function openNewPool(){
@@ -3246,6 +3304,7 @@ const Admin = {
         const tr=document.createElement("tr");
 
         const email = (u.email || "—");
+        try{ tr.setAttribute("data-search", (email+" "+(u.id||"")+" "+(u.role||"")).toLowerCase()); }catch(e){}
         tr.innerHTML = `
           <td>${escapeHtml(email)}</td>
           <td><code>${escapeHtml(u.id)}</code></td>
@@ -3284,7 +3343,39 @@ const Admin = {
     });
   },
 
-  async saveRole(userId){
+  
+  async saveInvite(){
+    try{
+      if(!window.Auth || !Auth.isAdmin || !Auth.isAdmin()){
+        const m=document.getElementById("inviteMsg");
+        if(m) m.innerHTML = "<span class='error'>✖ Endast admin.</span>";
+        return;
+      }
+      const email=(document.getElementById("inviteEmail")?.value||"").trim().toLowerCase();
+      const role=(document.getElementById("inviteRole")?.value||"coach_run");
+      const m=document.getElementById("inviteMsg");
+      if(!email){
+        if(m) m.innerHTML = "<span class='error'>✖ Skriv en e‑post.</span>";
+        return;
+      }
+      if(m) m.textContent = "Sparar...";
+      const { error } = await Auth.supabase
+        .from("invites")
+        .upsert({ email, role, updated_at: new Date().toISOString() }, { onConflict: "email" });
+      if(error){
+        if(m) m.innerHTML = "<span class='error'>✖ Kunde inte spara: " + escapeHtml(error.message) + "</span>";
+        return;
+      }
+      if(m) m.innerHTML = "<span class='ok'>✔ Sparat! Rollen gäller vid första inloggning (och kan auto‑uppgradera vid nästa refresh).</span>";
+      // refresh list
+      try{ await this.reload(); }catch(e){}
+    }catch(e){
+      const m=document.getElementById("inviteMsg");
+      if(m) m.innerHTML = "<span class='error'>✖ Fel: " + escapeHtml(e && e.message ? e.message : e) + "</span>";
+    }
+  },
+
+async saveRole(userId){
     try{
       if(!Auth.isAdmin()) return;
       const sel=document.querySelector(`#adminUsersTbody select[data-userid="${CSS.escape(userId)}"]`);
@@ -3336,7 +3427,7 @@ if ("serviceWorker" in navigator) {
 }
 </script>
 
-<div class="app-version">V 2.0</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
@@ -3379,6 +3470,66 @@ if ("serviceWorker" in navigator) {
     </div>
   </div>
 </div>
+
+
+<!--
+==========================
+SUPABASE: INVITES (förinställ roll via e‑post)
+==========================
+Skapa tabellen invites (SQL i Supabase SQL Editor):
+
+create table if not exists public.invites (
+  email text primary key,
+  role text not null default 'coach_run',
+  updated_at timestamptz not null default now()
+);
+
+-- Rekommenderat: bara admin ska kunna läsa/skriva invites.
+-- Exempel med RLS:
+alter table public.invites enable row level security;
+
+-- Admin read/write (kräver att du har profiles.role och en policy som låter auth-baserad kontroll).
+-- OBS: Supabase kan inte läsa andra tabeller direkt i policy utan en funktion.
+-- En enkel lösning är att skapa en SECURITY DEFINER funktion is_admin() och använda den.
+
+-- Exempel (anpassa efter din setup):
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+create policy "admin can read invites"
+on public.invites for select
+to authenticated
+using (public.is_admin());
+
+create policy "admin can write invites"
+on public.invites for insert
+to authenticated
+with check (public.is_admin());
+
+create policy "admin can update invites"
+on public.invites for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+==========================
+VIKTIGT
+==========================
+1) profiles-tabellen måste ha kolumner: id (uuid), role (text), email (text valfri).
+2) Auth.ensureProfileRow() försöker skriva email. Om kolumnen saknas faller den tillbaka.
+3) Vill du göra peter_hasselberg@hotmail.com till admin:
+   - Logga in med den e‑posten (så att profilen skapas), eller skapa invite först när du är admin.
+   - Alternativt: sätt role='admin' för den användarens id direkt i Supabase Table Editor.
+-->
 
 </body>
 </html>
