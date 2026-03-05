@@ -2633,7 +2633,7 @@ function makeLineupsForMatch(st, globalCounts, shiftTimes){
   const lineups=[];
   for(let i=0;i<shiftTimes.length;i++){
     const countsArr=roster.map(n=>({n, c:globalCounts[n.toLowerCase()]||0, r:ratings[n.toLowerCase()]||0}));
-    countsArr.sort((a,b)=>a.c!==b.c? a.c-b.c : b.r-a.r);
+    countsArr.sort((a,b)=> a.c!==b.c ? (a.c-b.c) : (b.r!==a.r ? (b.r-a.r) : String(a.n).localeCompare(String(b.n),'sv')));
     const pool=countsArr.map(x=>x.n).slice(0, Math.min(10, roster.length));
     const candidates=[];
     function rec(start,left,chosen){
@@ -2657,7 +2657,7 @@ function makeLineupsForMatch(st, globalCounts, shiftTimes){
       }
     }
     rec(0,k,[]);
-    candidates.sort((a,b)=>b.score-a.score);
+    candidates.sort((a,b)=> (b.score-a.score) || String(a.lineup.join('|')).localeCompare(String(b.lineup.join('|')),'sv'));
     const best=(candidates[0] && candidates[0].lineup)||[];
     for(const n of best){const key=n.toLowerCase(); globalCounts[key]=(globalCounts[key]||0)+1;}
     lineups.push(best); prev=best;
@@ -3452,16 +3452,24 @@ function updateRunProUI(){
 
     var readOnly = !!(window.App && App.state && App.state.readOnly);
 
-    var curMatchLine = cur.match ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(cur.match) +'</div>') : '';
+    function metaLines(obj){
+      var out = "";
+      if(obj && obj.match){
+        out += '<div class="small" style="opacity:.85;margin-top:4px;">' + escapeHtml(obj.match) + '</div>';
+      }
+      if(obj && obj.goalie){
+        out += '<div class="small" style="opacity:.85;margin-top:4px;">Målvakt: ' + escapeHtml(obj.goalie) + '</div>';
+      }
+      return out;
+    }
 
-    var curGoalieLine = (cur.goalie ? ('<div class="runNowInfoLine">' + escapeHtml(cur.match || '') + ' • Målvakt: ' + escapeHtml(cur.goalie) + '</div>') : '');
-    var nxtMatchLine = (nxt.match && nxt.match!==cur.match) ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(nxt.match) +'</div>') : '';
-
-    bar.innerHTML =
+    var curMetaLines = metaLines(cur);
+    var nxtMetaLines = nextRow ? metaLines(nxt) : '';
+bar.innerHTML =
       '<div class="runNowGrid">' +
         '<div class="runNowCol">' +
           '<div class="runNowTitle">Pågående byte</div>' +
-          curMatchLine +
+          curMetaLines +
           '<div class="runNowMain">'+ escapeHtml(cur.players) +'</div>' +
           '<div class="runNowMeta">' +
             '<span class="pill">#'+ escapeHtml(cur.no) +'</span>' +
@@ -3475,7 +3483,7 @@ function updateRunProUI(){
         (nextRow ? (
           '<div class="runNowCol">' +
             '<div class="runNowTitle">Nästa byte</div>' +
-            nxtMatchLine +
+            nxtMetaLines +
             '<div class=\"runNowMain blink\">'+ escapeHtml(nxt.players) +'</div>' +
             '<div class="runNowMeta">' +
               '<span class="pill">#'+ escapeHtml(nxt.no) +'</span>' +
