@@ -1037,20 +1037,6 @@ const Auth = {
         this.role = null;
         UI.showView("loginView");
         this.updateLoginUI();
-      try{
-        const hint=document.getElementById('adminSetupHint');
-        if(hint){
-          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
-          if(isAdminEmail && this.role!=='admin'){
-            hint.style.display='block';
-            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
-          }else{
-            hint.style.display='none';
-            hint.textContent='';
-          }
-        }
-      }catch(e){}
-
         return;
       }
 
@@ -1225,7 +1211,7 @@ function gateEditIfTeamCompleted(){
     if(pid && isTeamCompleted(pid, team)){
       if(!requireCode2018()){
         // bounce back to home if code not provided
-        try{ if(Actions && Actions.showHome) Actions.showHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
+        try{ if(Actions && Actions.goHome) Actions.goHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
         return false;
       }
     }
@@ -1969,7 +1955,7 @@ const Actions = {
 
     // If the pool is marked as completed, require code 2018 to delete
     const poolsBefore=Storage.loadPools();
-    const poolObj=poolsBefore.find(p=>p && p.id===id);
+    const poolObj=poolsBefore.find(p=>p && p.id===poolId);
     if(poolObj && poolObj.completed){
       const code=prompt("Poolspelet är avslutat. Ange kod för att ta bort:");
       if(code===null) return;
@@ -1978,16 +1964,16 @@ const Actions = {
         return;
       }
     }
-    const prefix=Storage.poolPrefix(id);
+    const prefix=Storage.poolPrefix(poolId);
     const keys=[];
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
       if(k && k.startsWith(prefix)) keys.push(k);
     }
     keys.forEach(k=>localStorage.removeItem(k));
-    const pools=Storage.loadPools().filter(p=>p && p.id!==id);
+    const pools=Storage.loadPools().filter(p=>p && p.id!==poolId);
     Storage.savePools(pools);
-    if(Storage.currentPoolId()===id) Storage.setCurrentPool("");
+    if(Storage.currentPoolId()===poolId) Storage.setCurrentPool("");
     UI.renderPoolList();
   },
 
@@ -2644,7 +2630,7 @@ function finishPool(){
     // If the other team is not finished, keep pool active overall
     try{ UI.renderPoolList(); }catch(e){}
     try{
-      if(Actions && Actions.showHome) Actions.showHome();
+      if(Actions && Actions.goHome) Actions.goHome();
       else if(typeof goHome==="function") goHome();
     }catch(e){}
 
@@ -2702,7 +2688,7 @@ function switchTeam(team){
   try{
     var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
     // require code if target team is completed
-    if(pid && isTeamCompleted(pid, teamNo)){
+    if(pid && isTeamCompleted(pid, team)){
       if(!requireCode2018()){
         return;
       }
@@ -2713,7 +2699,7 @@ function switchTeam(team){
     var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
     var p = (typeof getPoolById==="function") ? getPoolById(pid) : null;
     var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : null;
-    if(teams && teams.length && teams.indexOf(String(teamNo))===-1){
+    if(teams && teams.length && teams.indexOf(String(team))===-1){
       return;
     }
   }catch(e){}
@@ -2966,30 +2952,30 @@ function restoreLastRouteOnLoad(){
 
   try{
     if(r.route==="run"){
-      UI.showView("run");
+      UI.showView("runView");
       syncTeamUIForPool(Storage.currentPoolId());
       renderRunAll();
       return true;
     }
     if(r.route==="edit"){
-      UI.showView("edit");
+      UI.showView("editView");
       syncTeamUIForPool(Storage.currentPoolId());
       if(!gateEditIfTeamCompleted()) return;
-    renderEditAll();
+    initEditForCurrentPool();
+      renderEditOutput();
       return true;
     }
     if(r.route==="teamSelect"){
       try{
-        App.state.pendingPoolId = r.pendingPoolId || "";
+        App.state.pendingPoolId = r.pendingPoolId || (r.poolId||"");
         App.state.teamSelectTarget = (r.target==="edit") ? "edit" : "run";
         App.state.readOnly = !!r.readOnly;
       }catch(e){}
-      UI.openModal("teamSelectModal");
-      renderTeamSelectButtons();
+      try{ Actions.openTeamSelect(); }catch(e){}
       return true;
     }
     if(r.route==="home"){
-      UI.showView("home");
+      UI.showView("homeView");
       UI.renderPoolList();
       return true;
     }
@@ -3277,7 +3263,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
