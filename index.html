@@ -1115,9 +1115,6 @@ const Auth = {
   supabase: null,
   role: null,
   user: null,
-  _refreshing: false,
-  _queued: false,
-  _unsub: null,
 
   isLoggedIn(){ return !!this.user; },
   isAdmin(){ return this.role === "admin"; },
@@ -1125,202 +1122,89 @@ const Auth = {
   canRun(){ return this.role === "admin" || this.role === "coach_full" || this.role === "coach_run"; },
   canDelete(){ return this.role === "admin"; },
 
-
-// Bootstrap admin for the configured ADMIN_EMAIL.
-// IMPORTANT: This only works if your Supabase RLS policy ALLOWS this update server-side.
-// See notes in the README/comment below (search for "ADMIN BOOTSTRAP RLS POLICY").
-async tryBootstrapAdmin(){
-  try{
-    if(!this.supabase || !this.user) return false;
-    const email = (this.user.email || "").toLowerCase();
-    if(email !== String(ADMIN_EMAIL||"").toLowerCase()) return false;
-    if(this.role === "admin") return true;
-
-    // avoid infinite refresh loops / repeated attempts
-    if(localStorage.getItem("nsk_admin_bootstrap_done")==="1") return false;
-
-    const { error } = await this.supabase
-      .from("profiles")
-      .update({ role: "admin" })
-      .eq("id", this.user.id);
-
-    if(error) return false;
-
-    localStorage.setItem("nsk_admin_bootstrap_done","1");
-    this.role = "admin";
-    return true;
-  }catch(e){
-    return false;
-  }
-},
-
   async init(){
     try{
       if(!window.supabase || !window.supabase.createClient) return;
-      if(this.supabase) return; // already initialised
-
       this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-      // Subscribe once
-      const { data } = this.supabase.auth.onAuthStateChange(async () => {
+      this.supabase.auth.onAuthStateChange(async () => {
         await this.refresh();
       });
-      this._unsub = data && data.subscription ? data.subscription : null;
-
       await this.refresh();
-    }catch(e){
-      // swallow
-    }
+    }catch(e){}
   },
 
   async refresh(){
-    // Prevent overlapping refresh calls (supabase-js can throw "Lock was stolen by another request")
-    if(this._refreshing){
-      this._queued = true;
-      return;
-    }
-    this._refreshing = true;
-    this._queued = false;
-
     try{
       if(!this.supabase) return;
-
       const { data: sessionData } = await this.supabase.auth.getSession();
       const session = sessionData ? sessionData.session : null;
       this.user = session ? session.user : null;
 
       if(!this.user){
         this.role = null;
-        UI.showView("loginView");
         this.updateLoginUI();
-        this.applyRoleUI(); // hides perm-gated buttons
+        try{
+          if(window.UI && UI.showView) UI.showView("loginView");
+          const loginEl = document.getElementById("loginView");
+          if(loginEl) loginEl.style.display = "block";
+        }catch(e){}
         return;
       }
 
-      const email = (this.user.email || "").toLowerCase();
-      const isAdminEmail = email && String(ADMIN_EMAIL||"").toLowerCase()===email;
-
-      // Try read role from DB (may fail if RLS isn't configured yet)
       let role = await this.fetchRole();
       if(!role){
         await this.ensureProfileRow();
         role = await this.fetchRole();
       }
-
-      // Default role
       this.role = role || "coach_run";
 
-      // Client-side bootstrap for the configured admin email (UI convenience).
-      // NOTE: This does NOT bypass RLS; it only makes the UI usable while you fix policies.
-      if(isAdminEmail) this.role = "admin";
-
       this.updateLoginUI();
-      this.applyRoleUI();
 
-      // Admin setup hint (shown only to configured admin email when DB role isn't admin)
       try{
-        const hint = document.getElementById("adminSetupHint");
+        const hint=document.getElementById('adminSetupHint');
         if(hint){
-          if(isAdminEmail && this.role !== "admin"){
-            hint.style.display = "block";
-            hint.textContent =
-              "Tips: Sätt role=admin för " + (this.user.email||"") +
-              " i tabellen profiles (Supabase Table Editor) och se till att RLS tillåter admin read/update.";
+          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
+          if(isAdminEmail && this.role!=='admin'){
+            hint.style.display='block';
+            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
           }else{
-            hint.style.display = "none";
-            hint.textContent = "";
+            hint.style.display='none';
+            hint.textContent='';
           }
         }
       }catch(e){}
 
-      // If we're already on a non-login view, don't force navigation.
-      const active = document.querySelector(".view.active");
-      if(active && active.id && active.id !== "loginView"){
-        // We are already inside the app: keep current view but refresh UI that depends on permissions.
-        try{
-          // Re-render home list so buttons (Påbörja/Redigera/Ta bort) reflect the latest role.
-          if(active.id==="homeView"){ UI.renderPoolList(); }
-        }catch(e){}
-        return;
-      }
+      this.applyRoleUI();
 
-      UI.showView("homeView");
-      try{ UI.renderPoolList(); }catch(e){}
-    }catch(e){
-      // If anything goes wrong, still show login view instead of a blank app.
       try{
-        UI.showView("loginView");
-        const msg=document.getElementById("loginMsg");
-        if(msg) msg.textContent = "Auth-fel: " + (e && e.message ? e.message : e);
-      }catch(_){}
-    }finally{
-      this._refreshing = false;
-      if(this._queued){
-        try{ await this.refresh(); }catch(e){}
-      }
-    }
+        const active = document.querySelector(".view.active");
+        if(active && active.id === "loginView"){
+          if(window.UI && UI.showView) UI.showView("homeView");
+          if(window.UI && UI.renderPoolList) UI.renderPoolList();
+        }
+      }catch(e){}
+    }catch(e){}
   },
 
   async fetchRole(){
     try{
-      if(!this.supabase || !this.user) return null;
-
-      // 1) Preferred: lookup by auth user id (profiles.id)
-      let { data, error } = await this.supabase
+      const { data, error } = await this.supabase
         .from("profiles")
         .select("role")
         .eq("id", this.user.id)
-        .maybeSingle();
-
-      // 2) Fallback: some schemas/policies use email instead of id
-      if((error || !data) && this.user.email){
-        const res2 = await this.supabase
-          .from("profiles")
-          .select("role")
-          .eq("email", this.user.email)
-          .maybeSingle();
-        if(!res2.error && res2.data) { data = res2.data; error = null; }
-      }
-
-      // 3) Last resort bootstrap: allow the configured admin email to see admin UI
-      if((error || !data || !data.role) && this.user.email){
-        try{
-          if(String(this.user.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase()){
-            return "admin";
-          }
-        }catch(e){}
-      }
-
+        .single();
       if(error) return null;
       return data && data.role ? data.role : null;
-    }catch(e){
-      // Same bootstrap on unexpected errors
-      try{
-        if(this.user && this.user.email &&
-           String(this.user.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase()){
-          return "admin";
-        }
-      }catch(err){}
-      return null;
-    }
+    }catch(e){ return null; }
   },
 
   async ensureProfileRow(){
     try{
-      // Ensure a profiles row exists (id is PK). Upsert avoids duplicate/lock issues.
-      const payload = { id: this.user.id, role: "coach_run" };
+      let payload = { id: this.user.id, role: "coach_run" };
       if(this.user && this.user.email) payload.email = this.user.email;
-
-      // Try upsert with email (if column exists)
-      let res = await this.supabase
-        .from("profiles")
-        .upsert(payload, { onConflict: "id" });
-
-      // If email column doesn't exist (schema mismatch), retry without it
+      let res = await this.supabase.from("profiles").insert(payload);
       if(res && res.error && payload.email){
-        await this.supabase
-          .from("profiles")
-          .upsert({ id: this.user.id, role: "coach_run" }, { onConflict: "id" });
+        await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
       }
     }catch(e){}
   },
@@ -1347,23 +1231,23 @@ async tryBootstrapAdmin(){
     const status = document.getElementById("authStatus");
     const roleEl = document.getElementById("roleStatus");
     const btnLogout = document.getElementById("btnLogout");
+    const loginMsg = document.getElementById("loginMsg");
+
     if(!this.user){
       if(status) status.textContent = "Ej inloggad";
       if(roleEl) roleEl.textContent = "—";
       if(btnLogout) btnLogout.style.display = "none";
+      if(loginMsg) loginMsg.textContent = "";
       return;
     }
     if(status) status.textContent = "Inloggad";
- async function requireCode2018(message, title){
-  const code = await nskPrompt(message || "Ange kod:", title || "Kod krävs", { placeholder: "2018", type: "password" });
-  if(code===null) return false;
-  if(String(code).trim()!=="2018"){
-    await nskAlert("Fel kod.", "Fel");
-    return false;
-  }
-  return true;
-}
-ull = this.canFull();
+    if(roleEl) roleEl.textContent = this.role || "coach_run";
+    if(btnLogout) btnLogout.style.display = "inline-block";
+  },
+
+  applyRoleUI(){
+    const canRun = this.canRun();
+    const canFull = this.canFull();
     const canAdmin = this.isAdmin();
 
     document.querySelectorAll("[data-perm='run']").forEach(el => {
@@ -1377,9 +1261,6 @@ ull = this.canFull();
     });
   }
 };
-
-// Expose Auth globally (used by UI rendering)
-window.Auth = Auth;
 
 document.addEventListener("click", function(e){
   const t = e.target;
@@ -1405,8 +1286,8 @@ document.addEventListener("click", function(e){
 
 
 
-function requireCode2018(){
-  var code = prompt("Ange kod:");
+function requireCode2018(message){
+  var code = prompt(message || "Ange kod:");
   if(code===null) return false;
   if(String(code).trim()!=="2018"){
     alert("Fel kod.");
