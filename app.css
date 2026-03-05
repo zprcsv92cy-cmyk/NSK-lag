@@ -11,3 +11,8 @@ button{
   color:#fff;
   font-weight:800;
 }
+
+
+/* Header typography (if app.css is used) */
+.nsk-title{font-size:24px;line-height:1.1;font-weight:900;}
+.team-subtitle{font-size:13px;font-weight:700;opacity:.92;}
