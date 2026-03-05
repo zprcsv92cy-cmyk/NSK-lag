@@ -1128,59 +1128,62 @@ async tryBootstrapAdmin(){
         this.role = null;
         UI.showView("loginView");
         this.updateLoginUI();
-        this.applyRoleUI();
+        this.applyRoleUI(); // hides perm-gated buttons
         return;
       }
 
+      const email = (this.user.email || "").toLowerCase();
+      const isAdminEmail = email && String(ADMIN_EMAIL||"").toLowerCase()===email;
+
+      // Try read role from DB (may fail if RLS isn't configured yet)
       let role = await this.fetchRole();
       if(!role){
         await this.ensureProfileRow();
         role = await this.fetchRole();
       }
+
+      // Default role
       this.role = role || "coach_run";
 
-
-// Try to bootstrap admin for ADMIN_EMAIL (server-side policy must allow it)
-await this.tryBootstrapAdmin();
-
-      // Setup hint (only for the configured admin email)
-      try{
-        const hint=document.getElementById('adminSetupHint');
-        if(hint){
-          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
-          if(isAdminEmail && this.role!=='admin'){
-            hint.style.display='block';
-            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
-          }else{
-            hint.style.display='none';
-            hint.textContent='';
-          }
-        }
-      }catch(e){}
+      // Client-side bootstrap for the configured admin email (UI convenience).
+      // NOTE: This does NOT bypass RLS; it only makes the UI usable while you fix policies.
+      if(isAdminEmail) this.role = "admin";
 
       this.updateLoginUI();
       this.applyRoleUI();
 
+      // Admin setup hint (shown only to configured admin email when DB role isn't admin)
+      try{
+        const hint = document.getElementById("adminSetupHint");
+        if(hint){
+          if(isAdminEmail && this.role !== "admin"){
+            hint.style.display = "block";
+            hint.textContent =
+              "Tips: Sätt role=admin för " + (this.user.email||"") +
+              " i tabellen profiles (Supabase Table Editor) och se till att RLS tillåter admin read/update.";
+          }else{
+            hint.style.display = "none";
+            hint.textContent = "";
+          }
+        }
+      }catch(e){}
+
+      // If we're already on a non-login view, don't force navigation.
       const active = document.querySelector(".view.active");
       if(active && active.id && active.id !== "loginView") return;
 
       UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
     }catch(e){
-      // show error in banner if present
+      // If anything goes wrong, still show login view instead of a blank app.
       try{
-        const msg = "Auth-fel: " + (e && e.message ? e.message : String(e));
-        const b=document.getElementById("jsErrorBanner");
-        const t=document.getElementById("jsErrorText");
-        if(b && t){
-          t.textContent = msg;
-          b.style.display="block";
-        }
+        UI.showView("loginView");
+        const msg=document.getElementById("loginMsg");
+        if(msg) msg.textContent = "Auth-fel: " + (e && e.message ? e.message : e);
       }catch(_){}
     }finally{
       this._refreshing = false;
       if(this._queued){
-        // run one more time
         try{ await this.refresh(); }catch(e){}
       }
     }
@@ -1189,14 +1192,43 @@ await this.tryBootstrapAdmin();
   async fetchRole(){
     try{
       if(!this.supabase || !this.user) return null;
-      const { data, error } = await this.supabase
+
+      // 1) Preferred: lookup by auth user id (profiles.id)
+      let { data, error } = await this.supabase
         .from("profiles")
         .select("role")
         .eq("id", this.user.id)
-        .single();
+        .maybeSingle();
+
+      // 2) Fallback: some schemas/policies use email instead of id
+      if((error || !data) && this.user.email){
+        const res2 = await this.supabase
+          .from("profiles")
+          .select("role")
+          .eq("email", this.user.email)
+          .maybeSingle();
+        if(!res2.error && res2.data) { data = res2.data; error = null; }
+      }
+
+      // 3) Last resort bootstrap: allow the configured admin email to see admin UI
+      if((error || !data || !data.role) && this.user.email){
+        try{
+          if(String(this.user.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase()){
+            return "admin";
+          }
+        }catch(e){}
+      }
+
       if(error) return null;
       return data && data.role ? data.role : null;
     }catch(e){
+      // Same bootstrap on unexpected errors
+      try{
+        if(this.user && this.user.email &&
+           String(this.user.email).toLowerCase() === String(ADMIN_EMAIL).toLowerCase()){
+          return "admin";
+        }
+      }catch(err){}
       return null;
     }
   },
@@ -3008,6 +3040,12 @@ function init(){
   hideMatchDateInEdit();
   initSettingsDropdowns();
   wireImport();
+
+  // Admin search filter
+  try{
+    const s=document.getElementById('adminSearch');
+    if(s) s.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} });
+  }catch(e){}
   try{ const as=document.getElementById('adminSearch'); if(as){ as.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} }); } }catch(e){}
 
   // Admin search live filter
@@ -3302,6 +3340,7 @@ const Admin = {
         const tr=document.createElement("tr");
 
         const email = (u.email || "—");
+        try{ tr.setAttribute("data-search", (email+" "+(u.id||"")).toLowerCase()); }catch(e){}
         tr.setAttribute("data-search", (u.email||"") + " " + (u.id||"") + " " + (u.role||""));
 
       try{ tr.setAttribute("data-search", (email+" "+(u.id||"")+" "+(u.role||"")).toLowerCase()); }catch(e){}
