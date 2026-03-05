@@ -858,6 +858,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1554,7 +1555,7 @@ const Actions = {
     App.state.teamSelectTarget = "edit";
     Actions.closeNewPool();
     syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
-    syncTeamUIForPool(id);
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit();
   },
 
@@ -1634,7 +1635,7 @@ const Actions = {
     // New pool -> go directly to edit. Otherwise keep current behavior.
     if(App.state.teamSelectTarget==="edit"){
       App.state.readOnly = false;
-      syncTeamUIForPool(id);
+      syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit();
     }else{
       Actions.showRun();
@@ -1648,7 +1649,7 @@ const Actions = {
     if(!window.requireCode2018ForCompletedPool(pid)) return;
     App.state.readOnly = false;
     Storage.setCurrentPool(pid);
-    syncTeamUIForPool(id);
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit();
   },
   showEdit(){
@@ -2411,7 +2412,7 @@ function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
 function chooseTeam(teamNo){ Actions.chooseTeam(teamNo); }
 function openPoolEdit(id){ Actions.openPoolEdit(id); }
-function showEdit(){ syncTeamUIForPool(id);
+function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit(); }
 function showRun(){ Actions.showRun(); }
 
@@ -2565,6 +2566,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2588,7 +2590,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 4.0</div>
+<div class="app-version">V 4.1</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
