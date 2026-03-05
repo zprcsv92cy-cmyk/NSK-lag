@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#b11226">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Nyköpings Sportklubb">
+<meta name="apple-mobile-web-app-title" content="NSK Lag">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
-<title>Nyköpings Sportklubb</title>
+<title>NSK Lag</title>
 <style>
 :root{
   /* Bas */
@@ -164,22 +164,6 @@ body::before{
 }
 .nsk-top .small{
   color:rgba(255,255,255,.85);
-}
-
-/* NSK Header text (club + team) */
-.nsk-top h1.nsk-title{
-  font-size:24px;
-  line-height:1.1;
-  letter-spacing:.4px;
-  word-break:break-word;
-}
-.nsk-top .small.team-subtitle{
-  font-size:13px;
-  font-weight:700;
-  opacity:.92;
-}
-@media (max-width:420px){
-  .nsk-top h1.nsk-title{ font-size:22px; }
 }
 
 /* Kort: “metall”-känsla */
@@ -596,14 +580,103 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   filter: grayscale(.4);
 }
 
+
+
+/* ---- Improve New Pool Modal size/clarity ---- */
+#newPoolModal .modalPanel{
+  max-width:520px;
+  width:92%;
+  padding:22px;
+}
+
+#newPoolModal label{
+  font-size:15px;
+  font-weight:700;
+  opacity:.9;
+}
+
+#newPoolModal input,
+#newPoolModal select{
+  height:52px;
+  font-size:18px;
+  padding:10px 14px;
+  border-radius:14px;
+}
+
+#newPoolModal .row{
+  grid-template-columns:1fr;
+  gap:14px;
+}
+
+#newPoolModal button{
+  height:54px;
+  font-size:18px;
+  padding:0 26px;
+}
+
+#newPoolModal .btnrow{
+  justify-content:flex-start;
+  margin-top:18px;
+}
+
+
+/* ---- New Pool Modal: PRO glass + centered card ---- */
+#newPoolModal{
+  align-items:center;
+  justify-content:center;
+}
+
+#newPoolModal .modalPanel{
+  background: rgba(22,24,28,.72);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.55),
+    inset 0 1px 0 rgba(255,255,255,.10);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+#newPoolModal .modalPanel h2,
+#newPoolModal .modalPanel h3{
+  font-size:22px;
+  letter-spacing:.2px;
+  opacity:1;
+  margin-bottom:14px;
+}
+
+/* make date field feel more "primary" */
+#newPoolModal input[type="date"],
+#newPoolModal input[type="text"],
+#newPoolModal select{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+}
+
+#newPoolModal input[type="date"]{
+  text-align:center;
+  font-weight:800;
+  letter-spacing:.6px;
+}
+
+/* improve close button visibility & hit area */
+#newPoolModal .closeX{
+  transform: scale(1.06);
+}
+
+/* slightly dim the backdrop for focus */
+.modal{
+  background: rgba(0,0,0,.60);
+}
+
 </style>
 </head>
 <body>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
-    <h1 class="nsk-title">Nyköpings Sportklubb</h1>
-    <div class="small team-subtitle">Team 18</div>
+    <h1>NSK Lag</h1>
+    <div class="small">Poolspel • Lag • Byten • PDF</div>
   </div>
 </div>
 
