@@ -855,6 +855,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -2260,6 +2261,15 @@ function setActiveTeamButtons(team){
   });
 }
 function switchTeam(team){
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    var p = (typeof getPoolById==="function") ? getPoolById(pid) : null;
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : null;
+    if(teams && teams.length && teams.indexOf(String(teamNo))===-1){
+      return;
+    }
+  }catch(e){}
+
   document.getElementById("teamSelect").value=String(team||"1");
   setActiveTeamButtons(team);
   onTeamChanged();
@@ -2544,6 +2554,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2567,7 +2578,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 3.7</div>
+<div class="app-version">V 3.5</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
