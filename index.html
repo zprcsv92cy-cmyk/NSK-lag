@@ -1009,6 +1009,9 @@ const Auth = {
   role: null,
   user: null,
 
+  _refreshing: false,
+  _refreshQueued: false,
+
   isLoggedIn(){ return !!this.user; },
   isAdmin(){ return this.role === "admin"; },
   canFull(){ return this.role === "admin" || this.role === "coach_full"; },
@@ -1027,10 +1030,17 @@ const Auth = {
   },
 
   async refresh(){
+    // Ensure only one refresh runs at a time (Supabase uses Web Locks; concurrent calls can throw "Lock was stolen...")
+    if(this._refreshing){
+      this._refreshQueued = true;
+      return;
+    }
+    this._refreshing = true;
     try{
       if(!this.supabase) return;
-      const { data: sessionData } = await this.supabase.auth.getSession();
-      const session = sessionData ? sessionData.session : null;
+
+      // getSession can throw Web Locks errors on some mobile browsers if called concurrently
+      const session = await this.getSessionWithRetry();
       this.user = session ? session.user : null;
 
       if(!this.user){
@@ -1046,13 +1056,6 @@ const Auth = {
         role = await this.fetchRole();
       }
       this.role = role || "coach_run";
-      // Admin hint: set role to admin in Supabase for this email
-      try{
-        if(this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase()){
-          // No auto-promotion here (handled via Admin or Table Editor)
-        }
-      }catch(e){}
-
 
       this.updateLoginUI();
       try{
@@ -1076,8 +1079,23 @@ const Auth = {
 
       UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
-    }catch(e){}
+    }catch(e){
+      // Swallow lock errors; we will retry via queued refresh
+      try{
+        if(String(e && e.message || e).toLowerCase().includes("lock was stolen")){
+          this._refreshQueued = true;
+        }
+      }catch(_){}
+    }finally{
+      this._refreshing = false;
+      if(this._refreshQueued){
+        this._refreshQueued = false;
+        // next tick to avoid immediate lock contention
+        setTimeout(()=>{ try{ this.refresh(); }catch(e){} }, 50);
+      }
+    }
   },
+
 
   async fetchRole(){
     try{
@@ -1108,10 +1126,21 @@ const Auth = {
   async sendMagicLink(email){
     const msg = document.getElementById("loginMsg");
     if(msg) msg.textContent = "";
-    const { error } = await this.supabase.auth.signInWithOtp({
-      email,
-      options: { emailRedirectTo: window.location.href }
-    });
+    // Retry on transient WebLock issues
+    let error = null;
+    for(let attempt=0; attempt<3; attempt++){
+      const res = await this.supabase.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: window.location.href }
+      });
+      error = res && res.error ? res.error : null;
+      const msg = (error && (error.message||error.toString())) || "";
+      if(error && /lock was stolen/i.test(msg)){
+        await new Promise(r=>setTimeout(r, 80 + attempt*160));
+        continue;
+      }
+      break;
+    }
     if(error){
       if(msg) msg.textContent = "Kunde inte skicka länk: " + error.message;
       return;
@@ -1120,7 +1149,22 @@ const Auth = {
   },
 
   async logout(){
-    try{ await this.supabase.auth.signOut(); }catch(e){}
+    // Retry on transient WebLock issues
+    try{
+      for(let attempt=0; attempt<3; attempt++){
+        try{
+          await this.supabase.auth.signOut();
+          break;
+        }catch(err){
+          const msg = (err && (err.message||err.toString())) || "";
+          if(/lock was stolen/i.test(msg)){
+            await new Promise(r=>setTimeout(r, 80 + attempt*160));
+            continue;
+          }
+          throw err;
+        }
+      }
+    }catch(e){}
   },
 
   updateLoginUI(){
@@ -1323,6 +1367,8 @@ function hideMatchDateInEdit(){
 // ---- diagnostics: show JS errors on screen ----
 (function(){
   function showErr(msg){
+    // Ignore known harmless Supabase WebLock race
+    try{ if(/lock was stolen by another request/i.test(String(msg||""))) return; }catch(e){}
     try{
       var b=document.getElementById("jsErrorBanner");
       var t=document.getElementById("jsErrorText");
@@ -1340,7 +1386,11 @@ function hideMatchDateInEdit(){
     showErr(msg);
   });
   window.addEventListener("unhandledrejection", function(e){
-    var msg = "Promise-fel: " + (e && e.reason ? (e.reason.message||String(e.reason)) : "okänt");
+    var reason = (e && e.reason) ? (e.reason.message||String(e.reason)) : "okänt";
+    // Supabase/auth (och vissa webbläsare) kan ibland kasta ett ofarligt lock-fel
+    // när flera auth-anrop sker samtidigt. Vi filtrerar bort det så det inte stör.
+    if(/lock was stolen/i.test(String(reason))) return;
+    var msg = "Promise-fel: " + reason;
     showErr(msg);
   });
 })()
@@ -3263,7 +3313,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 3.0</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
