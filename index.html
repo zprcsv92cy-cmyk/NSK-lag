@@ -857,6 +857,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1378,6 +1379,7 @@ function syncTeamUIForPool(poolId){
       sel.innerHTML = teams.map(function(t){
         return '<option value="'+String(t).replace(/"/g,"&quot;")+'">Lag '+t+'</option>';
       }).join("");
+
       // keep current team if still valid, else set first team
       var cur = (Storage.currentTeam ? Storage.currentTeam() : (localStorage.getItem("nsk_current_team")||"1"));
       if(teams.indexOf(String(cur))===-1){
@@ -1387,13 +1389,17 @@ function syncTeamUIForPool(poolId){
       sel.value = String(cur);
     }
 
-    // If only one team, hide any team-switch row that relies on #teamSelect
-    if(teams.length===1){
-      var sw = document.getElementById("teamSwitchRow");
-      if(sw) sw.style.display="none";
-    }else{
-      var sw2 = document.getElementById("teamSwitchRow");
-      if(sw2) sw2.style.display="";
+    // Show/hide team switch buttons (Lag 1/2/3...) based on participating teams
+    for(var tb=1; tb<=6; tb++){
+      var btn=document.getElementById("tbtn"+tb);
+      if(!btn) continue;
+      btn.style.display = (teams.indexOf(String(tb))!==-1) ? "" : "none";
+    }
+
+    // If only one team, hide the whole switch row for a cleaner UI
+    var sw = document.getElementById("teamSwitchRow");
+    if(sw){
+      sw.style.display = (teams.length===1) ? "none" : "";
     }
   }catch(e){}
 }
@@ -2558,6 +2564,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2581,7 +2588,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 4.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
