@@ -1486,14 +1486,50 @@ function nskConfirm(message, title){
         return;
       }
       ttl.textContent = title || "Bekräfta";
-      msg.textConte
+      msg.textContent = message || "";
+      modal.style.display="block";
+
+      var done=false;
+      var backdrop = modal.querySelector(".nskConfirmBackdrop");
+
+      function cleanup(){
+        btnOk.removeEventListener("click", onOk);
+        btnCancel.removeEventListener("click", onCancel);
+        document.removeEventListener("keydown", onKey);
+        if(backdrop) backdrop.removeEventListener("click", onBackdrop);
+      }
+      function close(ok){
+        if(done) return;
+        done=true;
+        modal.style.display="none";
+        cleanup();
+        resolve(!!ok);
+      }
+      function onOk(){ close(true); }
+      function onCancel(){ close(false); }
+      function onBackdrop(){ close(false); }
+      function onKey(e){
+        if(e.key==="Escape") close(false);
+        if(e.key==="Enter") close(true);
+      }
+
+      btnOk.addEventListener("click", onOk);
+      btnCancel.addEventListener("click", onCancel);
+      document.addEventListener("keydown", onKey);
+      if(backdrop) backdrop.addEventListener("click", onBackdrop);
+    }catch(e){
+      resolve(window.confirm(message));
+    }
+  });
+}
+
+// Simple info-alert using the same modal (hides Cancel)
 function nskAlert(message, title){
-  // Återanvänd nskConfirm men göm Avbryt
   return new Promise(function(resolve){
     try{
       var modal=document.getElementById("nskConfirmModal");
       var cancel=document.getElementById("nskConfirmCancel");
-      if(!modal || !cancel){
+      if(!modal||!cancel){
         alert(message||"");
         resolve(true);
         return;
@@ -1510,65 +1546,6 @@ function nskAlert(message, title){
     }
   });
 }
-
-function nskPrompt(message, title, placeholder, defaultValue){
-  return new Promise(function(resolve){
-    try{
-      var modal=document.getElementById("nskPromptModal");
-      var msg=document.getElementById("nskPromptMsg");
-      var ttl=document.getElementById("nskPromptTitle");
-      var inp=document.getElementById("nskPromptInput");
-      var btnOk=document.getElementById("nskPromptOk");
-      var btnCancel=document.getElementById("nskPromptCancel");
-      if(!modal||!msg||!ttl||!inp||!btnOk||!btnCancel){
-        // fallback
-        var val = window.prompt(message || "", defaultValue || "");
-        resolve(val===null ? null : String(val));
-        return;
-      }
-      ttl.textContent = title || "Ange";
-      msg.textContent = message || "";
-      inp.value = (defaultValue!=null ? String(defaultValue) : "");
-      inp.placeholder = placeholder || "";
-      modal.style.display="block";
-      // focus input
-      setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 50);
-
-      var done=false;
-      var backdrop = modal.querySelector(".nskPromptBackdrop");
-
-      function cleanup(){
-        btnOk.removeEventListener("click", onOk);
-        btnCancel.removeEventListener("click", onCancel);
-        document.removeEventListener("keydown", onKey);
-        if(backdrop) backdrop.removeEventListener("click", onBackdrop);
-      }
-      function close(val){
-        if(done) return;
-        done=true;
-        modal.style.display="none";
-        cleanup();
-        resolve(val);
-      }
-      function onOk(){ close(String(inp.value||"")); }
-      function onCancel(){ close(null); }
-      function onBackdrop(){ close(null); }
-      function onKey(e){
-        if(e.key==="Escape") close(null);
-        if(e.key==="Enter") close(String(inp.value||""));
-      }
-
-      btnOk.addEventListener("click", onOk);
-      btnCancel.addEventListener("click", onCancel);
-      document.addEventListener("keydown", onKey);
-      if(backdrop) backdrop.addEventListener("click", onBackdrop);
-    }catch(e){
-      var val2 = window.prompt(message || "", defaultValue || "");
-      resolve(val2===null ? null : String(val2));
-    }
-  });
-}
-
 
 let finishingPool = false;
 
@@ -2252,7 +2229,7 @@ const Actions = {
     if(poolObj && poolObj.completed){
       if(!(await requireCode2018("Poolspelet är avslutat. Ange kod för att ta bort:", "Kod krävs"))) return;
     }
-}
+
     const prefix=Storage.poolPrefix(poolId);
     const keys=[];
     for(let i=0;i<localStorage.length;i++){
