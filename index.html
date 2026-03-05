@@ -800,37 +800,50 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 #adminView code{ opacity:.85; }
 
 
-/* ===== COACH-LÄGE (V18) ===== */
-body.coach-mode{ overflow:hidden; }
-body.coach-mode .nsk-top{ display:none !important; }
-body.coach-mode #runOutput{ display:none !important; }
-body.coach-mode #runHeaderCard{ display:none !important; }
-body.coach-mode .runNowBar{
+/* ===== COACH-LÄGE (V22) ===== */
+body.coach-mode{
+  overflow:hidden;
+}
+
+/* Dölj topp-bannern i coach-läge (endast coach-banner ska synas) */
+body.coach-mode .nsk-top{
+  display:none !important;
+}
+
+/* Dölj all vanlig UI i runView, men låt DOM finnas kvar (för att kunna räkna nästa/pågående) */
+body.coach-mode #runView .card{
+  display:none !important;
+}
+
+/* Fullskärm coach-banner */
+body.coach-mode #runNowBar.runNowBar{
   display:block !important;
   position:fixed !important;
   inset:0 !important;
   margin:0 !important;
-  padding:18px 16px 16px !important;
-  display:flex;
-  flex-direction:column;
-  justify-content:space-between;
-  background: rgba(6,7,9,.96) !important;
+  border-radius:0 !important;
+  min-height:100vh !important;
+  padding:20px 16px 16px !important;
+  background: rgba(6,7,9,.98) !important;
+  overflow:auto !important;
 }
-body.coach-mode .runNowBar .big{ font-size:32px !important; line-height:1.15; }
-body.coach-mode .runNowBar .label{ font-size:13px !important; letter-spacing:1px; }
-body.coach-mode .runNowBar .pill{ font-size:16px !important; padding:10px 12px !important; }
-body.coach-mode .runNowBar .coachMeta{ margin-top:10px; font-size:13px; opacity:.9; }
-body.coach-mode .runNowBar .coachBtns{ display:flex; gap:12px; flex-wrap:wrap; margin-top:14px; }
-body.coach-mode .runNowBar .coachBtns button{
-  flex:1 1 220px; min-height:58px; font-size:18px; border-radius:18px;
+
+/* Valfritt: visa schemat (om man vill) */
+body.coach-mode.coach-show-table #runView .card#runOutput{
+  display:block !important;
+  position:fixed;
+  left:0; right:0;
+  top:66vh;
+  bottom:0;
+  overflow:auto;
+  margin:0;
+  border-radius:18px 18px 0 0;
+  background: rgba(10,12,16,.96);
 }
-body.coach-mode #runView .card#runOutput{
-  position:fixed; left:0; right:0; top:68vh; bottom:0;
-  overflow:auto; margin:0; border-radius:18px 18px 0 0;
+body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
+  margin:12px 12px 16px;
 }
-body.coach-mode #runView .card#runOutput .print-card{ margin:12px 12px 16px; }
-body.coach-mode #runView .card#runOutput table td,
-body.coach-mode #runView .card#runOutput table th{ font-size:16px; }
+
 
 /* Nästa-byte blink/puls */
 @keyframes nskPulse{
@@ -2057,7 +2070,9 @@ const UI = {
         el.style.display = on ? "block" : "none";
       });
     }catch(e){}
-    try{ document.body.classList.toggle('coach-mode', id==='runView'); }catch(e){}
+    try{ document.body.classList.toggle('coach-mode', id==='runView');
+    // coach-show-table default off
+    if(id!=='runView') document.body.classList.remove('coach-show-table'); }catch(e){}
   },
   openModal(id){
     const el=document.getElementById(id);
@@ -3458,6 +3473,7 @@ function updateRunProUI(){
     }catch(e){}
 
     var readOnly = !!(window.App && App.state && App.state.readOnly);
+    var showTable = document.body.classList.contains('coach-show-table');
 
     function metaLines(obj){
       var out = "";
@@ -3485,6 +3501,7 @@ bar.innerHTML =
           curGoalieLine +
           '<div class="runNowActions">' +
             (readOnly ? '' : '<button type="button" class="runBockBtn" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
+            '<button type="button" class="ghost" onclick="toggleCoachShowTable()">'+(showTable?'Dölj schema':'Visa schema')+'</button>' +
           '</div>' +
         '</div>' +
         (nextRow ? (
@@ -3539,6 +3556,17 @@ function bockCurrentShiftFromBanner(){
     chk.click();
 
     // Refresh banner quickly (renderRunAll is called by onchange on run rows, but be safe)
+    try{ updateRunProUI(); }catch(e){}
+  }catch(e){}
+}
+
+
+// Toggle showing the full schema table in coach-mode (optional)
+function toggleCoachShowTable(){
+  try{
+    if(!document.body.classList.contains('coach-mode')) return;
+    document.body.classList.toggle('coach-show-table');
+    // Refresh banner text quickly
     try{ updateRunProUI(); }catch(e){}
   }catch(e){}
 }
@@ -3721,7 +3749,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.20");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.22");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3754,7 +3782,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.20</div>
+<div class="app-version">V 1.9.22</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
