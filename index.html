@@ -640,7 +640,18 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   transform: scale(1.01);
 }
 
+
+/* ===== AUTH (Login) ===== */
+#loginView .card{
+  border-left: 6px solid rgba(255,255,255,.10);
+}
+#loginView input{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="nsk-top">
@@ -651,12 +662,38 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   </div>
 </div>
 
+
+<!-- LOGIN -->
+<div id="loginView" class="view no-print" style="display:none;">
+  <div class="card" style="max-width:560px;margin:20px auto;">
+    <b style="font-size:20px;">Logga in</b>
+    <div class="small" style="margin-top:6px;opacity:.9;">
+      Ange din e-post. Du får en inloggningslänk (utan lösenord).
+    </div>
+
+    <label style="display:block;margin-top:14px;font-weight:800;opacity:.9;">E-post</label>
+    <input id="loginEmail" type="email" autocomplete="email" placeholder="namn@exempel.se"
+      style="height:52px;font-size:18px;padding:10px 14px;border-radius:14px;width:100%;" />
+
+    <div class="btnrow" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="btnSendLink" type="button">Skicka inloggningslänk</button>
+      <button id="btnLogout" class="ghost" type="button" style="display:none;">Logga ut</button>
+    </div>
+
+    <div id="loginMsg" class="small" style="margin-top:12px;opacity:.95;"></div>
+
+    <div class="small" style="margin-top:12px;opacity:.85;">
+      Status: <span id="authStatus">Ej inloggad</span> • Roll: <span id="roleStatus">—</span>
+    </div>
+  </div>
+</div>
+
 <!-- HOME -->
-<div id="homeView" class="view active no-print">
+<div id="homeView" class="view no-print">
   <div class="card">
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
-      <button class="ghost" type="button" onclick="openNewPool()">Skapa nytt poolspel</button>
+      <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -893,6 +930,150 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
+// ===== AUTH + ROLES (Supabase Magic Link) =====
+const SUPABASE_URL = "https://tonbbmxzotsjwuimobkn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbmJibXh6b3Rzand1aW1vYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODExMTIsImV4cCI6MjA4ODI1NzExMn0.lYByBwAhjbxlSYpOcv8W3JboNkf8ldTiieQ4goMtopc";
+const ADMIN_EMAIL = "peter_hasselberg@hotmail.com";
+
+const Auth = {
+  supabase: null,
+  role: null,
+  user: null,
+
+  isLoggedIn(){ return !!this.user; },
+  isAdmin(){ return this.role === "admin"; },
+  canFull(){ return this.role === "admin" || this.role === "coach_full"; },
+  canRun(){ return this.role === "admin" || this.role === "coach_full" || this.role === "coach_run"; },
+  canDelete(){ return this.role === "admin"; },
+
+  async init(){
+    try{
+      if(!window.supabase || !window.supabase.createClient) return;
+      this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      this.supabase.auth.onAuthStateChange(async () => {
+        await this.refresh();
+      });
+      await this.refresh();
+    }catch(e){}
+  },
+
+  async refresh(){
+    try{
+      if(!this.supabase) return;
+      const { data: sessionData } = await this.supabase.auth.getSession();
+      const session = sessionData ? sessionData.session : null;
+      this.user = session ? session.user : null;
+
+      if(!this.user){
+        this.role = null;
+        UI.show("loginView");
+        this.updateLoginUI();
+        return;
+      }
+
+      let role = await this.fetchRole();
+      if(!role){
+        await this.ensureProfileRow();
+        role = await this.fetchRole();
+      }
+      this.role = role || "coach_run";
+
+      this.updateLoginUI();
+      this.applyRoleUI();
+
+      const active = document.querySelector(".view.active");
+      if(active && active.id && active.id !== "loginView") return;
+
+      UI.show("homeView");
+      try{ UI.renderPoolList(); }catch(e){}
+    }catch(e){}
+  },
+
+  async fetchRole(){
+    try{
+      const { data, error } = await this.supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", this.user.id)
+        .single();
+      if(error) return null;
+      return data && data.role ? data.role : null;
+    }catch(e){ return null; }
+  },
+
+  async ensureProfileRow(){
+    try{
+      await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
+    }catch(e){}
+  },
+
+  async sendMagicLink(email){
+    const msg = document.getElementById("loginMsg");
+    if(msg) msg.textContent = "";
+    const { error } = await this.supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if(error){
+      if(msg) msg.textContent = "Kunde inte skicka länk: " + error.message;
+      return;
+    }
+    if(msg) msg.textContent = "Länk skickad! Öppna mejlet på mobilen och klicka på länken.";
+  },
+
+  async logout(){
+    try{ await this.supabase.auth.signOut(); }catch(e){}
+  },
+
+  updateLoginUI(){
+    const status = document.getElementById("authStatus");
+    const roleEl = document.getElementById("roleStatus");
+    const btnLogout = document.getElementById("btnLogout");
+    if(!this.user){
+      if(status) status.textContent = "Ej inloggad";
+      if(roleEl) roleEl.textContent = "—";
+      if(btnLogout) btnLogout.style.display = "none";
+      return;
+    }
+    if(status) status.textContent = "Inloggad";
+    if(roleEl) roleEl.textContent = this.role || "coach_run";
+    if(btnLogout) btnLogout.style.display = "inline-block";
+  },
+
+  applyRoleUI(){
+    const canRun = this.canRun();
+    const canFull = this.canFull();
+    const canAdmin = this.isAdmin();
+
+    document.querySelectorAll("[data-perm='run']").forEach(el => {
+      el.style.display = canRun ? "" : "none";
+    });
+    document.querySelectorAll("[data-perm='full']").forEach(el => {
+      el.style.display = canFull ? "" : "none";
+    });
+    document.querySelectorAll("[data-perm='admin']").forEach(el => {
+      el.style.display = canAdmin ? "" : "none";
+    });
+  }
+};
+
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t) return;
+  if(t.id==="btnSendLink"){
+    const email = (document.getElementById("loginEmail")?.value || "").trim();
+    if(!email){
+      const msg = document.getElementById("loginMsg");
+      if(msg) msg.textContent = "Skriv din e-post.";
+      return;
+    }
+    Auth.sendMagicLink(email);
+  }
+  if(t.id==="btnLogout") Auth.logout();
+});
+
+
 
 
 
@@ -1581,10 +1762,10 @@ const UI = {
           </div>
           ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
-            <button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>
-            <button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>
-            <button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>
-          </div>
+            ${((window.Auth && Auth.canRun && Auth.canRun())) ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>` : ``}
+            ${((window.Auth && Auth.canFull && Auth.canFull())) ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>` : ``}
+            ${((window.Auth && Auth.canDelete && Auth.canDelete())) ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>` : ``}
+</div>
         </div>`;
     });
 
@@ -2550,16 +2731,40 @@ function wireImport(){
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
 function goHome(){ Actions.goHome(); }
-function openNewPool(){ Actions.openNewPool(); }
+function openNewPool(){
+  // AUTH_GUARD_openNewPool
+  if(window.Auth && !(Auth.canFull && Auth.canFull())){
+    alert("Du saknar behörighet att skapa poolspel.");
+    return;
+  }
+ Actions.openNewPool(); }
 function closeNewPool(){ Actions.closeNewPool(); }
 function saveNewPool(){ Actions.saveNewPool(); }
-function deletePool(id){ Actions.deletePool(id); }
-function startPoolRun(id, target){ Actions.startPoolRun(id, target); }
+function deletePool(id){
+  // AUTH_GUARD_deletePool
+  if(window.Auth && !(Auth.canDelete && Auth.canDelete())){
+    alert("Endast admin kan ta bort.");
+    return;
+  }
+ Actions.deletePool(id); }
+function startPoolRun(id, target){
+  // AUTH_GUARD_startPoolRun
+  if(window.Auth && !(Auth.canRun && Auth.canRun())){
+    alert("Du saknar behörighet att starta poolspel.");
+    return;
+  }
+ Actions.startPoolRun(id, target); }
 function openTeamSelectForCurrentPool(){ Actions.openTeamSelectForCurrentPool(); }
 function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
 function chooseTeam(teamNo){ Actions.chooseTeam(teamNo); }
-function openPoolEdit(id){ Actions.openPoolEdit(id); }
+function openPoolEdit(id){
+  // AUTH_GUARD_openPoolEdit
+  if(window.Auth && !(Auth.canFull && Auth.canFull())){
+    alert("Du saknar behörighet att redigera.");
+    return;
+  }
+ Actions.openPoolEdit(id); }
 function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit(); }
 function showRun(){ Actions.showRun(); }
@@ -2818,6 +3023,11 @@ document.addEventListener("change", function(e){
   }catch(err){}
 });
 
+
+
+
+// Init auth
+try{ Auth.init(); }catch(e){}
 
 </script>
 <script>
