@@ -816,6 +816,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 <!-- RUN VIEW -->
 <div id="runView" class="view no-print">
   <div class="card">
+    <div id="runNowBar" class="runNowBar" style="display:none;"></div>
     <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
       <div>
         <b>Poolspel-läge</b>
@@ -1033,13 +1034,12 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ADMIN_EMAIL = "peter_hasselberg@hotmail.com";
 
 const Auth = {
-
   supabase: null,
   role: null,
   user: null,
-
   _refreshing: false,
-  _refreshQueued: false,
+  _queued: false,
+  _unsub: null,
 
   isLoggedIn(){ return !!this.user; },
   isAdmin(){ return this.role === "admin"; },
@@ -1050,24 +1050,33 @@ const Auth = {
   async init(){
     try{
       if(!window.supabase || !window.supabase.createClient) return;
+      if(this.supabase) return; // already initialised
+
       this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-      this.supabase.auth.onAuthStateChange(async () => {
+
+      // Subscribe once
+      const { data } = this.supabase.auth.onAuthStateChange(async () => {
         await this.refresh();
       });
+      this._unsub = data && data.subscription ? data.subscription : null;
+
       await this.refresh();
-    }catch(e){}
+    }catch(e){
+      // swallow
+    }
   },
 
   async refresh(){
+    // Prevent overlapping refresh calls (supabase-js can throw "Lock was stolen by another request")
+    if(this._refreshing){
+      this._queued = true;
+      return;
+    }
+    this._refreshing = true;
+    this._queued = false;
+
     try{
       if(!this.supabase) return;
-
-      // Prevent concurrent refreshes (can cause: "Lock was stolen by another request")
-      if(this._refreshing){
-        this._refreshQueued = true;
-        return;
-      }
-      this._refreshing = true;
 
       const { data: sessionData } = await this.supabase.auth.getSession();
       const session = sessionData ? sessionData.session : null;
@@ -1077,6 +1086,7 @@ const Auth = {
         this.role = null;
         UI.showView("loginView");
         this.updateLoginUI();
+        this.applyRoleUI();
         return;
       }
 
@@ -1086,26 +1096,8 @@ const Auth = {
         role = await this.fetchRole();
       }
       this.role = role || "coach_run";
-      // If there is an invite role for this email, ensure profile role matches it (useful for pre-setting roles)
-      try{
-        if(this.user && this.user.email){
-          const invited = await this.fetchInviteRole(this.user.email);
-          if(invited && invited !== (this.role||"")){
-            // Only auto-upgrade (never downgrade) unless profile missing
-            const order = { "coach_run": 1, "coach_full": 2, "admin": 3 };
-            const cur = order[this.role||"coach_run"] || 1;
-            const wanted = order[invited] || cur;
-            if(wanted > cur){
-              await this.supabase.from("profiles").update({ role: invited }).eq("id", this.user.id);
-              this.role = invited;
-            }
-          }
-        }
-      }catch(e){}
 
-
-      // (Admin email hint handled in updateLoginUI below)
-      this.updateLoginUI();
+      // Setup hint (only for the configured admin email)
       try{
         const hint=document.getElementById('adminSetupHint');
         if(hint){
@@ -1120,6 +1112,7 @@ const Auth = {
         }
       }catch(e){}
 
+      this.updateLoginUI();
       this.applyRoleUI();
 
       const active = document.querySelector(".view.active");
@@ -1128,23 +1121,28 @@ const Auth = {
       UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
     }catch(e){
-      // If we hit the supabase lock contention, queue a retry
+      // show error in banner if present
       try{
-        if(String(e && e.message || e).toLowerCase().includes("lock was stolen")){
-          this._refreshQueued = true;
+        const msg = "Auth-fel: " + (e && e.message ? e.message : String(e));
+        const b=document.getElementById("jsErrorBanner");
+        const t=document.getElementById("jsErrorText");
+        if(b && t){
+          t.textContent = msg;
+          b.style.display="block";
         }
       }catch(_){}
     }finally{
       this._refreshing = false;
-      if(this._refreshQueued){
-        this._refreshQueued = false;
-        setTimeout(()=>{ try{ this.refresh(); }catch(e){} }, 50);
+      if(this._queued){
+        // run one more time
+        try{ await this.refresh(); }catch(e){}
       }
     }
   },
 
   async fetchRole(){
     try{
+      if(!this.supabase || !this.user) return null;
       const { data, error } = await this.supabase
         .from("profiles")
         .select("role")
@@ -1152,65 +1150,36 @@ const Auth = {
         .single();
       if(error) return null;
       return data && data.role ? data.role : null;
-    }catch(e){ return null; }
-  
-  async fetchInviteRole(email){
-    try{
-      const em = String(email||"").trim().toLowerCase();
-      if(!em) return null;
-      const { data, error } = await this.supabase
-        .from("invites")
-        .select("role")
-        .eq("email", em)
-        .single();
-      if(error) return null;
-      return data && data.role ? data.role : null;
-    }catch(e){ return null; }
+    }catch(e){
+      return null;
+    }
   },
-
-},
 
   async ensureProfileRow(){
     try{
-      // Optional: apply invited role (from invites table) on first login
-      let invitedRole = null;
-      try{
-        if(this.user && this.user.email){
-          invitedRole = await this.fetchInviteRole(this.user.email);
-        }
-      }catch(e){ invitedRole = null; }
+      if(!this.supabase || !this.user) return;
 
-      let payload = { id: this.user.id, role: invitedRole || "coach_run" };
+      // Insert default row if missing
+      let payload = { id: this.user.id, role: "coach_run" };
       if(this.user && this.user.email) payload.email = this.user.email;
 
       let res = await this.supabase.from("profiles").insert(payload);
-
       // If email column doesn't exist, retry without it
       if(res && res.error && payload.email){
-        await this.supabase.from("profiles").insert({ id: this.user.id, role: payload.role });
+        await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
       }
-    }catch(e){}
-  }
+    }catch(e){
+      // ignore
+    }
   },
 
   async sendMagicLink(email){
     const msg = document.getElementById("loginMsg");
     if(msg) msg.textContent = "";
-    // Retry on transient WebLock issues
-    let error = null;
-    for(let attempt=0; attempt<3; attempt++){
-      const res = await this.supabase.auth.signInWithOtp({
-        email,
-        options: { emailRedirectTo: window.location.href }
-      });
-      error = res && res.error ? res.error : null;
-      const msg = (error && (error.message||error.toString())) || "";
-      if(error && /lock was stolen/i.test(msg)){
-        await new Promise(r=>setTimeout(r, 80 + attempt*160));
-        continue;
-      }
-      break;
-    }
+    const { error } = await this.supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
     if(error){
       if(msg) msg.textContent = "Kunde inte skicka länk: " + error.message;
       return;
@@ -1219,22 +1188,7 @@ const Auth = {
   },
 
   async logout(){
-    // Retry on transient WebLock issues
-    try{
-      for(let attempt=0; attempt<3; attempt++){
-        try{
-          await this.supabase.auth.signOut();
-          break;
-        }catch(err){
-          const msg = (err && (err.message||err.toString())) || "";
-          if(/lock was stolen/i.test(msg)){
-            await new Promise(r=>setTimeout(r, 80 + attempt*160));
-            continue;
-          }
-          throw err;
-        }
-      }
-    }catch(e){}
+    try{ await this.supabase.auth.signOut(); }catch(e){}
   },
 
   updateLoginUI(){
@@ -1268,7 +1222,6 @@ const Auth = {
     });
   }
 };
-
 
 // Expose Auth globally (used by UI rendering)
 window.Auth = Auth;
@@ -3012,6 +2965,14 @@ function init(){
   initSettingsDropdowns();
   wireImport();
 
+  // Admin search live filter
+  try{
+    var s=document.getElementById('adminSearch');
+    if(s){
+      s.addEventListener('input', function(){ try{ Admin.filter(); }catch(e){} });
+    }
+  }catch(e){}
+
   // Close modals on backdrop click
   ["newPoolModal","registerModal","goalieStatsModal","teamSelectModal"].forEach(id=>{
     const m=document.getElementById(id);
@@ -3304,7 +3265,9 @@ const Admin = {
         const tr=document.createElement("tr");
 
         const email = (u.email || "—");
-        try{ tr.setAttribute("data-search", (email+" "+(u.id||"")+" "+(u.role||"")).toLowerCase()); }catch(e){}
+        tr.setAttribute("data-search", (u.email||"") + " " + (u.id||"") + " " + (u.role||""));
+
+      try{ tr.setAttribute("data-search", (email+" "+(u.id||"")+" "+(u.role||"")).toLowerCase()); }catch(e){}
         tr.innerHTML = `
           <td>${escapeHtml(email)}</td>
           <td><code>${escapeHtml(u.id)}</code></td>
