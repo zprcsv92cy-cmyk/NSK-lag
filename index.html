@@ -1031,17 +1031,18 @@ const Auth = {
   },
 
   async refresh(){
-    // Ensure only one refresh runs at a time (Supabase uses Web Locks; concurrent calls can throw "Lock was stolen...")
-    if(this._refreshing){
-      this._refreshQueued = true;
-      return;
-    }
-    this._refreshing = true;
     try{
       if(!this.supabase) return;
 
-      // getSession can throw Web Locks errors on some mobile browsers if called concurrently
-      const session = await this.getSessionWithRetry();
+      // Prevent concurrent refreshes (can cause: "Lock was stolen by another request")
+      if(this._refreshing){
+        this._refreshQueued = true;
+        return;
+      }
+      this._refreshing = true;
+
+      const { data: sessionData } = await this.supabase.auth.getSession();
+      const session = sessionData ? sessionData.session : null;
       this.user = session ? session.user : null;
 
       if(!this.user){
@@ -1058,6 +1059,7 @@ const Auth = {
       }
       this.role = role || "coach_run";
 
+      // (Admin email hint handled in updateLoginUI below)
       this.updateLoginUI();
       try{
         const hint=document.getElementById('adminSetupHint');
@@ -1081,7 +1083,7 @@ const Auth = {
       UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
     }catch(e){
-      // Swallow lock errors; we will retry via queued refresh
+      // If we hit the supabase lock contention, queue a retry
       try{
         if(String(e && e.message || e).toLowerCase().includes("lock was stolen")){
           this._refreshQueued = true;
@@ -1091,12 +1093,10 @@ const Auth = {
       this._refreshing = false;
       if(this._refreshQueued){
         this._refreshQueued = false;
-        // next tick to avoid immediate lock contention
         setTimeout(()=>{ try{ this.refresh(); }catch(e){} }, 50);
       }
     }
   },
-
 
   async fetchRole(){
     try{
@@ -1865,12 +1865,22 @@ function getCurrentPoolDate(){
 // ---------- UI ----------
 const UI = {
   showView(id){
-    // Show exactly one view at a time (including login/admin)
-    document.querySelectorAll(".view").forEach(el=>{
-      const isActive = (el.id === id);
-      el.classList.toggle("active", isActive);
-      el.style.display = isActive ? "block" : "none";
+    const views=["loginView","homeView","editView","runView","adminView"];
+    views.forEach(v=>{
+      const el=document.getElementById(v);
+      if(!el) return;
+      const on = (v===id);
+      el.classList.toggle("active", on);
+      el.style.display = on ? "block" : "none";
     });
+  },
+  openModal(id){
+    const el=document.getElementById(id);
+    if(el) el.style.display="block";
+  },
+  closeModal(id){
+    const el=document.getElementById(id);
+    if(el) el.style.display="none";
   },
   renderPoolList(){
     const el=document.getElementById("poolList");
