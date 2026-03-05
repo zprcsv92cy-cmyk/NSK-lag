@@ -672,13 +672,91 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 #adminView code{ opacity:.85; }
 
 </style>
+<script>
+/**
+ * EARLY ERROR CAPTURE + ALWAYS-AVAILABLE BANNER
+ * - Fångar fel innan DOM finns
+ * - Skapar banner själv om den saknas
+ * - Klick kopierar feltext
+ */
+(function(){
+  const buf = [];
+  function ensureBanner(){
+    let b = document.getElementById("jsErrorBanner");
+    let t = document.getElementById("jsErrorText");
+    if(b && t) return { b, t };
+
+    b = document.createElement("div");
+    b.id = "jsErrorBanner";
+    b.style.cssText =
+      "display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;" +
+      "background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;" +
+      "padding:10px 12px;font-size:13px;";
+
+    const title = document.createElement("div");
+    title.textContent = "JavaScript-fel (klicka för att kopiera)";
+    title.style.cssText = "font-weight:900;margin-bottom:6px;";
+    b.appendChild(title);
+
+    t = document.createElement("div");
+    t.id = "jsErrorText";
+    t.style.cssText = "opacity:.95;word-break:break-word;";
+    b.appendChild(t);
+
+    const mount = () => {
+      if(document.body && !document.getElementById("jsErrorBanner")){
+        document.body.appendChild(b);
+      }
+    };
+    if(document.body) mount();
+    else document.addEventListener("DOMContentLoaded", mount);
+
+    return { b, t };
+  }
+
+  function showErr(msg){
+    try{
+      buf.push(msg);
+
+      // If DOM not ready, wait — buffer is kept.
+      if(!document || !document.documentElement){
+        return;
+      }
+
+      const ui = ensureBanner();
+      ui.t.textContent = buf.join("\n\n");
+      ui.b.style.display = "block";
+      ui.b.onclick = function(){
+        try{ navigator.clipboard && navigator.clipboard.writeText(buf.join("\n\n")); }catch(e){}
+      };
+    }catch(e){}
+  }
+
+  window.__NSK_showErr = showErr;
+
+  window.addEventListener("error", function(e){
+    let msg = (e && e.message) ? e.message : "Okänt fel";
+    if(e && e.filename) msg += " @ " + e.filename + ":" + (e.lineno||0) + ":" + (e.colno||0);
+    showErr(msg);
+  });
+
+  window.addEventListener("unhandledrejection", function(e){
+    const r = e && e.reason ? (e.reason.message || String(e.reason)) : "okänt";
+    showErr("Promise-fel: " + r);
+  });
+
+  document.addEventListener("DOMContentLoaded", function(){
+    if(buf.length) showErr(buf.join("\n\n"));
+  });
+})();
+</script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
-    <h1>NSK Lag</h1>
+    <h1>Nyköpings Sportklubb • Team 18</h1>
     <div class="small">Poolspel • Lag • Byten • PDF</div>
   </div>
 </div>
@@ -1017,7 +1095,10 @@ const Auth = {
 
   async init(){
     try{
-      if(!window.supabase || !window.supabase.createClient) return;
+      if(!window.supabase || !window.supabase.createClient){
+        try{ UI.showView("loginView"); }catch(e){}
+        return;
+      }
       this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
       this.supabase.auth.onAuthStateChange(async () => {
         await this.refresh();
@@ -1320,20 +1401,9 @@ function hideMatchDateInEdit(){
 
 
 
-// ---- diagnostics: show JS errors on screen ----
+// diagnostics handled in <head> (early capture)
 (function(){
-  function showErr(msg){
-    try{
-      var b=document.getElementById("jsErrorBanner");
-      var t=document.getElementById("jsErrorText");
-      if(!b||!t) return;
-      t.textContent = msg;
-      b.style.display = "block";
-      b.onclick=function(){
-        try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
-      };
-    }catch(e){}
-  }
+  const showErr = window.__NSK_showErr || function(){};
   window.addEventListener("error", function(e){
     var msg = (e && e.message ? e.message : "Okänt fel");
     if(e && e.filename) msg += " @ " + e.filename + ":" + (e.lineno||0) + ":" + (e.colno||0);
@@ -1343,9 +1413,7 @@ function hideMatchDateInEdit(){
     var msg = "Promise-fel: " + (e && e.reason ? (e.reason.message||String(e.reason)) : "okänt");
     showErr(msg);
   });
-})()
-
-
+})();
 
 function setRouteHash(route, poolId, team){
   try{
@@ -3263,7 +3331,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.9</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
