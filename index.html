@@ -1170,7 +1170,14 @@ async tryBootstrapAdmin(){
 
       // If we're already on a non-login view, don't force navigation.
       const active = document.querySelector(".view.active");
-      if(active && active.id && active.id !== "loginView") return;
+      if(active && active.id && active.id !== "loginView"){
+        // We are already inside the app: keep current view but refresh UI that depends on permissions.
+        try{
+          // Re-render home list so buttons (Påbörja/Redigera/Ta bort) reflect the latest role.
+          if(active.id==="homeView"){ UI.renderPoolList(); }
+        }catch(e){}
+        return;
+      }
 
       UI.showView("homeView");
       try{ UI.renderPoolList(); }catch(e){}
