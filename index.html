@@ -555,55 +555,89 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 }
 
 
-/* NSK confirm modal */
-#nskConfirmModal{ position:fixed; inset:0; z-index:100000; }
-#nskConfirmModal .nskConfirmBackdrop{ position:absolute; inset:0; background:rgba(0,0,0,.55); backdrop-filter: blur(6px); }
-#nskConfirmModal .nskConfirmCard{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(520px, calc(100vw - 28px));
-  background:rgba(25,26,30,.96);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:18px;
-  box-shadow: 0 18px 50px rgba(0,0,0,.55);
-  padding:16px 14px;
+/* NSK confirm + prompt modal (iOS-lik, men med NSK accent) */
+#nskConfirmModal, #nskPromptModal{
+  position:fixed;
+  inset:0;
+  z-index:100000;
 }
-#nskConfirmModal .nskConfirmTitle{ font-weight:900; font-size:16px; margin-bottom:8px; }
-#nskConfirmModal .nskConfirmMsg{ font-size:14px; line-height:1.35; opacity:.95; }
-#nskConfirmModal .nskConfirmBtns{ display:flex; gap:10px; justify-content:flex-end; margin-top:14px; }
-#nskConfirmModal .nskConfirmBtns button{ min-width:110px; }
-
-
-
-/* NSK prompt/alert modal (ersätter iOS prompt/confirm för bättre look) */
-#nskPromptModal{ position:fixed; inset:0; z-index:100001; display:none; }
-#nskPromptModal .nskConfirmBackdrop{ position:absolute; inset:0; background:rgba(0,0,0,.55); backdrop-filter: blur(6px); }
-#nskPromptModal .nskConfirmCard{
-  position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);
-  width:min(520px, calc(100vw - 28px));
-  background:rgba(25,26,30,.96);
-  border:1px solid rgba(255,255,255,.12);
-  border-radius:18px;
-  box-shadow: 0 18px 50px rgba(0,0,0,.55);
-  padding:16px 14px;
+#nskConfirmModal .nskConfirmBackdrop,
+#nskPromptModal .nskPromptBackdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
-#nskPromptModal .nskConfirmTitle{ font-weight:900; font-size:16px; margin-bottom:8px; }
-#nskPromptModal .nskConfirmMsg{ font-size:14px; line-height:1.35; opacity:.95; }
+#nskConfirmModal .nskConfirmCard,
+#nskPromptModal .nskPromptCard{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(560px, calc(100vw - 28px));
+  background:#f2f2f7;
+  color:#111;
+  border-radius:20px;
+  box-shadow: 0 22px 70px rgba(0,0,0,.45);
+  padding:18px 16px 14px;
+}
+#nskConfirmModal .nskConfirmTitle,
+#nskPromptModal .nskConfirmTitle{
+  font-weight:800;
+  font-size:20px;
+  margin-bottom:10px;
+}
+#nskConfirmModal .nskConfirmMsg,
+#nskPromptModal .nskConfirmMsg{
+  font-size:16px;
+  line-height:1.35;
+  color:#111;
+  opacity:.95;
+}
 #nskPromptModal .nskPromptInput{
-  margin-top:12px;
   width:100%;
-  height:52px;
-  border-radius:14px;
-  padding:10px 14px;
+  margin-top:14px;
+  height:48px;
   font-size:18px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.18);
+  background:#fff;
+  color:#111;
   outline:none;
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.14);
-  color:#fff;
 }
 #nskPromptModal .nskPromptInput:focus{
-  border-color: rgba(177,18,38,.85);
-  box-shadow: 0 0 0 3px rgba(177,18,38,.18);
+  border-color: rgba(177,18,38,.75);
+  box-shadow: 0 0 0 4px rgba(177,18,38,.15);
 }
+#nskConfirmModal .nskConfirmBtns,
+#nskPromptModal .nskConfirmBtns{
+  display:flex;
+  gap:18px;
+  justify-content:flex-end;
+  margin-top:16px;
+}
+#nskConfirmModal .nskConfirmBtns button,
+#nskPromptModal .nskConfirmBtns button{
+  background:transparent;
+  border:0;
+  padding:10px 6px;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:700;
+  box-shadow:none;
+}
+#nskConfirmModal #nskConfirmCancel,
+#nskPromptModal #nskPromptCancel{
+  color:#007aff;
+}
+#nskConfirmModal #nskConfirmOk,
+#nskPromptModal #nskPromptOk{
+  color:var(--nsk-red);
+  font-weight:900;
+}
+
 /* Clear disabled look for finish button */
 .finishPoolFooter button:disabled{
   opacity:.35 !important;
@@ -1477,8 +1511,7 @@ function nskAlert(message, title){
   });
 }
 
-function nskPrompt(message, title, opts){
-  opts = opts || {};
+function nskPrompt(message, title, placeholder, defaultValue){
   return new Promise(function(resolve){
     try{
       var modal=document.getElementById("nskPromptModal");
@@ -1487,24 +1520,23 @@ function nskPrompt(message, title, opts){
       var inp=document.getElementById("nskPromptInput");
       var btnOk=document.getElementById("nskPromptOk");
       var btnCancel=document.getElementById("nskPromptCancel");
-      var backdrop = modal ? modal.querySelector(".nskConfirmBackdrop") : null;
-
       if(!modal||!msg||!ttl||!inp||!btnOk||!btnCancel){
-        resolve(prompt(message||""));
+        // fallback
+        var val = window.prompt(message || "", defaultValue || "");
+        resolve(val===null ? null : String(val));
         return;
       }
-
       ttl.textContent = title || "Ange";
       msg.textContent = message || "";
-      inp.type = (opts.type||"password");
-      inp.placeholder = opts.placeholder || "";
-      inp.value = (opts.value!=null ? String(opts.value) : "");
+      inp.value = (defaultValue!=null ? String(defaultValue) : "");
+      inp.placeholder = placeholder || "";
       modal.style.display="block";
-
-      // focus after paint
+      // focus input
       setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 50);
 
       var done=false;
+      var backdrop = modal.querySelector(".nskPromptBackdrop");
+
       function cleanup(){
         btnOk.removeEventListener("click", onOk);
         btnCancel.removeEventListener("click", onCancel);
@@ -1518,12 +1550,12 @@ function nskPrompt(message, title, opts){
         cleanup();
         resolve(val);
       }
-      function onOk(){ close(inp.value); }
+      function onOk(){ close(String(inp.value||"")); }
       function onCancel(){ close(null); }
       function onBackdrop(){ close(null); }
       function onKey(e){
         if(e.key==="Escape") close(null);
-        if(e.key==="Enter") close(inp.value);
+        if(e.key==="Enter") close(String(inp.value||""));
       }
 
       btnOk.addEventListener("click", onOk);
@@ -1531,44 +1563,8 @@ function nskPrompt(message, title, opts){
       document.addEventListener("keydown", onKey);
       if(backdrop) backdrop.addEventListener("click", onBackdrop);
     }catch(e){
-      resolve(prompt(message||""));
-    }
-  });
-}
-nt = message || "";
-      modal.style.display="block";
-    refreshTeamSelectUI();
-
-      var done=false;
-      var backdrop = modal.querySelector(".nskConfirmBackdrop");
-
-      function cleanup(){
-        btnOk.removeEventListener("click", onOk);
-        btnCancel.removeEventListener("click", onCancel);
-        document.removeEventListener("keydown", onKey);
-        if(backdrop) backdrop.removeEventListener("click", onBackdrop);
-      }
-      function close(ok){
-        if(done) return;
-        done=true;
-        modal.style.display="none";
-        cleanup();
-        resolve(!!ok);
-      }
-      function onOk(){ close(true); }
-      function onCancel(){ close(false); }
-      function onBackdrop(){ close(false); }
-      function onKey(e){
-        if(e.key==="Escape") close(false);
-        if(e.key==="Enter") close(true);
-      }
-
-      btnOk.addEventListener("click", onOk);
-      btnCancel.addEventListener("click", onCancel);
-      document.addEventListener("keydown", onKey);
-      if(backdrop) backdrop.addEventListener("click", onBackdrop);
-    }catch(e){
-      resolve(window.confirm(message));
+      var val2 = window.prompt(message || "", defaultValue || "");
+      resolve(val2===null ? null : String(val2));
     }
   });
 }
@@ -3574,30 +3570,39 @@ async saveRole(userId){
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
-    // Avoid duplicate registrations which can cause "Lock was stolen by another request"
-    if (window.
-<!-- NSK prompt/alert modal -->
+    try{
+      const reg = await navigator.serviceWorker.register("./sw.js");
+      // Ask SW to activate immediately on update (prevents "stuck" old cache)
+      if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener("statechange", () => {
+          if (nw.state === "installed" && navigator.serviceWorker.controller) {
+            // New version installed; refresh on next load.
+          }
+        });
+      });
+      // Also check for updates in the background
+      if (reg.update) reg.update().catch(()=>{});
+    }catch(e){}
+  });
+}
+</script>
+
+<!-- NSK prompt modal -->
 <div id="nskPromptModal" style="display:none;">
-  <div class="nskConfirmBackdrop"></div>
-  <div class="nskConfirmCard" role="dialog" aria-modal="true" aria-labelledby="nskPromptTitle">
-    <div id="nskPromptTitle" class="nskConfirmTitle">Kod krävs</div>
+  <div class="nskPromptBackdrop"></div>
+  <div class="nskPromptCard" role="dialog" aria-modal="true" aria-labelledby="nskPromptTitle">
+    <div id="nskPromptTitle" class="nskConfirmTitle">Ange</div>
     <div id="nskPromptMsg" class="nskConfirmMsg"></div>
-    <input id="nskPromptInput" class="nskPromptInput" type="password" autocomplete="off" inputmode="numeric" />
+    <input id="nskPromptInput" type="text" class="nskPromptInput" />
     <div class="nskConfirmBtns">
       <button id="nskPromptCancel" class="ghost" type="button">Avbryt</button>
       <button id="nskPromptOk" type="button">OK</button>
     </div>
   </div>
 </div>
-
-__nskSwInit) return;
-    window.__nskSwInit = true;
-    try{
-      await navigator.serviceWorker.register("./sw.js");
-    }catch(e){}
-  });
-}
-</script>
 
 <div class="app-version">V 1.0</div>
 
