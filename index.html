@@ -1033,6 +1033,19 @@ const SUPABASE_URL = "https://tonbbmxzotsjwuimobkn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbmJibXh6b3Rzand1aW1vYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODExMTIsImV4cCI6MjA4ODI1NzExMn0.lYByBwAhjbxlSYpOcv8W3JboNkf8ldTiieQ4goMtopc";
 const ADMIN_EMAIL = "peter_hasselberg@hotmail.com";
 
+// ADMIN BOOTSTRAP RLS POLICY (run in Supabase SQL Editor, once):
+// 1) Ensure profiles has columns: id (uuid, PK), role (text), email (text)
+// 2) Enable RLS on profiles
+// 3) Allow everyone to read their own profile row:
+//    create policy "profiles: read own" on public.profiles
+//    for select using (auth.uid() = id);
+// 4) Allow ONLY this email to promote itself to admin:
+//    create policy "profiles: bootstrap admin (peter)" on public.profiles
+//    for update using (auth.uid() = id and lower(auth.email()) = lower(\'peter_hasselberg@hotmail.com\'))
+//    with check (auth.uid() = id and lower(auth.email()) = lower(\'peter_hasselberg@hotmail.com\') and role = \'admin\');
+// NOTE: This is safer than hardcoding secrets client-side, because the server enforces the rule.
+
+
 const Auth = {
   supabase: null,
   role: null,
@@ -1046,6 +1059,35 @@ const Auth = {
   canFull(){ return this.role === "admin" || this.role === "coach_full"; },
   canRun(){ return this.role === "admin" || this.role === "coach_full" || this.role === "coach_run"; },
   canDelete(){ return this.role === "admin"; },
+
+
+// Bootstrap admin for the configured ADMIN_EMAIL.
+// IMPORTANT: This only works if your Supabase RLS policy ALLOWS this update server-side.
+// See notes in the README/comment below (search for "ADMIN BOOTSTRAP RLS POLICY").
+async tryBootstrapAdmin(){
+  try{
+    if(!this.supabase || !this.user) return false;
+    const email = (this.user.email || "").toLowerCase();
+    if(email !== String(ADMIN_EMAIL||"").toLowerCase()) return false;
+    if(this.role === "admin") return true;
+
+    // avoid infinite refresh loops / repeated attempts
+    if(localStorage.getItem("nsk_admin_bootstrap_done")==="1") return false;
+
+    const { error } = await this.supabase
+      .from("profiles")
+      .update({ role: "admin" })
+      .eq("id", this.user.id);
+
+    if(error) return false;
+
+    localStorage.setItem("nsk_admin_bootstrap_done","1");
+    this.role = "admin";
+    return true;
+  }catch(e){
+    return false;
+  }
+},
 
   async init(){
     try{
@@ -1096,6 +1138,10 @@ const Auth = {
         role = await this.fetchRole();
       }
       this.role = role || "coach_run";
+
+
+// Try to bootstrap admin for ADMIN_EMAIL (server-side policy must allow it)
+await this.tryBootstrapAdmin();
 
       // Setup hint (only for the configured admin email)
       try{
