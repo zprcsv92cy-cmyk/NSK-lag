@@ -581,92 +581,63 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 }
 
 
-
-/* ---- Improve New Pool Modal size/clarity ---- */
-#newPoolModal .modalPanel{
-  max-width:520px;
-  width:92%;
-  padding:22px;
+/* ===== POOLSPEL PRO (Run view) ===== */
+.runNowBar{
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  margin: 0 -16px 12px;
+  padding: 12px 16px;
+  background: rgba(10,12,16,.92);
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-
-#newPoolModal label{
-  font-size:15px;
-  font-weight:700;
-  opacity:.9;
+.runNowBar .label{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .8px;
+  opacity: .85;
+  text-transform: uppercase;
 }
-
-#newPoolModal input,
-#newPoolModal select{
-  height:52px;
-  font-size:18px;
-  padding:10px 14px;
-  border-radius:14px;
+.runNowBar .big{
+  font-size: 18px;
+  font-weight: 900;
+  margin-top: 4px;
 }
-
-#newPoolModal .row{
-  grid-template-columns:1fr;
-  gap:14px;
+.runNowBar .row2{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:8px;
+  opacity:.95;
 }
-
-#newPoolModal button{
-  height:54px;
-  font-size:18px;
-  padding:0 26px;
-}
-
-#newPoolModal .btnrow{
-  justify-content:flex-start;
-  margin-top:18px;
-}
-
-
-/* ---- New Pool Modal: PRO glass + centered card ---- */
-#newPoolModal{
-  align-items:center;
-  justify-content:center;
-}
-
-#newPoolModal .modalPanel{
-  background: rgba(22,24,28,.72);
+.runNowBar .pill{
+  padding:6px 10px;
+  border-radius:999px;
+  background: rgba(255,255,255,.07);
   border: 1px solid rgba(255,255,255,.10);
-  box-shadow:
-    0 24px 70px rgba(0,0,0,.55),
-    inset 0 1px 0 rgba(255,255,255,.10);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  font-size: 13px;
+  font-weight: 800;
 }
 
-#newPoolModal .modalPanel h2,
-#newPoolModal .modalPanel h3{
-  font-size:22px;
-  letter-spacing:.2px;
-  opacity:1;
-  margin-bottom:14px;
+#runView tr.current-row td{
+  background: rgba(255,255,255,.08) !important;
 }
-
-/* make date field feel more "primary" */
-#newPoolModal input[type="date"],
-#newPoolModal input[type="text"],
-#newPoolModal select{
-  background: rgba(255,255,255,.06);
-  border: 1px solid rgba(255,255,255,.10);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.06);
+#runView tr.current-row td:first-child{
+  box-shadow: inset 6px 0 0 #22c55e;
 }
-
-#newPoolModal input[type="date"]{
-  text-align:center;
-  font-weight:800;
-  letter-spacing:.6px;
+#runView tr.next-row td{
+  background: rgba(255,255,255,.05) !important;
 }
-
-/* improve close button visibility & hit area */
-#newPoolModal .closeX{
-  transform: scale(1.06);
+#runView tr.next-row td:first-child{
+  box-shadow: inset 6px 0 0 #f59e0b;
 }
-
-/* slightly dim the backdrop for focus */
-.modal{
-  background: rgba(0,0,0,.60);
+#runView tr.done-row td{
+  opacity:.75;
+}
+#runView tr.current-row{
+  transform: scale(1.01);
 }
 
 </style>
@@ -922,6 +893,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 </div>
 
 <script>
+
 
 
 
@@ -2289,6 +2261,8 @@ function renderRunAll(){
   }
 document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
   updateFinishButtons();
+  try{ updateRunProUI(); }catch(e){}
+
 }
 
 function allShiftsDoneForCurrentTeam(){
@@ -2747,6 +2721,102 @@ function markTeamActiveIfNeeded(){
 
 
 
+
+
+
+
+// ===== POOLSPEL PRO (Run view) =====
+function updateRunProUI(){
+  try{
+    var runView=document.getElementById("runView");
+    if(!runView) return;
+
+    var bar=document.getElementById("runNowBar");
+    if(!bar) return;
+
+    var tables=[].slice.call(runView.querySelectorAll("table"));
+    if(!tables.length){
+      bar.style.display="none";
+      return;
+    }
+    var t=tables[0];
+
+    var rows=[].slice.call(t.querySelectorAll("tbody tr"));
+    if(!rows.length){
+      bar.style.display="none";
+      return;
+    }
+
+    var idxFirstUnchecked=-1;
+    var lastCheckedIdx=-1;
+
+    rows.forEach(function(r,i){
+      r.classList.remove("current-row","next-row","done-row");
+      var chk=r.querySelector("input.chk, input[type=checkbox].chk");
+      if(chk){
+        if(chk.checked){ lastCheckedIdx=i; }
+        else if(idxFirstUnchecked===-1){ idxFirstUnchecked=i; }
+      }
+    });
+
+    if(idxFirstUnchecked===-1){
+      idxFirstUnchecked = Math.max(0, rows.length-1);
+    }
+
+    var curRow=rows[idxFirstUnchecked];
+    if(curRow) curRow.classList.add("current-row");
+    if(idxFirstUnchecked+1 < rows.length) rows[idxFirstUnchecked+1].classList.add("next-row");
+    for(var i=0;i<idxFirstUnchecked;i++) rows[i].classList.add("done-row");
+
+    function rowPlayersText(r){
+      if(!r) return "—";
+      var tds=r.querySelectorAll("td");
+      if(!tds.length) return "—";
+      return (tds[tds.length-1].textContent||"").trim() || "—";
+    }
+    var nowText = rowPlayersText(rows[lastCheckedIdx>=0 ? lastCheckedIdx : idxFirstUnchecked]);
+    var nextText = rowPlayersText(rows[idxFirstUnchecked]);
+
+    bar.innerHTML =
+      '<div class="label">Nu på plan</div>' +
+      '<div class="big">'+ escapeHtml(nowText) +'</div>' +
+      '<div class="row2">' +
+        '<div class="pill">Nästa: '+ escapeHtml(nextText) +'</div>' +
+      '</div>';
+    bar.style.display="block";
+
+    try{
+      if(curRow && !isElementInViewport(curRow)){
+        curRow.scrollIntoView({behavior:"smooth", block:"center"});
+      }
+    }catch(e){}
+  }catch(e){}
+}
+
+function isElementInViewport(el){
+  var rect=el.getBoundingClientRect();
+  return rect.top >= 0 && rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.8;
+}
+
+function escapeHtml(str){
+  return String(str)
+    .replace(/&/g,"&amp;")
+    .replace(/</g,"&lt;")
+    .replace(/>/g,"&gt;")
+    .replace(/"/g,"&quot;")
+    .replace(/'/g,"&#039;");
+}
+
+document.addEventListener("change", function(e){
+  try{
+    var t=e.target;
+    if(t && (t.matches("input.chk") || t.matches("input[type=checkbox].chk"))){
+      if(document.getElementById("runView") && document.getElementById("runView").contains(t)){
+        updateRunProUI();
+      }
+    }
+  }catch(err){}
+});
 
 
 </script>
