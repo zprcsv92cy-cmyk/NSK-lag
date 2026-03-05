@@ -1246,9 +1246,9 @@ const Auth = {
   },
 
   applyRoleUI(){
-    const canRun = this.canRun();
-    const canFull = this.canFull();
-    const canAdmin = this.isAdmin();
+    var canRun = this.canRun();
+    var canFull = this.canFull();
+    var canAdmin = this.isAdmin();
 
     document.querySelectorAll("[data-perm='run']").forEach(el => {
       el.style.display = canRun ? "" : "none";
@@ -2004,13 +2004,13 @@ const UI = {
           ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
             ${(window.Auth && Auth.canRun && Auth.canRun()) 
-              ? `<button class="startBtn" type="button" onclick="startPoolRun(\'${p.id}\')" data-pool-action="start" data-pool-id="${p.id}" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>`
+              ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>`
               : `<button class="startBtn" type="button" disabled title="Saknar behörighet">Påbörja poolspel</button>`}
             ${(window.Auth && Auth.canFull && Auth.canFull())
-              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit(\'${p.id}\')" data-pool-action="edit" data-pool-id="${p.id}" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>`
+              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>`
               : `<button class="editBtn ghost" type="button" disabled title="Saknar behörighet">Redigera</button>`}
             ${(window.Auth && Auth.canDelete && Auth.canDelete())
-              ? `<button class="ghost" type="button" onclick="deletePool(\'${p.id}\')" data-pool-action="delete" data-pool-id="${p.id}" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>`
+              ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')" data-pool-action="delete" data-pool-id="${p.id}" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>`
               : `<button class="ghost" type="button" disabled title="Endast admin">Ta bort</button>`}
 </div>
         </div>`;
@@ -2968,6 +2968,39 @@ function wireImport(){
     }finally{fileInput.value="";}
   });
 }
+
+
+// ---------- Delegated handlers (stabilare än inline onclick, speciellt i iOS/PWA) ----------
+(function(){
+  function closestWithAttr(el, attr){
+    while(el && el !== document){
+      try{
+        if(el.getAttribute && el.getAttribute(attr)) return el;
+      }catch(e){}
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  document.addEventListener("click", function(e){
+    try{
+      var btn = closestWithAttr(e.target, "data-pool-action");
+      if(!btn) return;
+
+      var action = btn.getAttribute("data-pool-action");
+      var pid = btn.getAttribute("data-pool-id") || "";
+      if(!action || !pid) return;
+
+      // stop så inget annat "tar" klicken
+      try{ e.preventDefault(); }catch(e){}
+      try{ e.stopPropagation(); }catch(e){}
+
+      if(action==="start") startPoolRun(pid);
+      else if(action==="edit") openPoolEdit(pid);
+      else if(action==="delete") deletePool(pid);
+    }catch(err){}
+  }, true); // capture för att funka även om andra handlers stör
+})();
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
 function goHome(){ Actions.goHome(); }
