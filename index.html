@@ -834,6 +834,18 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 <script>
 
+function requireCode2018(){
+  var code = prompt("Ange kod:");
+  if(code===null) return false;
+  if(String(code).trim()!=="2018"){
+    alert("Fel kod.");
+    return false;
+  }
+  return true;
+}
+
+
+
 
 
 
@@ -1630,9 +1642,16 @@ const Actions = {
     Actions.closeTeamSelect();
     if(!App.state.pendingPoolId) return;
     Storage.setCurrentPool(App.state.pendingPoolId);
-    document.getElementById("teamSelect").value = String(teamNo||"1");
-    App.state.readOnly = (App.state.teamSelectTarget!=="edit") && isTeamCompleted(App.state.pendingPoolId, teamNo);
-    // New pool -> go directly to edit. Otherwise keep current behavior.
+    
+    // Require code only for completed team
+    if(isTeamCompleted(App.state.pendingPoolId, teamNo)){
+      if(!requireCode2018()){
+        return;
+      }
+    }
+document.getElementById("teamSelect").value = String(teamNo||"1");
+    App.state.readOnly = false;
+// New pool -> go directly to edit. Otherwise keep current behavior.
     if(App.state.teamSelectTarget==="edit"){
       App.state.readOnly = false;
       syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
@@ -2567,6 +2586,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2590,7 +2610,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 4.1</div>
+<div class="app-version">V 4.2</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
