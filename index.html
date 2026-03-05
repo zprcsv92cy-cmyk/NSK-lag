@@ -853,6 +853,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1092,6 +1093,34 @@ const Storage = {
     if(p){p.updatedAt=Date.now(); Storage.savePools(pools);}
   }
 };
+
+// --- team helpers (compat) ---
+if(!Storage.setCurrentTeam){
+  Storage.setCurrentTeam = function(team){
+    try{ localStorage.setItem("nsk_current_team", String(team||"1")); }catch(e){}
+  };
+}
+if(!Storage.currentTeam){
+  Storage.currentTeam = function(){
+    try{ return localStorage.getItem("nsk_current_team") || "1"; }catch(e){ return "1"; }
+  };
+}
+
+
+
+// --- pool helpers (compat) ---
+if(!Storage.setCurrentPool){
+  Storage.setCurrentPool = function(id){
+    try{ localStorage.setItem("nsk_current_pool", String(id||"")); }catch(e){}
+  };
+}
+if(!Storage.currentPoolId){
+  Storage.currentPoolId = function(){
+    try{ return localStorage.getItem("nsk_current_pool") || ""; }catch(e){ return ""; }
+  };
+}
+
+
 
 
 // ---- per-team completion helpers (supports any number of teams) ----
@@ -2470,6 +2499,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2493,7 +2523,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 3.2</div>
+<div class="app-version">V 4.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
