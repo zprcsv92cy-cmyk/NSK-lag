@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#b11226">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NSK Lag">
+<meta name="apple-mobile-web-app-title" content="NSK Team 18">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
-<title>NSK Lag</title>
+<title>NSK Team 18</title>
 <style>
 :root{
   /* Bas */
@@ -678,7 +678,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
-    <h1>NSK Lag</h1>
+    <h1>Nyköpings Sportklubb • Team 18</h1>
     <div class="small">Poolspel • Lag • Byten • PDF</div>
   </div>
 </div>
@@ -3294,24 +3294,15 @@ const Admin = {
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
+    // Avoid duplicate registrations which can cause "Lock was stolen by another request"
+    if (window.__nskSwInit) return;
+    window.__nskSwInit = true;
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js");
-      // Ask SW to activate immediately on update (prevents "stuck" old cache)
-      if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
-      reg.addEventListener("updatefound", () => {
-        const nw = reg.installing;
-        if(!nw) return;
-        nw.addEventListener("statechange", () => {
-          if (nw.state === "installed" && navigator.serviceWorker.controller) {
-            // New version installed; refresh on next load.
-          }
-        });
-      });
-      // Also check for updates in the background
-      if (reg.update) reg.update().catch(()=>{});
-}catch(e){}
+      await navigator.serviceWorker.register("./sw.js");
+    }catch(e){}
   });
-}</script>
+}
+</script>
 
 <div class="app-version">V 1.0</div>
 
