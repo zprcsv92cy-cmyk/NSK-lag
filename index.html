@@ -650,6 +650,27 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   border: 1px solid rgba(255,255,255,.10);
 }
 
+
+/* ===== ADMIN (Behörigheter) ===== */
+#adminView .tbl th, #adminView .tbl td{
+  padding:10px 10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:14px;
+}
+#adminView .tbl th{
+  opacity:.9;
+  font-weight:900;
+}
+#adminView select{
+  height:40px;
+  border-radius:12px;
+  padding:6px 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  color: #fff;
+}
+#adminView code{ opacity:.85; }
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -694,6 +715,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
       <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
+      <button type="button" class="ghost" data-perm="admin" onclick="UI.show('adminView'); Admin.reload();">Behörigheter</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -929,7 +951,45 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   </div>
 </div>
 
+
+<!-- ADMIN: BEHÖRIGHETER -->
+<div id="adminView" class="view no-print" style="display:none;">
+  <div class="card" style="max-width:860px;margin:18px auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <b style="font-size:20px;">Behörigheter</b>
+      <div class="btnrow" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="ghost" onclick="UI.show('homeView')">Till startsidan</button>
+        <button type="button" onclick="Admin.reload()">Uppdatera</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px;opacity:.9;">
+      Här kan admin ändra roll för inloggade användare.
+    </div>
+
+    <div id="adminMsg" class="small" style="margin-top:10px;opacity:.95;"></div>
+
+    <div style="overflow:auto;margin-top:12px;">
+      <table class="tbl" style="width:100%;min-width:680px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">E‑post</th>
+            <th style="text-align:left;">User ID</th>
+            <th style="text-align:left;">Roll</th>
+            <th style="text-align:left;">Åtgärd</th>
+          </tr>
+        </thead>
+        <tbody id="adminUsersTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="small" style="margin-top:12px;opacity:.85;">
+      Roller: <b>admin</b> (allt + behörigheter), <b>coach_full</b> (allt utom behörigheter), <b>coach_run</b> (endast poolspelsläge).
+    </div>
+  </div>
+</div>
+
 <script>
+
 
 // ===== AUTH + ROLES (Supabase Magic Link) =====
 const SUPABASE_URL = "https://tonbbmxzotsjwuimobkn.supabase.co";
@@ -978,6 +1038,13 @@ const Auth = {
         role = await this.fetchRole();
       }
       this.role = role || "coach_run";
+      // Admin hint: set role to admin in Supabase for this email
+      try{
+        if(this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase()){
+          // No auto-promotion here (handled via Admin or Table Editor)
+        }
+      }catch(e){}
+
 
       this.updateLoginUI();
       this.applyRoleUI();
@@ -1004,7 +1071,15 @@ const Auth = {
 
   async ensureProfileRow(){
     try{
-      await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
+      // Try insert with email column (if exists)
+      let payload = { id: this.user.id, role: "coach_run" };
+      if(this.user && this.user.email) payload.email = this.user.email;
+
+      let res = await this.supabase.from("profiles").insert(payload);
+      // If email column doesn't exist, retry without it
+      if(res && res.error && payload.email){
+        await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
+      }
     }catch(e){}
   },
 
@@ -3028,6 +3103,94 @@ document.addEventListener("change", function(e){
 
 // Init auth
 try{ Auth.init(); }catch(e){}
+
+
+
+// ===== ADMIN UI (Behörigheter) =====
+const Admin = {
+  async reload(){
+    try{
+      if(!window.Auth || !Auth.isAdmin || !Auth.isAdmin()){
+        const msg=document.getElementById("adminMsg");
+        if(msg) msg.textContent = "Endast admin.";
+        return;
+      }
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Laddar...";
+      const tbody=document.getElementById("adminUsersTbody");
+      if(tbody) tbody.innerHTML = "";
+
+      // fetch profiles (requires policy: admin read all)
+      const { data, error } = await Auth.supabase
+        .from("profiles")
+        .select("id, role, email")
+        .order("role", { ascending: true });
+
+      if(error){
+        if(msg) msg.textContent = "Kunde inte läsa användare. Kontrollera RLS-policy (admin read all) och att kolumn email finns. ("+error.message+")";
+        return;
+      }
+
+      if(!data || !data.length){
+        if(msg) msg.textContent = "Inga användare ännu. (De dyker upp efter första inloggning.)";
+        return;
+      }
+
+      if(msg) msg.textContent = "Antal användare: " + data.length;
+
+      data.forEach(u=>{
+        const tr=document.createElement("tr");
+
+        const email = (u.email || "—");
+        tr.innerHTML = `
+          <td>${escapeHtml(email)}</td>
+          <td><code>${escapeHtml(u.id)}</code></td>
+          <td>
+            <select data-userid="${escapeHtml(u.id)}">
+              <option value="coach_run" ${u.role==="coach_run"?"selected":""}>coach_run</option>
+              <option value="coach_full" ${u.role==="coach_full"?"selected":""}>coach_full</option>
+              <option value="admin" ${u.role==="admin"?"selected":""}>admin</option>
+            </select>
+          </td>
+          <td>
+            <button type="button" class="ghost" onclick="Admin.saveRole('${escapeHtml(u.id)}')">Spara</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }catch(e){
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Fel: " + (e && e.message ? e.message : e);
+    }
+  },
+
+  async saveRole(userId){
+    try{
+      if(!Auth.isAdmin()) return;
+      const sel=document.querySelector(`#adminUsersTbody select[data-userid="${CSS.escape(userId)}"]`);
+      const role=sel ? sel.value : null;
+      if(!role) return;
+
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Sparar...";
+
+      const { error } = await Auth.supabase
+        .from("profiles")
+        .update({ role })
+        .eq("id", userId);
+
+      if(error){
+        if(msg) msg.textContent = "Kunde inte spara: " + error.message;
+        return;
+      }
+      if(msg) msg.textContent = "Sparat!";
+    }catch(e){
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Fel: " + (e && e.message ? e.message : e);
+    }
+  }
+};
+
 
 </script>
 <script>
