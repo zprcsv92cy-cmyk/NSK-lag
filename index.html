@@ -2003,15 +2003,9 @@ const UI = {
           </div>
           ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
-            ${(window.Auth && Auth.canRun && Auth.canRun()) 
-              ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>`
-              : `<button class="startBtn" type="button" disabled title="Saknar behörighet">Påbörja poolspel</button>`}
-            ${(window.Auth && Auth.canFull && Auth.canFull())
-              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>`
-              : `<button class="editBtn ghost" type="button" disabled title="Saknar behörighet">Redigera</button>`}
-            ${(window.Auth && Auth.canDelete && Auth.canDelete())
-              ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')" data-pool-action="delete" data-pool-id="${p.id}" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>`
-              : `<button class="ghost" type="button" disabled title="Endast admin">Ta bort</button>`}
+  <button class="startBtn" type="button" onclick="startPoolRun('${p.id}')" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>
+  <button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>
+  <button class="ghost" type="button" onclick="deletePool('${p.id}')" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>
 </div>
         </div>`;
     });
