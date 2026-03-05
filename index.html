@@ -679,7 +679,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
     <h1>Nyköpings Sportklubb • Team 18</h1>
-    <div class="small">Poolspel • Lag • Byten • PDF</div>
+    <div class="small">Poolspel • Lag • Byten • PDF • Behörigheter</div>
   </div>
 </div>
 
@@ -1005,6 +1005,7 @@ const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 const ADMIN_EMAIL = "peter_hasselberg@hotmail.com";
 
 const Auth = {
+
   supabase: null,
   role: null,
   user: null,
@@ -1198,6 +1199,10 @@ const Auth = {
     });
   }
 };
+
+
+// Expose Auth globally (used by UI rendering)
+window.Auth = Auth;
 
 document.addEventListener("click", function(e){
   const t = e.target;
@@ -1909,9 +1914,15 @@ const UI = {
           </div>
           ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
-            ${((window.Auth && Auth.canRun && Auth.canRun())) ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>` : ``}
-            ${((window.Auth && Auth.canFull && Auth.canFull())) ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>` : ``}
-            ${((window.Auth && Auth.canDelete && Auth.canDelete())) ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>` : ``}
+            ${(window.Auth && Auth.canRun && Auth.canRun()) 
+              ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>`
+              : `<button class="startBtn" type="button" disabled title="Saknar behörighet">Påbörja poolspel</button>`}
+            ${(window.Auth && Auth.canFull && Auth.canFull())
+              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>`
+              : `<button class="editBtn ghost" type="button" disabled title="Saknar behörighet">Redigera</button>`}
+            ${(window.Auth && Auth.canDelete && Auth.canDelete())
+              ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>`
+              : `<button class="ghost" type="button" disabled title="Endast admin">Ta bort</button>`}
 </div>
         </div>`;
     });
