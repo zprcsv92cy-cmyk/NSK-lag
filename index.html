@@ -802,7 +802,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 /* ===== COACH-LÄGE (V18) ===== */
 body.coach-mode{ overflow:hidden; }
-body.coach-mode #runView > .card:first-child{ display:none !important; }
+body.coach-mode #runHeaderCard{ display:none !important; }
 body.coach-mode .runNowBar{
   position:fixed !important;
   inset:0 !important;
@@ -981,8 +981,8 @@ body.coach-mode #runView .card#runOutput table th{ font-size:16px; }
 
 <!-- RUN VIEW -->
 <div id="runView" class="view no-print">
-  <div class="card">
-    <div id="runNowBar" class="runNowBar" style="display:none;"></div>
+  <div id="runNowBar" class="runNowBar" style="display:none;"></div>
+  <div class="card" id="runHeaderCard">
     <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
       <div>
         <b>Poolspel-läge</b>
@@ -3416,7 +3416,24 @@ function updateRunProUI(){
           matchTxt = b ? (b.textContent||"").trim() : "";
         }
       }catch(e){}
-      return {no:no, time:time, players:players, chk:chk, match:matchTxt};
+      var goalieTxt="";
+      try{
+        var mb2=r.closest(".matchBlock");
+        if(mb2){
+          // In run view the goalie line looks like: "Målvakt <namn>"
+          var pills=[].slice.call(mb2.querySelectorAll("span.pill"));
+          for(var pi=0;pi<pills.length;pi++){
+            var lab=(pills[pi].textContent||"").trim().toLowerCase();
+            if(lab.indexOf("målvakt")!==-1){
+              var parent=pills[pi].parentNode;
+              var full=(parent && parent.textContent)?parent.textContent:"";
+              goalieTxt = full.replace(/.*Målvakt\s*/i,"").trim();
+              break;
+            }
+          }
+        }
+      }catch(e){}
+      return {no:no, time:time, players:players, chk:chk, match:matchTxt, goalie:goalieTxt};
     }
 
     var cur=rowInfo(curRow);
@@ -3436,6 +3453,8 @@ function updateRunProUI(){
     var readOnly = !!(window.App && App.state && App.state.readOnly);
 
     var curMatchLine = cur.match ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(cur.match) +'</div>') : '';
+
+    var curGoalieLine = (cur.goalie ? ('<div class="runNowInfoLine">' + escapeHtml(cur.match || '') + ' • Målvakt: ' + escapeHtml(cur.goalie) + '</div>') : '');
     var nxtMatchLine = (nxt.match && nxt.match!==cur.match) ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(nxt.match) +'</div>') : '';
 
     bar.innerHTML =
@@ -3448,6 +3467,7 @@ function updateRunProUI(){
             '<span class="pill">#'+ escapeHtml(cur.no) +'</span>' +
             '<span class="pill">Tid kvar: '+ escapeHtml(cur.time) +'</span>' +
           '</div>' +
+          curGoalieLine +
           '<div class="runNowActions">' +
             (readOnly ? '' : '<button type="button" class="runBockBtn" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
           '</div>' +
@@ -3686,7 +3706,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.17");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.18");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3719,7 +3739,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.17</div>
+<div class="app-version">V 1.9.18</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
