@@ -839,6 +839,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function requireCode2018(){
   var code = prompt("Ange kod:");
   if(code===null) return false;
@@ -1724,9 +1725,10 @@ const Actions = {
     Actions.showEdit();
   },
   showEdit(){
+    // Redigera är låst: fråga kod innan vi byter vy
+    if(!gateEditAlways()) return;
     UI.showView("editView");
     UI.updateEditHeader();
-    if(!gateEditAlways()) return;
     initEditForCurrentPool();
   },
   showRun(){
@@ -2390,7 +2392,6 @@ function initSettingsDropdowns(){
   for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
 }
 function initEditForCurrentPool(){
-  if(!gateEditAlways()) return;
   if(!gateEditIfTeamCompleted()) return;
   fillMatchCountDropdown();
   applyMatchCount();
@@ -2658,6 +2659,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2681,7 +2683,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 1.1</div>
+<div class="app-version">V 1.0</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
