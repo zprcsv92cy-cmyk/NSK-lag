@@ -664,6 +664,31 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   flex-direction:column;
   justify-content:center;
 }
+
+/* Banner modes */
+.runNowBar.fullscreen{
+  position:fixed;
+  inset:0;
+  margin:0;
+  border-radius:0;
+  min-height:100vh;
+  padding:24px 18px 18px;
+  overflow:auto;
+}
+.runNowBar.minimized{
+  position:sticky;
+  top:0;
+  margin:0 -16px 12px;
+  border-radius:0 0 18px 18px;
+  min-height:auto;
+  padding:12px 16px;
+}
+.runNowActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.runNowActions button{flex:1 1 200px; min-height:56px; font-size:18px; border-radius:18px;}
+.runNowActions button.ghost{font-weight:900;}
+.runNowInfoLine{font-size:13px; opacity:.9; margin-top:10px;}
+@keyframes nskBlink{0%,100%{opacity:1}50%{opacity:.35}}
+.nextBlink{animation:nskBlink 1s infinite;}
 .runNowMeta{
   display:flex;
   gap:10px;
@@ -724,7 +749,6 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   .runNowMeta .pill{ font-size: 13px; }
 }
 
-#runView tr.current-row td{
 #runView tr.current-row td{
   background: rgba(255,255,255,.08) !important;
 }
@@ -3622,7 +3646,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.17");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3655,7 +3679,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.0</div>
+<div class="app-version">V 1.9.17</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
