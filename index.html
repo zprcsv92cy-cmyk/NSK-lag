@@ -854,6 +854,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 
+
 function nskConfirm(message, title){
   return new Promise(function(resolve){
     try{
@@ -1360,6 +1361,41 @@ function continueTeamSetup(){
 }
 
 
+
+function syncTeamUIForPool(poolId){
+  try{
+    var pid = poolId || (Storage.currentPoolId ? Storage.currentPoolId() : "");
+    if(!pid) return;
+    var p = (typeof getPoolById==="function") ? getPoolById(pid) : null;
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : null;
+    if(!teams || !teams.length) return;
+
+    // Sync the teamSelect <select> options to only participating teams
+    var sel = document.getElementById("teamSelect");
+    if(sel){
+      sel.innerHTML = teams.map(function(t){
+        return '<option value="'+String(t).replace(/"/g,"&quot;")+'">Lag '+t+'</option>';
+      }).join("");
+      // keep current team if still valid, else set first team
+      var cur = (Storage.currentTeam ? Storage.currentTeam() : (localStorage.getItem("nsk_current_team")||"1"));
+      if(teams.indexOf(String(cur))===-1){
+        cur = teams[0];
+        if(Storage.setCurrentTeam) Storage.setCurrentTeam(cur);
+      }
+      sel.value = String(cur);
+    }
+
+    // If only one team, hide any team-switch row that relies on #teamSelect
+    if(teams.length===1){
+      var sw = document.getElementById("teamSwitchRow");
+      if(sw) sw.style.display="none";
+    }else{
+      var sw2 = document.getElementById("teamSwitchRow");
+      if(sw2) sw2.style.display="";
+    }
+  }catch(e){}
+}
+
 function getCurrentPoolDate(){
   var id = Storage.currentPoolId();
   if(!id) return "—";
@@ -1509,6 +1545,8 @@ const Actions = {
     App.state.readOnly = false;
     App.state.teamSelectTarget = "edit";
     Actions.closeNewPool();
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+    syncTeamUIForPool(id);
     Actions.showEdit();
   },
 
@@ -1588,7 +1626,8 @@ const Actions = {
     // New pool -> go directly to edit. Otherwise keep current behavior.
     if(App.state.teamSelectTarget==="edit"){
       App.state.readOnly = false;
-      Actions.showEdit();
+      syncTeamUIForPool(id);
+    Actions.showEdit();
     }else{
       Actions.showRun();
     }
@@ -1601,6 +1640,7 @@ const Actions = {
     if(!window.requireCode2018ForCompletedPool(pid)) return;
     App.state.readOnly = false;
     Storage.setCurrentPool(pid);
+    syncTeamUIForPool(id);
     Actions.showEdit();
   },
   showEdit(){
@@ -2353,7 +2393,8 @@ function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
 function chooseTeam(teamNo){ Actions.chooseTeam(teamNo); }
 function openPoolEdit(id){ Actions.openPoolEdit(id); }
-function showEdit(){ Actions.showEdit(); }
+function showEdit(){ syncTeamUIForPool(id);
+    Actions.showEdit(); }
 function showRun(){ Actions.showRun(); }
 
 // ---------- init ----------
@@ -2443,11 +2484,13 @@ function restoreLastRouteOnLoad(){
   try{
     if(r.route==="run"){
       UI.show("run");
+      syncTeamUIForPool(Storage.currentPoolId());
       renderRunAll();
       return true;
     }
     if(r.route==="edit"){
       UI.show("edit");
+      syncTeamUIForPool(Storage.currentPoolId());
       renderEditAll();
       return true;
     }
@@ -2500,6 +2543,7 @@ function markTeamActiveIfNeeded(){
 
 
 
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
@@ -2523,7 +2567,7 @@ if ("serviceWorker" in navigator) {
   });
 }</script>
 
-<div class="app-version">V 4.0</div>
+<div class="app-version">V 3.7</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
