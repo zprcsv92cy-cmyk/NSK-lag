@@ -647,6 +647,19 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 
 
 /* ===== POOLSPEL PRO (Run view) ===== */
+
+/* ===== RUN NOW BAR (Pågående/Nästa) ===== */
+.runNowGrid{display:flex;gap:12px;flex-wrap:wrap;align-items:stretch}
+.runNowCol{flex:1 1 260px;min-width:240px}
+.runNowTitle{font-size:12px;font-weight:900;letter-spacing:.8px;opacity:.85;text-transform:uppercase}
+.runNowMain{font-size:18px;font-weight:900;margin-top:4px}
+.runNowMeta{margin-top:6px;opacity:.92;font-size:13px;line-height:1.25}
+.runNowMeta .pill{display:inline-block;margin-right:6px;margin-bottom:6px}
+.runNowActions{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-top:10px}
+.runNowActions button{padding:12px 14px;border-radius:14px;min-height:48px}
+.runNowActions .ghost{background:rgba(255,255,255,.06)}
+.runNowActions .runBockBtn{flex:1 1 240px}
+
 .runNowBar{
   position: sticky;
   top: 0;
@@ -3267,62 +3280,141 @@ function updateRunProUI(){
     var bar=document.getElementById("runNowBar");
     if(!bar) return;
 
-    var tables=[].slice.call(runView.querySelectorAll("table"));
-    if(!tables.length){
-      bar.style.display="none";
-      return;
-    }
-    var t=tables[0];
-
-    var rows=[].slice.call(t.querySelectorAll("tbody tr"));
+    // Collect ALL shift rows across all matches (DOM order)
+    var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
     if(!rows.length){
       bar.style.display="none";
       return;
     }
 
-    var idxFirstUnchecked=-1;
-    var lastCheckedIdx=-1;
-
-    rows.forEach(function(r,i){
-      r.classList.remove("current-row","next-row","done-row");
-      var chk=r.querySelector("input.chk, input[type=checkbox].chk");
-      if(chk){
-        if(chk.checked){ lastCheckedIdx=i; }
-        else if(idxFirstUnchecked===-1){ idxFirstUnchecked=i; }
+    // Find first unchecked row (current) and the next unchecked row after it (next)
+    var curRow=null, nextRow=null;
+    for(var i=0;i<rows.length;i++){
+      var chk=rows[i].querySelector("input.chk, input[type=checkbox].chk");
+      if(!chk) continue;
+      if(!chk.checked){
+        curRow = rows[i];
+        // next unchecked after cur
+        for(var j=i+1;j<rows.length;j++){
+          var chk2=rows[j].querySelector("input.chk, input[type=checkbox].chk");
+          if(chk2 && !chk2.checked){ nextRow = rows[j]; break; }
+        }
+        break;
       }
-    });
-
-    if(idxFirstUnchecked===-1){
-      idxFirstUnchecked = Math.max(0, rows.length-1);
     }
 
-    var curRow=rows[idxFirstUnchecked];
-    if(curRow) curRow.classList.add("current-row");
-    if(idxFirstUnchecked+1 < rows.length) rows[idxFirstUnchecked+1].classList.add("next-row");
-    for(var i=0;i<idxFirstUnchecked;i++) rows[i].classList.add("done-row");
+    // If everything is checked, show last row as "pågående" and hide "nästa"
+    if(!curRow){
+      curRow = rows[rows.length-1];
+      nextRow = null;
+    }
 
-    function rowPlayersText(r){
-      if(!r) return "—";
+    function rowInfo(r){
+      if(!r) return {no:"—", time:"—", players:"—", chk:null, match:""};
       var tds=r.querySelectorAll("td");
-      if(!tds.length) return "—";
-      return (tds[tds.length-1].textContent||"").trim() || "—";
+      var chk=r.querySelector("input.chk, input[type=checkbox].chk");
+      var no = (tds[1] && (tds[1].textContent||"").trim()) || "—";
+      var time = (tds[2] && (tds[2].textContent||"").trim()) || "—";
+      var players = (tds[3] && (tds[3].textContent||"").trim()) || (tds[tds.length-1] ? (tds[tds.length-1].textContent||"").trim() : "—") || "—";
+
+      // try derive match header from closest match block
+      var matchTxt="";
+      try{
+        var mb=r.closest(".matchBlock");
+        if(mb){
+          var b=mb.querySelector("b");
+          matchTxt = b ? (b.textContent||"").trim() : "";
+        }
+      }catch(e){}
+      return {no:no, time:time, players:players, chk:chk, match:matchTxt};
     }
-    var nowText = rowPlayersText(rows[lastCheckedIdx>=0 ? lastCheckedIdx : idxFirstUnchecked]);
-    var nextText = rowPlayersText(rows[idxFirstUnchecked]);
+
+    var cur=rowInfo(curRow);
+    var nxt=rowInfo(nextRow);
+
+    // Store pointer so banner button can tick the current row
+    try{
+      bar.dataset.curRowId = "";
+      if(curRow){
+        if(!curRow.id){
+          curRow.id = "runCurRow_" + Date.now() + "_" + Math.floor(Math.random()*10000);
+        }
+        bar.dataset.curRowId = curRow.id;
+      }
+    }catch(e){}
+
+    var readOnly = !!(window.App && App.state && App.state.readOnly);
+
+    var curMatchLine = cur.match ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(cur.match) +'</div>') : '';
+    var nxtMatchLine = (nxt.match && nxt.match!==cur.match) ? ('<div class="small" style="opacity:.85;margin-top:4px;">'+ escapeHtml(nxt.match) +'</div>') : '';
 
     bar.innerHTML =
-      '<div class="label">Nu på plan</div>' +
-      '<div class="big">'+ escapeHtml(nowText) +'</div>' +
-      '<div class="row2">' +
-        '<div class="pill">Nästa: '+ escapeHtml(nextText) +'</div>' +
+      '<div class="runNowGrid">' +
+        '<div class="runNowCol">' +
+          '<div class="runNowTitle">Pågående byte</div>' +
+          curMatchLine +
+          '<div class="runNowMain">'+ escapeHtml(cur.players) +'</div>' +
+          '<div class="runNowMeta">' +
+            '<span class="pill">#'+ escapeHtml(cur.no) +'</span>' +
+            '<span class="pill">Tid kvar: '+ escapeHtml(cur.time) +'</span>' +
+          '</div>' +
+          '<div class="runNowActions">' +
+            (readOnly ? '' : '<button type="button" class="runBockBtn" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
+          '</div>' +
+        '</div>' +
+        (nextRow ? (
+          '<div class="runNowCol">' +
+            '<div class="runNowTitle">Nästa byte</div>' +
+            nxtMatchLine +
+            '<div class="runNowMain">'+ escapeHtml(nxt.players) +'</div>' +
+            '<div class="runNowMeta">' +
+              '<span class="pill">#'+ escapeHtml(nxt.no) +'</span>' +
+              '<span class="pill">Tid kvar: '+ escapeHtml(nxt.time) +'</span>' +
+            '</div>' +
+          '</div>'
+        ) : '') +
       '</div>';
+
     bar.style.display="block";
 
+    // Keep current row in view when you tick from banner (nice on phone)
     try{
       if(curRow && !isElementInViewport(curRow)){
         curRow.scrollIntoView({behavior:"smooth", block:"center"});
       }
     }catch(e){}
+  }catch(e){}
+}
+
+// Tick current (pågående) shift from the banner
+function bockCurrentShiftFromBanner(){
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(!bar) return;
+    if(window.App && App.state && App.state.readOnly) return;
+
+    var id = bar.dataset ? (bar.dataset.curRowId || "") : "";
+    var row = id ? document.getElementById(id) : null;
+    if(!row){
+      // fallback: find first unchecked again
+      var runView=document.getElementById("runView");
+      if(!runView) return;
+      var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
+      for(var i=0;i<rows.length;i++){
+        var chk=rows[i].querySelector("input.chk, input[type=checkbox].chk");
+        if(chk && !chk.checked){ row = rows[i]; break; }
+      }
+    }
+    if(!row) return;
+
+    var chk=row.querySelector("input.chk, input[type=checkbox].chk");
+    if(!chk || chk.disabled) return;
+
+    // Use click so existing onchange handlers run
+    chk.click();
+
+    // Refresh banner quickly (renderRunAll is called by onchange on run rows, but be safe)
+    try{ updateRunProUI(); }catch(e){}
   }catch(e){}
 }
 
