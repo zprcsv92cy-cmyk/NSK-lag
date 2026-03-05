@@ -2004,13 +2004,13 @@ const UI = {
           ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
           <div class="btnrow" style="margin-top:10px;">
             ${(window.Auth && Auth.canRun && Auth.canRun()) 
-              ? `<button class="startBtn" type="button" onclick="startPoolRun('${p.id}')">Påbörja poolspel</button>`
+              ? `<button class="startBtn" type="button" onclick="startPoolRun(\'${p.id}\')" data-pool-action="start" data-pool-id="${p.id}" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>`
               : `<button class="startBtn" type="button" disabled title="Saknar behörighet">Påbörja poolspel</button>`}
             ${(window.Auth && Auth.canFull && Auth.canFull())
-              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')">Redigera</button>`
+              ? `<button class="editBtn ghost" type="button" onclick="openPoolEdit(\'${p.id}\')" data-pool-action="edit" data-pool-id="${p.id}" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>`
               : `<button class="editBtn ghost" type="button" disabled title="Saknar behörighet">Redigera</button>`}
             ${(window.Auth && Auth.canDelete && Auth.canDelete())
-              ? `<button class="ghost" type="button" onclick="deletePool('${p.id}')">Ta bort</button>`
+              ? `<button class="ghost" type="button" onclick="deletePool(\'${p.id}\')" data-pool-action="delete" data-pool-id="${p.id}" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>`
               : `<button class="ghost" type="button" disabled title="Endast admin">Ta bort</button>`}
 </div>
         </div>`;
@@ -3009,6 +3009,54 @@ async function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.cu
     await Actions.showEdit(); }
 function showRun(){ Actions.showRun(); }
 
+
+
+// ===== Pool list button fallback (iOS safe tap) =====
+(function(){
+  var lastTouchTs = 0;
+  function runAction(btn){
+    try{
+      if(!btn) return;
+      var action = btn.getAttribute("data-pool-action");
+      var pid = btn.getAttribute("data-pool-id");
+      if(!action || !pid) return;
+      // Call the same global wrappers used by onclick
+      if(action==="start") startPoolRun(pid);
+      else if(action==="edit") openPoolEdit(pid);
+      else if(action==="delete") deletePool(pid);
+    }catch(e){
+      try{
+        var b=document.getElementById("jsErrorBanner");
+        var t=document.getElementById("jsErrorText");
+        if(b&&t){
+          t.textContent = "Klickfel: " + (e && e.message ? e.message : e);
+          b.style.display="block";
+        }
+      }catch(_){}
+    }
+  }
+
+  document.addEventListener("touchend", function(e){
+    try{
+      var btn = e.target && e.target.closest ? e.target.closest("button[data-pool-action]") : null;
+      if(!btn) return;
+      lastTouchTs = Date.now();
+      e.preventDefault();
+      runAction(btn);
+    }catch(_){}
+  }, {passive:false});
+
+  document.addEventListener("click", function(e){
+    try{
+      // Avoid double-fire after touch
+      if(Date.now() - lastTouchTs < 700) return;
+      var btn = e.target && e.target.closest ? e.target.closest("button[data-pool-action]") : null;
+      if(!btn) return;
+      e.preventDefault();
+      runAction(btn);
+    }catch(_){}
+  });
+})();
 // ---------- init ----------
 function init(){
   hideMatchDateInEdit();
