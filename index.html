@@ -3232,33 +3232,44 @@ function init(){
   // Close modals on backdrop click
   ["newPoolModal","registerModal","goalieStatsModal","teamSelectModal"].forEach(id=>{
     const m=document.getElementById(id);
-    m.addEventListener("click",(e)=>{ if(e.target.id===id) m.style.display="none"; });
+    if(!m) return;
+    m.addEventListener("click",(e)=>{ if(e.target && e.target.id===id) m.style.display="none"; });
   });
 
   // edit listeners
-  
   ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
     el.addEventListener("input", ()=>{saveState();});
   });
-  document.getElementById("goalie").addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
-  document.getElementById("teamSize").addEventListener("change", ()=>{
+
+  const goalieEl=document.getElementById("goalie");
+  if(goalieEl) goalieEl.addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
+
+  const teamSizeEl=document.getElementById("teamSize");
+  if(teamSizeEl) teamSizeEl.addEventListener("change", ()=>{
     const newN=parseInt(document.getElementById("teamSize").value||"10",10);
     const st=getFormState(); st.teamSize=String(newN);
     renderPlayerSelectors(newN, st.players||[]);
     setManualOverrideForCurrentMatch();
     saveState(); renderEditOutput(); renderRunAll();
   });
-  document.getElementById("coach").addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
-  document.getElementById("matchCount").addEventListener("change", ()=>{
+
+  const coachEl=document.getElementById("coach");
+  if(coachEl) coachEl.addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
+
+  const matchCountEl=document.getElementById("matchCount");
+  if(matchCountEl) matchCountEl.addEventListener("change", ()=>{
     const n=parseInt(document.getElementById("matchCount").value||"4",10);
     saveMatchCount(n); applyMatchCount(); loadState(); renderEditOutput(); renderRunAll();
   });
-  document.getElementById("matchNo").addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
+
+  const matchNoEl=document.getElementById("matchNo");
+  if(matchNoEl) matchNoEl.addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
 
   // Start
+// Start
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
 window.addEventListener("load", init);
@@ -3749,7 +3760,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.22");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.23");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3782,7 +3793,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.22</div>
+<div class="app-version">V 1.9.23</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
