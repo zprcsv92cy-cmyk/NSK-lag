@@ -853,33 +853,11 @@ body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
 }
 .runNowBar .pill.nextPulse{ animation: nskPulse 1.1s ease-in-out infinite; }
 
-
-
-/* Init debug overlay */
-#initDebug{
-  display:none;
-  position:fixed;
-  left:8px;
-  top:8px;
-  z-index:100001;
-  max-width:min(92vw, 520px);
-  max-height:40vh;
-  overflow:auto;
-  white-space:pre-wrap;
-  font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;
-  color:#fff;
-  background:rgba(0,0,0,.82);
-  border:1px solid rgba(255,255,255,.14);
-  border-radius:12px;
-  padding:10px 12px;
-  box-shadow:0 8px 30px rgba(0,0,0,.35);
-}
-
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<div id="initDebug"></div>
+<pre id="bootDebug" style="display:none;position:fixed;left:8px;right:8px;top:8px;z-index:999999;background:#111;color:#0f0;padding:10px;border-radius:12px;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;"></pre>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
@@ -3003,7 +2981,7 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); arena.innerHTML="";
+  const arena=document.getElementById("arena"); if(!arena) return; arena.innerHTML="";
   for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
   const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
   for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
@@ -3084,6 +3062,7 @@ function exportJSON(){
 }
 function wireImport(){
   const fileInput=document.getElementById("importFile");
+  if(!fileInput) return;
   fileInput.addEventListener("change", async ()=>{
     const f=fileInput.files && fileInput.files[0];
     if(!f) return;
@@ -3295,66 +3274,81 @@ function init(){
 // Start
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
-function __dbg(step, detail){
+
+function __safeBootLog(msg){
   try{
-    var box=document.getElementById('initDebug');
-    if(!box) return;
+    var el=document.getElementById("bootDebug");
+    if(!el) return;
+    el.style.display="block";
     var t=new Date();
-    var hh=String(t.getHours()).padStart(2,'0');
-    var mm=String(t.getMinutes()).padStart(2,'0');
-    var ss=String(t.getSeconds()).padStart(2,'0');
-    var line='['+hh+':'+mm+':'+ss+'] '+step + (detail ? ' — '+detail : '');
-    box.style.display='block';
-    box.textContent = line + '\n' + box.textContent;
+    var hh=String(t.getHours()).padStart(2,"0");
+    var mm=String(t.getMinutes()).padStart(2,"0");
+    var ss=String(t.getSeconds()).padStart(2,"0");
+    el.textContent += "["+hh+":"+mm+":"+ss+"] " + msg + "\n";
   }catch(e){}
 }
-
+function __safeShowHome(){
+  try{
+    document.body.classList.remove("coach-mode","coach-show-table");
+  }catch(e){}
+  try{
+    document.querySelectorAll(".view").forEach(function(v){
+      var on=(v && v.id==="homeView");
+      if(v){
+        v.style.display = on ? "block" : "none";
+        if(v.classList) v.classList.toggle("active", on);
+      }
+    });
+  }catch(e){}
+  try{
+    if(window.UI && UI.renderPoolList) UI.renderPoolList();
+  }catch(e){}
+}
 function __safeInit(){
-  __dbg('load','start');
+  __safeBootLog("load — start");
   try{
     init();
-    __dbg('init','ok');
+    __safeBootLog("init — ok");
   }catch(e){
-    __dbg('init error', e && e.message ? e.message : String(e));
+    __safeBootLog("INIT ERROR: " + (e && e.message ? e.message : e));
     try{
-      var jsb=document.getElementById('jsErrorBanner');
-      var jst=document.getElementById('jsErrorText');
-      if(jsb && jst){
-        jst.textContent='Init-fel: ' + (e && e.message ? e.message : String(e));
-        jsb.style.display='block';
+      var b=document.getElementById("jsErrorBanner");
+      var t=document.getElementById("jsErrorText");
+      if(b&&t){
+        t.textContent="Init-fel: " + (e && e.message ? e.message : e);
+        b.style.display="block";
       }
     }catch(_){}
-    try{
-      document.body.classList.remove('coach-mode');
-      document.body.classList.remove('coach-show-table');
-      if(window.UI && UI.showView) UI.showView('homeView');
-      if(window.UI && UI.renderPoolList) UI.renderPoolList();
-      __dbg('fallback','homeView');
-    }catch(_){}
+    __safeShowHome();
   }
-
   setTimeout(function(){
     try{
-      var active=document.querySelector('.view.active');
+      var active=document.querySelector(".view.active");
+      var coach=document.body.classList.contains("coach-mode");
+      var bar=document.getElementById("runNowBar");
+      var barHasContent = !!(bar && ((bar.textContent||"").trim().length>0));
       if(!active){
-        __dbg('watchdog','no active view, forcing home');
-        document.body.classList.remove('coach-mode');
-        document.body.classList.remove('coach-show-table');
-        if(window.UI && UI.showView) UI.showView('homeView');
-        if(window.UI && UI.renderPoolList) UI.renderPoolList();
+        __safeBootLog("watchdog — no active view, fallback home");
+        __safeShowHome();
+        return;
       }
-      var bar=document.getElementById('runNowBar');
-      if(document.body.classList.contains('coach-mode') && bar && (!bar.textContent || !bar.textContent.trim())){
-        __dbg('watchdog','empty coach banner, leaving coach-mode');
-        document.body.classList.remove('coach-mode');
-        document.body.classList.remove('coach-show-table');
-        if(window.UI && UI.showView) UI.showView('homeView');
-        if(window.UI && UI.renderPoolList) UI.renderPoolList();
+      if(coach && !barHasContent){
+        __safeBootLog("watchdog — empty coach banner, fallback home");
+        __safeShowHome();
       }
     }catch(e){}
   }, 1200);
 }
 window.addEventListener("load", __safeInit);
+setInterval(function(){
+  try{
+    var runVisible = !!(document.getElementById("runView") && document.getElementById("runView").style.display==="block");
+    if(!runVisible){
+      document.body.classList.remove("coach-mode","coach-show-table");
+    }
+  }catch(e){}
+}, 700);
+
 
 
 
@@ -3842,7 +3836,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.27");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.29");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3875,7 +3869,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.27</div>
+<div class="app-version">V 1.9.29</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
