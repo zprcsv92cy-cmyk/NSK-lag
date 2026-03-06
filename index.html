@@ -2059,20 +2059,11 @@ function getCurrentPoolDate(){
 
 
 
-
-window.__allowRunView = false;
-function unlockRunView(){ try{ window.__allowRunView = true; bootLog('runView — unlocked'); }catch(e){ window.__allowRunView = true; } }
-function lockRunView(){ try{ window.__allowRunView = false; bootLog('runView — locked'); }catch(e){ window.__allowRunView = false; } }
-
 // ---------- UI ----------
 const UI = {
   showView(id){
     try{ bootLog("view — "+id); }catch(e){}
     try{
-      if(id==='runView' && !window.__allowRunView){
-        try{ bootLog('runView — blocked'); }catch(e){}
-        id='homeView';
-      }
       // Dölj alla vyer och visa bara den valda (inkl login/admin)
       document.querySelectorAll(".view").forEach(function(el){
         if(!el || !el.id) return;
@@ -2081,9 +2072,14 @@ const UI = {
         el.style.display = on ? "block" : "none";
       });
     }catch(e){}
-    try{ document.body.classList.toggle('coach-mode', id==='runView');
-    // coach-show-table default off
-    if(id!=='runView') document.body.classList.remove('coach-show-table'); }catch(e){}
+    // Coach-mode får aldrig aktiveras automatiskt bara för att runView visas.
+    // Det slås på först EFTER att bannern faktiskt har fått innehåll.
+    try{
+      if(id!=='runView'){
+        document.body.classList.remove('coach-mode');
+        document.body.classList.remove('coach-show-table');
+      }
+    }catch(e){}
   },
   openModal(id){
     const el=document.getElementById(id);
@@ -2162,10 +2158,30 @@ const UI = {
   }
 };
 
+
+function shouldEnableCoachMode(){
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(!bar) return false;
+    var txt=(bar.textContent||"").replace(/\s+/g," ").trim();
+    if(!txt) return false;
+    // fallback/empty states ska inte köra helskärms coach-mode
+    if(/inget aktivt poolspel|schema saknas|ingen data tillgänglig|välj lag|poolspel-läge/i.test(txt)) return false;
+    return true;
+  }catch(e){ return false; }
+}
+
+function syncCoachModeFromRunContent(){
+  try{
+    var on = shouldEnableCoachMode();
+    document.body.classList.toggle("coach-mode", !!on);
+    if(!on) document.body.classList.remove("coach-show-table");
+  }catch(e){}
+}
+
 // ---------- Pool actions ----------
 const Actions = {
   goHome(){
-    lockRunView();
     UI.showView("homeView");
     UI.renderPoolList();
   },
@@ -2268,7 +2284,6 @@ const Actions = {
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
   startPoolRun(id, target){
-    unlockRunView();
     target = target || "run";
     const pid = String(id||"");
     if(!pid) return;
@@ -2284,7 +2299,6 @@ const Actions = {
     Actions.openTeamSelect();
   },
   openTeamSelectForCurrentPool(){
-    unlockRunView();
     const id=Storage.currentPoolId();
     if(!id){ Actions.goHome(); return; }
     App.state.pendingPoolId = id;
@@ -2349,12 +2363,24 @@ const Actions = {
     await initEditForCurrentPool();
   },
   showRun(){
-    unlockRunView();
+    // Visa först vanlig runView utan coach-mode så att sidan aldrig blir svart.
+    try{
+      document.body.classList.remove("coach-mode");
+      document.body.classList.remove("coach-show-table");
+    }catch(e){}
     UI.showView("runView");
     UI.updateRunHeader();
     renderRunAll();
-    try{ var b=document.getElementById("runNowBar"); if(b) b.style.display="block"; }catch(e){}
-    try{ setTimeout(function(){ try{ updateRunProUI(); }catch(e){} }, 50); }catch(e){}
+    try{
+      var b=document.getElementById("runNowBar");
+      if(b) b.style.display="block";
+    }catch(e){}
+    try{
+      setTimeout(function(){
+        try{ updateRunProUI(); }catch(e){}
+        try{ syncCoachModeFromRunContent(); }catch(e){}
+      }, 80);
+    }catch(e){}
   }
 };
 
@@ -2787,6 +2813,10 @@ function renderEditOutput(){
 // ---------- run view ----------
 function renderRunFallback(title, msg){
   try{
+    document.body.classList.remove("coach-mode");
+    document.body.classList.remove("coach-show-table");
+  }catch(e){}
+  try{
     var bar=document.getElementById("runNowBar");
     if(bar){
       bar.innerHTML = `
@@ -2842,13 +2872,19 @@ function renderRunAll(){
         <button type="button" onclick="finishPool()">Avsluta poolspel</button>
       </div>`;
   }
-document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+document.getElementById("runOutput").innerHTML = html || "<div class='card'><b>Poolspel-läge</b><div class='small'>Inga matcher.</div></div>";
   if(!html){
     renderRunFallback("Schema saknas", "Det finns inga matchrader att visa för valt lag.");
     return;
   }
   updateFinishButtons();
-  try{ updateRunProUI(); }catch(e){ renderRunFallback("RunView-fel", (e && e.message) ? e.message : "Kunde inte visa coach-läge."); }
+  try{
+    updateRunProUI();
+  }catch(e){
+    renderRunFallback("RunView-fel", (e && e.message) ? e.message : "Kunde inte visa coach-läge.");
+    return;
+  }
+  try{ syncCoachModeFromRunContent(); }catch(e){}
 
 }
 
@@ -3204,7 +3240,7 @@ function openPoolEdit(id){
  Actions.openPoolEdit(id); }
 async function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     await Actions.showEdit(); }
-function showRun(){ unlockRunView(); Actions.showRun(); }
+function showRun(){ Actions.showRun(); }
 
 
 
@@ -3330,7 +3366,6 @@ function bootLog(msg){
 }
 
 function forceShowHomeFallback(reason){
-  lockRunView();
   try{ bootLog("fallback — "+String(reason||"home")); }catch(e){}
   try{ document.body.classList.remove("coach-mode","coach-show-table"); }catch(e){}
   try{
@@ -3346,7 +3381,6 @@ function forceShowHomeFallback(reason){
 
 function safeInit(){
   bootLog("load — start");
-  lockRunView();
   try{
     init();
     bootLog("init — ok");
@@ -3419,7 +3453,6 @@ document.addEventListener("change", function(e){
 
 
 function restoreLastRouteOnLoad(){
-  lockRunView();
   try{ bootLog("route — restore"); }catch(e){}
   var r = getRouteHash() || loadLastRoute();
   if(!r || !r.route) return false;
@@ -3432,7 +3465,6 @@ function restoreLastRouteOnLoad(){
   try{
     if(r.route==="run"){
       UI.showView("homeView");
-      try{ bootLog("view — homeView"); }catch(e){}
       UI.renderPoolList();
       return true;
     }
@@ -3871,7 +3903,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.33");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.34");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3904,7 +3936,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.33</div>
+<div class="app-version">V 1.9.34</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
