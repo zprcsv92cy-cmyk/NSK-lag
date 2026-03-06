@@ -2059,11 +2059,20 @@ function getCurrentPoolDate(){
 
 
 
+
+window.__allowRunView = false;
+function unlockRunView(){ try{ window.__allowRunView = true; bootLog('runView — unlocked'); }catch(e){ window.__allowRunView = true; } }
+function lockRunView(){ try{ window.__allowRunView = false; bootLog('runView — locked'); }catch(e){ window.__allowRunView = false; } }
+
 // ---------- UI ----------
 const UI = {
   showView(id){
     try{ bootLog("view — "+id); }catch(e){}
     try{
+      if(id==='runView' && !window.__allowRunView){
+        try{ bootLog('runView — blocked'); }catch(e){}
+        id='homeView';
+      }
       // Dölj alla vyer och visa bara den valda (inkl login/admin)
       document.querySelectorAll(".view").forEach(function(el){
         if(!el || !el.id) return;
@@ -2156,6 +2165,7 @@ const UI = {
 // ---------- Pool actions ----------
 const Actions = {
   goHome(){
+    lockRunView();
     UI.showView("homeView");
     UI.renderPoolList();
   },
@@ -2258,6 +2268,7 @@ const Actions = {
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
   startPoolRun(id, target){
+    unlockRunView();
     target = target || "run";
     const pid = String(id||"");
     if(!pid) return;
@@ -2273,6 +2284,7 @@ const Actions = {
     Actions.openTeamSelect();
   },
   openTeamSelectForCurrentPool(){
+    unlockRunView();
     const id=Storage.currentPoolId();
     if(!id){ Actions.goHome(); return; }
     App.state.pendingPoolId = id;
@@ -2337,6 +2349,7 @@ const Actions = {
     await initEditForCurrentPool();
   },
   showRun(){
+    unlockRunView();
     UI.showView("runView");
     UI.updateRunHeader();
     renderRunAll();
@@ -3191,7 +3204,7 @@ function openPoolEdit(id){
  Actions.openPoolEdit(id); }
 async function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     await Actions.showEdit(); }
-function showRun(){ Actions.showRun(); }
+function showRun(){ unlockRunView(); Actions.showRun(); }
 
 
 
@@ -3317,6 +3330,7 @@ function bootLog(msg){
 }
 
 function forceShowHomeFallback(reason){
+  lockRunView();
   try{ bootLog("fallback — "+String(reason||"home")); }catch(e){}
   try{ document.body.classList.remove("coach-mode","coach-show-table"); }catch(e){}
   try{
@@ -3332,6 +3346,7 @@ function forceShowHomeFallback(reason){
 
 function safeInit(){
   bootLog("load — start");
+  lockRunView();
   try{
     init();
     bootLog("init — ok");
@@ -3404,6 +3419,7 @@ document.addEventListener("change", function(e){
 
 
 function restoreLastRouteOnLoad(){
+  lockRunView();
   try{ bootLog("route — restore"); }catch(e){}
   var r = getRouteHash() || loadLastRoute();
   if(!r || !r.route) return false;
@@ -3855,7 +3871,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.32");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.33");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3888,7 +3904,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.32</div>
+<div class="app-version">V 1.9.33</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
