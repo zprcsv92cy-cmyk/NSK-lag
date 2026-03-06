@@ -857,7 +857,7 @@ body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<pre id="bootDebug" style="display:none;position:fixed;left:8px;right:8px;top:8px;z-index:999999;background:#111;color:#0f0;padding:10px;border-radius:12px;font-size:12px;white-space:pre-wrap;max-height:40vh;overflow:auto;"></pre>
+<pre id="bootDebug" style="display:block;position:fixed;left:12px;right:12px;top:90px;z-index:100000;background:rgba(0,0,0,.72);color:#00ff5a;padding:12px 14px;border-radius:18px;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;pointer-events:none;"></pre>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
@@ -2062,6 +2062,7 @@ function getCurrentPoolDate(){
 // ---------- UI ----------
 const UI = {
   showView(id){
+    try{ bootLog("view — "+id); }catch(e){}
     try{
       // Dölj alla vyer och visa bara den valda (inkl login/admin)
       document.querySelectorAll(".view").forEach(function(el){
@@ -2981,7 +2982,7 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); if(!arena) return; arena.innerHTML="";
+  const arena=document.getElementById("arena"); arena.innerHTML="";
   for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
   const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
   for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
@@ -3062,7 +3063,6 @@ function exportJSON(){
 }
 function wireImport(){
   const fileInput=document.getElementById("importFile");
-  if(!fileInput) return;
   fileInput.addEventListener("change", async ()=>{
     const f=fileInput.files && fileInput.files[0];
     if(!f) return;
@@ -3275,80 +3275,67 @@ function init(){
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
 
-function __safeBootLog(msg){
+function bootLog(msg){
   try{
     var el=document.getElementById("bootDebug");
     if(!el) return;
-    el.style.display="block";
-    var t=new Date();
-    var hh=String(t.getHours()).padStart(2,"0");
-    var mm=String(t.getMinutes()).padStart(2,"0");
-    var ss=String(t.getSeconds()).padStart(2,"0");
-    el.textContent += "["+hh+":"+mm+":"+ss+"] " + msg + "\n";
+    var d=new Date();
+    var ts=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);
+    el.textContent += "["+ts+"] "+msg+"\n";
   }catch(e){}
 }
-function __safeShowHome(){
+
+function forceShowHomeFallback(reason){
+  try{ bootLog("fallback — "+String(reason||"home")); }catch(e){}
+  try{ document.body.classList.remove("coach-mode","coach-show-table"); }catch(e){}
   try{
-    document.body.classList.remove("coach-mode","coach-show-table");
-  }catch(e){}
-  try{
-    document.querySelectorAll(".view").forEach(function(v){
-      var on=(v && v.id==="homeView");
-      if(v){
-        v.style.display = on ? "block" : "none";
-        if(v.classList) v.classList.toggle("active", on);
-      }
+    document.querySelectorAll(".view").forEach(function(el){
+      if(!el || !el.id) return;
+      var on = (el.id==="homeView");
+      el.classList.toggle("active", on);
+      el.style.display = on ? "block" : "none";
     });
   }catch(e){}
-  try{
-    if(window.UI && UI.renderPoolList) UI.renderPoolList();
-  }catch(e){}
+  try{ UI && UI.renderPoolList && UI.renderPoolList(); }catch(e){}
 }
-function __safeInit(){
-  __safeBootLog("load — start");
+
+function safeInit(){
+  bootLog("load — start");
   try{
     init();
-    __safeBootLog("init — ok");
+    bootLog("init — ok");
   }catch(e){
-    __safeBootLog("INIT ERROR: " + (e && e.message ? e.message : e));
+    bootLog("init — fail: " + (e && e.message ? e.message : e));
+    forceShowHomeFallback("init-error");
     try{
       var b=document.getElementById("jsErrorBanner");
       var t=document.getElementById("jsErrorText");
       if(b&&t){
-        t.textContent="Init-fel: " + (e && e.message ? e.message : e);
-        b.style.display="block";
+        t.textContent = "Init-fel: " + (e && e.message ? e.message : e);
+        b.style.display = "block";
       }
     }catch(_){}
-    __safeShowHome();
   }
+
   setTimeout(function(){
     try{
       var active=document.querySelector(".view.active");
-      var coach=document.body.classList.contains("coach-mode");
-      var bar=document.getElementById("runNowBar");
-      var barHasContent = !!(bar && ((bar.textContent||"").trim().length>0));
+      var runBar=document.getElementById("runNowBar");
+      var inCoach=document.body.classList.contains("coach-mode");
       if(!active){
-        __safeBootLog("watchdog — no active view, fallback home");
-        __safeShowHome();
+        forceShowHomeFallback("no-active-view");
         return;
       }
-      if(coach && !barHasContent){
-        __safeBootLog("watchdog — empty coach banner, fallback home");
-        __safeShowHome();
+      if(inCoach && (!runBar || !String(runBar.innerHTML||"").trim())){
+        forceShowHomeFallback("empty-coach");
       }
-    }catch(e){}
+    }catch(e){
+      forceShowHomeFallback("watchdog-error");
+    }
   }, 1200);
 }
-window.addEventListener("load", __safeInit);
-setInterval(function(){
-  try{
-    var runVisible = !!(document.getElementById("runView") && document.getElementById("runView").style.display==="block");
-    if(!runVisible){
-      document.body.classList.remove("coach-mode","coach-show-table");
-    }
-  }catch(e){}
-}, 700);
 
+window.addEventListener("load", safeInit);
 
 
 
@@ -3386,6 +3373,7 @@ document.addEventListener("change", function(e){
 
 
 function restoreLastRouteOnLoad(){
+  try{ bootLog("route — restore"); }catch(e){}
   var r = getRouteHash() || loadLastRoute();
   if(!r || !r.route) return false;
 
@@ -3836,7 +3824,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.29");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.30");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3869,7 +3857,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.29</div>
+<div class="app-version">V 1.9.30</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
