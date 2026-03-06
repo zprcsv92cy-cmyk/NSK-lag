@@ -2780,6 +2780,9 @@ function renderEditOutput(){
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
+  var poolObj=null;
+  try{ poolObj=getPoolById(Storage.currentPoolId()); }catch(e){}
+  var normalizedMatches=getRunMatchesFromPool(poolObj);
   for(let m=1;m<=matchCount;m++){
     const st=loadStateFor(teamNo,m);
     const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
@@ -2808,6 +2811,19 @@ function renderEditOutput(){
   document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
   updateFinishButtons();
   syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+}
+
+
+function getRunMatchesFromPool(pool){
+  try{
+    if(!pool) return [];
+    var a = null;
+    if(Array.isArray(pool.matches)) a = pool.matches;
+    else if(Array.isArray(pool.games)) a = pool.games;
+    else if(Array.isArray(pool.schedule)) a = pool.schedule;
+    if(!a) return [];
+    return a.filter(function(x){ return !!x; });
+  }catch(e){ return []; }
 }
 
 // ---------- run view ----------
@@ -2849,6 +2865,9 @@ function renderRunAll(){
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
+  var poolObj=null;
+  try{ poolObj=getPoolById(Storage.currentPoolId()); }catch(e){}
+  var normalizedMatches=getRunMatchesFromPool(poolObj);
   for(let m=1;m<=matchCount;m++){
     const st=loadStateFor(teamNo,m);
     const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
@@ -2874,7 +2893,10 @@ function renderRunAll(){
   }
 document.getElementById("runOutput").innerHTML = html || "<div class='card'><b>Poolspel-läge</b><div class='small'>Inga matcher.</div></div>";
   if(!html){
-    renderRunFallback("Schema saknas", "Det finns inga matchrader att visa för valt lag.");
+    var msg = normalizedMatches.length
+      ? "Matcher finns i poolspelet men kunde inte visas för valt lag. Kontrollera lag, spelare och matchinställningar i Redigera."
+      : "Det finns inga matcher i poolspelet ännu. Lägg till matcher i Redigera poolspel.";
+    renderRunFallback("Schema saknas", msg);
     return;
   }
   updateFinishButtons();
@@ -3908,7 +3930,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.35");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.36");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3941,7 +3963,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.35</div>
+<div class="app-version">V 1.9.36</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
