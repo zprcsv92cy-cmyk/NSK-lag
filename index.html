@@ -3415,9 +3415,9 @@ function restoreLastRouteOnLoad(){
 
   try{
     if(r.route==="run"){
-      UI.showView("runView");
-      syncTeamUIForPool(Storage.currentPoolId());
-      renderRunAll();
+      UI.showView("homeView");
+      try{ bootLog("view — homeView"); }catch(e){}
+      UI.renderPoolList();
       return true;
     }
     if(r.route==="edit"){
@@ -3855,7 +3855,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.31");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.32");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3888,7 +3888,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.31</div>
+<div class="app-version">V 1.9.32</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
