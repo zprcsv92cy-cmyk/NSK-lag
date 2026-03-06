@@ -2,6 +2,7 @@
   "name": "NSK Team 18",
   "short_name": "NSK T18",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0f0f10",
   "theme_color": "#b11226",
