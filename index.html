@@ -2772,8 +2772,35 @@ function renderEditOutput(){
 }
 
 // ---------- run view ----------
+function renderRunFallback(title, msg){
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(bar){
+      bar.innerHTML = `
+        <div class="runNowGrid">
+          <div class="runNowCol">
+            <div class="runNowTitle">${escapeHtml(title||"Poolspel-läge")}</div>
+            <div class="runNowMain">${escapeHtml(msg||"Ingen data tillgänglig")}</div>
+            <div class="runNowHint">Välj poolspel från startsidan eller redigera matcherna först.</div>
+            <div class="runNowActions">
+              <button type="button" onclick="goHome()">Till startsidan</button>
+              <button type="button" class="ghost" onclick="showEdit()">Redigera</button>
+            </div>
+          </div>
+        </div>`;
+      bar.style.display="block";
+    }
+  }catch(e){}
+  try{
+    var out=document.getElementById("runOutput");
+    if(out){
+      out.innerHTML = `<div class="card"><b>${escapeHtml(title||"Poolspel-läge")}</b><div class="small" style="margin-top:8px;">${escapeHtml(msg||"Ingen data tillgänglig")}</div></div>`;
+    }
+  }catch(e){}
+}
+
 function renderRunAll(){
-  if(!Storage.currentPoolId()) return;
+  if(!Storage.currentPoolId()){ renderRunFallback("Inget aktivt poolspel", "Välj ett poolspel först."); return; }
   UI.updateRunHeader();
   const teamNo=document.getElementById("teamSelect").value||"1";
   const matchCount=loadMatchCount();
@@ -2803,8 +2830,12 @@ function renderRunAll(){
       </div>`;
   }
 document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+  if(!html){
+    renderRunFallback("Schema saknas", "Det finns inga matchrader att visa för valt lag.");
+    return;
+  }
   updateFinishButtons();
-  try{ updateRunProUI(); }catch(e){}
+  try{ updateRunProUI(); }catch(e){ renderRunFallback("RunView-fel", (e && e.message) ? e.message : "Kunde inte visa coach-läge."); }
 
 }
 
@@ -3824,7 +3855,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.30");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.31");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3857,7 +3888,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.30</div>
+<div class="app-version">V 1.9.31</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
