@@ -2980,7 +2980,7 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); arena.innerHTML="";
+  const arena=document.getElementById("arena"); if(!arena) return; arena.innerHTML="";
   for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
   const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
   for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
@@ -3061,6 +3061,7 @@ function exportJSON(){
 }
 function wireImport(){
   const fileInput=document.getElementById("importFile");
+  if(!fileInput) return;
   fileInput.addEventListener("change", async ()=>{
     const f=fileInput.files && fileInput.files[0];
     if(!f) return;
@@ -3272,7 +3273,36 @@ function init(){
 // Start
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
-window.addEventListener("load", init);
+function __safeInit(){
+  try{ init(); }
+  catch(e){
+    try{
+      console.error("INIT ERROR", e);
+      var msg = (e && e.message) ? e.message : String(e);
+      try{
+        var b=document.getElementById("jsErrorBanner");
+        var t=document.getElementById("jsErrorText");
+        if(b&&t){ t.textContent = "Init-fel: " + msg; b.style.display="block"; }
+      }catch(_){}
+      // Fallback: visa startsidan så appen inte blir svart
+      try{
+        if(window.UI && UI.showView){ UI.showView("homeView"); }
+        if(window.UI && UI.renderPoolList){ UI.renderPoolList(); }
+      }catch(_){}
+    }catch(_){}
+  }
+  // Watchdog: om ingen vy är synlig efter 900ms -> visa home
+  setTimeout(function(){
+    try{
+      var active=document.querySelector(".view.active");
+      if(!active){
+        if(window.UI && UI.showView){ UI.showView("homeView"); }
+        if(window.UI && UI.renderPoolList){ UI.renderPoolList(); }
+      }
+    }catch(_){}
+  }, 900);
+}
+window.addEventListener("load", __safeInit);
 
 
 
@@ -3760,7 +3790,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.25");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.26");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3793,7 +3823,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.25</div>
+<div class="app-version">V 1.9.26</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
