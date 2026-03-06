@@ -853,10 +853,33 @@ body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
 }
 .runNowBar .pill.nextPulse{ animation: nskPulse 1.1s ease-in-out infinite; }
 
+
+
+/* Init debug overlay */
+#initDebug{
+  display:none;
+  position:fixed;
+  left:8px;
+  top:8px;
+  z-index:100001;
+  max-width:min(92vw, 520px);
+  max-height:40vh;
+  overflow:auto;
+  white-space:pre-wrap;
+  font:12px/1.35 ui-monospace,SFMono-Regular,Menlo,monospace;
+  color:#fff;
+  background:rgba(0,0,0,.82);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:12px;
+  padding:10px 12px;
+  box-shadow:0 8px 30px rgba(0,0,0,.35);
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
+<div id="initDebug"></div>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
@@ -2980,7 +3003,7 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); if(!arena) return; arena.innerHTML="";
+  const arena=document.getElementById("arena"); arena.innerHTML="";
   for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
   const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
   for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
@@ -3061,7 +3084,6 @@ function exportJSON(){
 }
 function wireImport(){
   const fileInput=document.getElementById("importFile");
-  if(!fileInput) return;
   fileInput.addEventListener("change", async ()=>{
     const f=fileInput.files && fileInput.files[0];
     if(!f) return;
@@ -3273,34 +3295,64 @@ function init(){
 // Start
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
+function __dbg(step, detail){
+  try{
+    var box=document.getElementById('initDebug');
+    if(!box) return;
+    var t=new Date();
+    var hh=String(t.getHours()).padStart(2,'0');
+    var mm=String(t.getMinutes()).padStart(2,'0');
+    var ss=String(t.getSeconds()).padStart(2,'0');
+    var line='['+hh+':'+mm+':'+ss+'] '+step + (detail ? ' — '+detail : '');
+    box.style.display='block';
+    box.textContent = line + '\n' + box.textContent;
+  }catch(e){}
+}
+
 function __safeInit(){
-  try{ init(); }
-  catch(e){
+  __dbg('load','start');
+  try{
+    init();
+    __dbg('init','ok');
+  }catch(e){
+    __dbg('init error', e && e.message ? e.message : String(e));
     try{
-      console.error("INIT ERROR", e);
-      var msg = (e && e.message) ? e.message : String(e);
-      try{
-        var b=document.getElementById("jsErrorBanner");
-        var t=document.getElementById("jsErrorText");
-        if(b&&t){ t.textContent = "Init-fel: " + msg; b.style.display="block"; }
-      }catch(_){}
-      // Fallback: visa startsidan så appen inte blir svart
-      try{
-        if(window.UI && UI.showView){ UI.showView("homeView"); }
-        if(window.UI && UI.renderPoolList){ UI.renderPoolList(); }
-      }catch(_){}
-    }catch(_){}
-  }
-  // Watchdog: om ingen vy är synlig efter 900ms -> visa home
-  setTimeout(function(){
-    try{
-      var active=document.querySelector(".view.active");
-      if(!active){
-        if(window.UI && UI.showView){ UI.showView("homeView"); }
-        if(window.UI && UI.renderPoolList){ UI.renderPoolList(); }
+      var jsb=document.getElementById('jsErrorBanner');
+      var jst=document.getElementById('jsErrorText');
+      if(jsb && jst){
+        jst.textContent='Init-fel: ' + (e && e.message ? e.message : String(e));
+        jsb.style.display='block';
       }
     }catch(_){}
-  }, 900);
+    try{
+      document.body.classList.remove('coach-mode');
+      document.body.classList.remove('coach-show-table');
+      if(window.UI && UI.showView) UI.showView('homeView');
+      if(window.UI && UI.renderPoolList) UI.renderPoolList();
+      __dbg('fallback','homeView');
+    }catch(_){}
+  }
+
+  setTimeout(function(){
+    try{
+      var active=document.querySelector('.view.active');
+      if(!active){
+        __dbg('watchdog','no active view, forcing home');
+        document.body.classList.remove('coach-mode');
+        document.body.classList.remove('coach-show-table');
+        if(window.UI && UI.showView) UI.showView('homeView');
+        if(window.UI && UI.renderPoolList) UI.renderPoolList();
+      }
+      var bar=document.getElementById('runNowBar');
+      if(document.body.classList.contains('coach-mode') && bar && (!bar.textContent || !bar.textContent.trim())){
+        __dbg('watchdog','empty coach banner, leaving coach-mode');
+        document.body.classList.remove('coach-mode');
+        document.body.classList.remove('coach-show-table');
+        if(window.UI && UI.showView) UI.showView('homeView');
+        if(window.UI && UI.renderPoolList) UI.renderPoolList();
+      }
+    }catch(e){}
+  }, 1200);
 }
 window.addEventListener("load", __safeInit);
 
@@ -3790,7 +3842,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.26");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.27");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -3823,7 +3875,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.26</div>
+<div class="app-version">V 1.9.27</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
