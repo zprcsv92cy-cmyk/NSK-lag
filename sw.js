@@ -1,5 +1,5 @@
-// NSK Team 18 Service Worker (v1.9.60)
-const CACHE_NAME = "nsk-team18-v1.9.60";
+// NSK Team 18 Service Worker (v1.9.61)
+const CACHE_NAME = "nsk-team18-v1.9.61";
 const ASSETS = [
   "./",
   "./index.html",
