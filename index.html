@@ -1076,14 +1076,14 @@ body.arena-mode #runView > .card:first-child > .small{
   display:none !important;
 }
 body.arena-mode #runNowBar{
-  position:fixed !important;
-  inset:0 !important;
+  position:relative !important;
+  inset:auto !important;
   margin:0 !important;
   padding:20px 18px 24px !important;
   display:flex !important;
   flex-direction:column !important;
-  justify-content:space-between !important;
-  z-index:100 !important;
+  justify-content:flex-start !important;
+  z-index:5 !important;
   min-height:100vh !important;
   background:transparent !important;
 }
@@ -1131,6 +1131,45 @@ body.arena-mode #runOutput{
   body.arena-mode #runNowBar .runNowMain{
     font-size:42px !important;
   }
+}
+
+
+/* ===== V44 ARENA FIX ===== */
+#runNowBar{ z-index:5; }
+#runOutput{ z-index:1; }
+
+body.arena-mode #runView > .card:first-child{
+  position:relative !important;
+  z-index:5 !important;
+}
+
+body.arena-mode #runOutput{
+  display:block !important;
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  top:58vh !important;
+  overflow:auto !important;
+  margin:0 !important;
+  border-radius:22px 22px 0 0 !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  background:rgba(18,20,24,.96) !important;
+  z-index:2 !important;
+}
+
+body.arena-mode #runNowBar .runNowGrid{
+  position:relative !important;
+  z-index:6 !important;
+}
+
+body.arena-mode #runView{
+  overflow:auto !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+body.arena-mode #runOutput .print-card{
+  margin:12px !important;
 }
 
 </style>
@@ -1287,7 +1326,7 @@ body.arena-mode #runOutput{
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
         <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
-        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena mode</button>
+        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena FIX</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
@@ -4295,7 +4334,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.43");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.44");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4328,7 +4367,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.43</div>
+<div class="app-version">V 1.9.44</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
