@@ -946,6 +946,96 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
 }
 
 
+
+/* ===== V46 COACH SCREEN ===== */
+#coachView{
+  display:none;
+  min-height:100vh;
+  padding:12px 12px 120px;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98);
+}
+#coachView.active{ display:block; }
+body.coach-screen-active .nsk-top,
+body.coach-screen-active #homeView,
+body.coach-screen-active #editView,
+body.coach-screen-active #runView,
+body.coach-screen-active #adminView,
+body.coach-screen-active #loginView{
+  display:none !important;
+}
+body.coach-screen-active #coachView{
+  display:block !important;
+}
+.coachScreenWrap{
+  max-width:980px;
+  margin:0 auto;
+}
+.coachScreenCard{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:24px;
+  padding:18px 16px;
+  background:rgba(255,255,255,.05);
+  box-shadow:0 14px 34px rgba(0,0,0,.35);
+  margin-bottom:14px;
+}
+.coachScreenTitle{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.coachScreenMatch{
+  font-size:20px;
+  font-weight:900;
+  margin-top:6px;
+}
+.coachScreenMain{
+  font-size:52px;
+  line-height:1.04;
+  font-weight:950;
+  margin-top:14px;
+}
+.coachScreenSub{
+  font-size:18px;
+  opacity:.9;
+  margin-top:8px;
+}
+.coachScreenMeta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.coachScreenMeta .pill{
+  padding:10px 14px;
+  font-size:16px;
+  font-weight:900;
+}
+.coachScreenBtns{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.coachScreenBtns button{
+  flex:1 1 220px;
+  min-height:68px;
+  font-size:24px;
+  border-radius:22px;
+}
+.coachScreenNext{
+  animation:nskBlink 1s infinite;
+}
+@media (max-width:600px){
+  #coachView{ padding:10px 10px 110px; }
+  .coachScreenMain{ font-size:40px; }
+  .coachScreenBtns button{ min-height:64px; font-size:22px; }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1099,6 +1189,7 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
       </div>
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
+        <button class="ghost" type="button" onclick="openCoachScreen()">Coachskärm</button>
         <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
         <button class="ghost" type="button" onclick="toggleArenaMode()">Arena Mode</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
@@ -1297,6 +1388,17 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
 
     <div class="small" style="margin-top:12px;opacity:.85;">
       Roller: <b>admin</b> (allt + behörigheter), <b>coach_full</b> (allt utom behörigheter), <b>coach_run</b> (endast poolspelsläge).
+    </div>
+  </div>
+</div>
+
+
+<!-- COACH VIEW -->
+<div id="coachView" class="view no-print">
+  <div class="coachScreenWrap">
+    <div id="coachScreenContent" class="coachScreenCard">
+      <div class="coachScreenTitle">Coachskärm</div>
+      <div class="coachScreenSub">Ingen data ännu.</div>
     </div>
   </div>
 </div>
@@ -3382,7 +3484,7 @@ function wireImport(){
 })();
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
-function goHome(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.goHome(); }
+function goHome(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.goHome(); }
 function openNewPool(){
   // AUTH_GUARD_openNewPool
   if(window.Auth && !(Auth.canFull && Auth.canFull())){
@@ -3417,9 +3519,9 @@ function openPoolEdit(id){
     return;
   }
  Actions.openPoolEdit(id); }
-async function showEdit(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+async function showEdit(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     await Actions.showEdit(); }
-function showRun(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.showRun(); }
+function showRun(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.showRun(); }
 
 
 
@@ -4041,7 +4143,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.45");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.46");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4074,7 +4176,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.45</div>
+<div class="app-version">V 1.9.46</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
