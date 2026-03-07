@@ -1038,6 +1038,101 @@ body.coach-mode #runOutput{
   }
 }
 
+
+/* ===== V43 COACH ARENA MODE ===== */
+body.arena-mode{
+  overflow:hidden !important;
+}
+body.arena-mode .nsk-top,
+body.arena-mode #homeView,
+body.arena-mode #editView,
+body.arena-mode #adminView,
+body.arena-mode #loginView{
+  display:none !important;
+}
+body.arena-mode #runView{
+  display:block !important;
+  position:fixed !important;
+  inset:0 !important;
+  padding:0 !important;
+  margin:0 !important;
+  min-height:100vh !important;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.24), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.16), transparent 55%),
+    rgba(6,7,9,.985) !important;
+  overflow:hidden !important;
+}
+body.arena-mode #runView > .card:first-child{
+  display:block !important;
+  margin:0 !important;
+  padding:0 !important;
+  background:transparent !important;
+  border:none !important;
+  box-shadow:none !important;
+}
+body.arena-mode #runView > .card:first-child > div:not(#runNowBar),
+body.arena-mode #runView > .card:first-child > .small{
+  display:none !important;
+}
+body.arena-mode #runNowBar{
+  position:fixed !important;
+  inset:0 !important;
+  margin:0 !important;
+  padding:20px 18px 24px !important;
+  display:flex !important;
+  flex-direction:column !important;
+  justify-content:space-between !important;
+  z-index:100 !important;
+  min-height:100vh !important;
+  background:transparent !important;
+}
+body.arena-mode #runNowBar .runNowGrid{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:18px !important;
+}
+body.arena-mode #runNowBar .runNowCol{
+  border-radius:26px !important;
+  padding:18px 16px !important;
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  box-shadow:0 14px 34px rgba(0,0,0,.35) !important;
+}
+body.arena-mode #runNowBar .runNowTitle{
+  font-size:22px !important;
+  font-weight:950 !important;
+  letter-spacing:1px !important;
+}
+body.arena-mode #runNowBar .runNowMain{
+  font-size:54px !important;
+  line-height:1.02 !important;
+  font-weight:950 !important;
+}
+body.arena-mode #runNowBar .runNowHint,
+body.arena-mode #runNowBar .small{
+  font-size:18px !important;
+}
+body.arena-mode #runNowBar .runNowActions{
+  display:flex !important;
+  gap:12px !important;
+  margin-top:14px !important;
+}
+body.arena-mode #runNowBar .runNowActions button{
+  flex:1 1 auto !important;
+  min-height:72px !important;
+  font-size:24px !important;
+  border-radius:22px !important;
+}
+body.arena-mode #runOutput{
+  display:none !important;
+}
+@media (max-width: 600px){
+  body.arena-mode #runNowBar .runNowMain{
+    font-size:42px !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1192,6 +1287,7 @@ body.coach-mode #runOutput{
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
         <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
+        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena mode</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
@@ -3264,6 +3360,32 @@ function toggleCoachMode(){
   }catch(e){}
 }
 
+
+function setArenaMode(on){
+  try{
+    document.body.classList.toggle("arena-mode", !!on);
+    if(on){
+      document.body.classList.remove("coach-mode");
+      document.body.classList.remove("coach-show-table");
+      try{ updateRunProUI(); }catch(e){}
+    }
+  }catch(e){}
+}
+
+function toggleArenaMode(){
+  try{
+    var next = !document.body.classList.contains("arena-mode");
+    if(next){
+      try{ updateRunProUI(); }catch(e){}
+      var bar=document.getElementById("runNowBar");
+      var ok = !!(bar && (bar.textContent||"").replace(/\s+/g," ").trim());
+      if(ok) setArenaMode(true);
+    }else{
+      setArenaMode(false);
+    }
+  }catch(e){}
+}
+
 // ---------- navigation helpers ----------
 function setActiveTeamButtons(team){
   const t=String(team||"1");
@@ -3450,7 +3572,7 @@ function wireImport(){
 })();
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
-function goHome(){ Actions.goHome(); }
+function goHome(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.goHome(); }
 function openNewPool(){
   // AUTH_GUARD_openNewPool
   if(window.Auth && !(Auth.canFull && Auth.canFull())){
@@ -3485,9 +3607,9 @@ function openPoolEdit(id){
     return;
   }
  Actions.openPoolEdit(id); }
-async function showEdit(){ syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+async function showEdit(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     await Actions.showEdit(); }
-function showRun(){ Actions.showRun(); }
+function showRun(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.showRun(); }
 
 
 
@@ -4173,7 +4295,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.42");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.43");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4206,7 +4328,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.42</div>
+<div class="app-version">V 1.9.43</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
