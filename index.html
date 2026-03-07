@@ -1831,6 +1831,36 @@ function shortName(full){
   return parts[0]+" "+(parts[parts.length-1][0]||"").toUpperCase();
 }
 
+
+
+function ensureTeamSelectExists(){
+  try{
+    var el=document.getElementById("teamSelect");
+    if(el) return el;
+    var sel=document.createElement("select");
+    sel.id="teamSelect";
+    sel.style.display="none";
+    sel.innerHTML='<option value="1">1</option><option value="2">2</option><option value="3">3</option>';
+    document.body.appendChild(sel);
+    sel.value=getSelectedTeamSafe();
+    return sel;
+  }catch(e){ return null; }
+}
+
+function getSelectedTeamSafe(){
+  try{
+    var el=document.getElementById("teamSelect");
+    if(el && el.value) return String(el.value);
+  }catch(e){}
+  try{
+    if(window.Storage && Storage.currentTeam) return String(Storage.currentTeam()||"1");
+  }catch(e){}
+  try{
+    return String(localStorage.getItem("nsk_current_team")||"1");
+  }catch(e){}
+  return "1";
+}
+
 // ---------- Storage ----------
 const Storage = {
   poolsKey(){ return "nsk_pools"; },
@@ -2274,8 +2304,9 @@ const UI = {
     const id=Storage.currentPoolId();
     const pools=Storage.loadPools();
     const p=pools.find(x=>x&&x.id===id);
-    const team=document.getElementById("teamSelect").value||"1";
-    document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
+    const team=getSelectedTeamSafe();
+    var runSubEl=document.getElementById("runSub"); if(!runSubEl) return;
+    runSubEl.textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
   }
 };
 
@@ -2585,7 +2616,7 @@ function applyTeamCoachesToUI(){
 }
 
 // ---------- match count per team ----------
-function matchCountKey(){const team=document.getElementById("teamSelect").value||"1"; return `${Storage.poolPrefix()}matchCount_team_${team}`;}
+function matchCountKey(){const team=getSelectedTeamSafe(); return `${Storage.poolPrefix()}matchCount_team_${team}`;}
 function loadMatchCount(){const raw=localStorage.getItem(matchCountKey()); const n=raw?parseInt(raw,10):4; return (Number.isFinite(n)&&n>=1&&n<=30)?n:4;}
 function saveMatchCount(n){localStorage.setItem(matchCountKey(), String(n));}
 function fillMatchCountDropdown(){
@@ -2653,7 +2684,7 @@ function setFormState(s){
   document.getElementById("goalie").value=d.goalie||"";
 }
 function ensureInheritanceOnLoad(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)==="1") return;
   const key=stateKey();
@@ -2689,7 +2720,7 @@ function setManualOverrideForCurrentMatch(){
   localStorage.setItem(stateKey(), JSON.stringify(Object.assign(defaultsState(), st)));
 }
 function propagateMatch1ToOtherMatches(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)!=="1") return;
   const count=loadMatchCount();
@@ -2912,7 +2943,7 @@ function renderEditOutput(){
   const msg=document.getElementById("msg");
   msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
 
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
@@ -2997,7 +3028,7 @@ function renderRunFallback(title, msg){
 function renderRunAll(){
   if(!Storage.currentPoolId()){ renderRunFallback("Inget aktivt poolspel", "Välj ett poolspel först."); return; }
   UI.updateRunHeader();
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
@@ -3048,7 +3079,7 @@ document.getElementById("runOutput").innerHTML = html || "<div class='card'><b>P
 
 function allShiftsDoneForCurrentTeam(){
   if(!Storage.currentPoolId()) return false;
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   if(!matchCount || matchCount<1) return false;
 
@@ -3118,7 +3149,7 @@ function finishPool(){
     if(!ok){ unlock(); return; }
 
     var id = Storage.currentPoolId();
-    var team = document.getElementById("teamSelect").value || "1";
+    var team = getSelectedTeamSafe();
     if(!id || !team){ unlock(); return; }
 
     if(!allShiftsDoneForCurrentTeam()){
@@ -3250,7 +3281,7 @@ async function switchTeam(team){
     }
   }catch(e){}
 
-  document.getElementById("teamSelect").value=String(team||"1");
+  var __tsel=document.getElementById("teamSelect"); if(__tsel) __tsel.value=String(team||"1");
   setActiveTeamButtons(team);
   onTeamChanged();
 }
@@ -3286,7 +3317,7 @@ async function initEditForCurrentPool(){
   applyTeamCoachesToUI();
   loadState();
   renderEditOutput();
-  setActiveTeamButtons(document.getElementById("teamSelect").value||"1");
+  setActiveTeamButtons(getSelectedTeamSafe());
 }
 
 // ---------- PDF ----------
@@ -3495,6 +3526,7 @@ function showRun(){ try{ document.body.classList.remove("arena-mode"); document.
 })();
 // ---------- init ----------
 function init(){
+  ensureTeamSelectExists();
   hideMatchDateInEdit();
   initSettingsDropdowns();
   wireImport();
@@ -3725,7 +3757,7 @@ window.addEventListener("beforeunload", function(){
 function markTeamActiveIfNeeded(){
   try{
     var id=Storage.currentPoolId();
-    var team=document.getElementById("teamSelect").value || "1";
+    var team=getSelectedTeamSafe();
     if(!id || !team) return;
     if(!isTeamCompleted(id, team)) return;
     if(!allShiftsDoneForCurrentTeam()){
@@ -4065,7 +4097,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.49");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.50");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4098,7 +4130,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.49</div>
+<div class="app-version">V 1.9.50</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
