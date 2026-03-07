@@ -1,8 +1,9 @@
-// NSK Team 18 Service Worker (v1.9.53)
-const CACHE_NAME = "nsk-team18-v1.9.53";
+// NSK Team 18 Service Worker (v1.9.54)
+const CACHE_NAME = "nsk-team18-v1.9.54";
 const ASSETS = [
   "./",
   "./index.html",
+  "./coach.html",
   "./manifest.webmanifest",
   "./icon-192.png",
   "./icon-512.png",
@@ -27,34 +28,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Network-first for HTML, cache-first for everything else
-
-
 self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
+  if (event.data === "SKIP_WAITING") self.skipWaiting();
 });
 
-
-self.addEventListener('fetch', event => {
+self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return;
-
+  if (req.method !== "GET") return;
   const url = new URL(req.url);
+  const isHTML = req.mode === "navigate" || (req.headers.get("accept") || "").includes("text/html");
 
-  // Network-first for HTML to avoid stale blank-screen shells
-  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
   if (isHTML) {
     event.respondWith((async () => {
       try {
-        const fresh = await fetch(req, {cache: 'no-store'});
+        const fresh = await fetch(req, { cache: "no-store" });
         const cache = await caches.open(CACHE_NAME);
         cache.put(req, fresh.clone());
         return fresh;
       } catch (e) {
         const cached = await caches.match(req);
-        return cached || Response.redirect(url.origin + url.pathname);
+        return cached || caches.match("./index.html");
       }
     })());
     return;
