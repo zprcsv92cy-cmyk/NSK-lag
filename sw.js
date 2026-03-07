@@ -1,5 +1,5 @@
-// NSK Team 18 Service Worker (v1.9.40)
-const CACHE_NAME = "nsk-team18-v1.9.40";
+// NSK Team 18 Service Worker (v1.9.41)
+const CACHE_NAME = "nsk-team18-v1.9.41";
 const ASSETS = [
   "./",
   "./index.html",
@@ -28,41 +28,44 @@ self.addEventListener("activate", (event) => {
 });
 
 // Network-first for HTML, cache-first for everything else
-self.addEventListener("fetch", (event) => {
-  const req = event.request;
-  const url = new URL(req.url);
 
-  // Only handle same-origin
-  if (url.origin !== self.location.origin) return;
-
-  const accept = req.headers.get("accept") || "";
-  const isHTML = req.mode === "navigate" || accept.includes("text/html");
-
-  if (isHTML) {
-    event.respondWith(
-      fetch(req)
-        .then((res) => {
-          const copy = res.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put("./index.html", copy)).catch(() => {});
-          return res;
-        })
-        .catch(() => caches.match("./index.html"))
-    );
-    return;
-  }
-
-  // Cache-first
-  event.respondWith(
-    caches.match(req).then((cached) => cached || fetch(req).then((res) => {
-      const copy = res.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(req, copy)).catch(() => {});
-      return res;
-    }))
-  );
-});
 
 self.addEventListener("message", (event) => {
   if (event.data === "SKIP_WAITING") {
     self.skipWaiting();
   }
+});
+
+
+self.addEventListener('fetch', event => {
+  const req = event.request;
+  if (req.method !== 'GET') return;
+
+  const url = new URL(req.url);
+
+  // Network-first for HTML to avoid stale blank-screen shells
+  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
+  if (isHTML) {
+    event.respondWith((async () => {
+      try {
+        const fresh = await fetch(req, {cache: 'no-store'});
+        const cache = await caches.open(CACHE_NAME);
+        cache.put(req, fresh.clone());
+        return fresh;
+      } catch (e) {
+        const cached = await caches.match(req);
+        return cached || Response.redirect(url.origin + url.pathname);
+      }
+    })());
+    return;
+  }
+
+  event.respondWith((async () => {
+    const cached = await caches.match(req);
+    if (cached) return cached;
+    const fresh = await fetch(req);
+    const cache = await caches.open(CACHE_NAME);
+    cache.put(req, fresh.clone());
+    return fresh;
+  })());
 });
