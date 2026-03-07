@@ -1332,6 +1332,25 @@ body.coach-screen-active #coachView{
 
 (function(){
   try{
+    var _origApply = window.applyTeamCoachesToUI;
+    window.applyTeamCoachesToUI = function(){
+      try{
+        var coachSel=document.getElementById("coach");
+        if(!coachSel) return;
+        var chosen=new Set((typeof loadTeamCoaches==="function" ? loadTeamCoaches() : []).map(function(x){ return String(x).toLowerCase(); }));
+        var opts = coachSel.options ? Array.from(coachSel.options) : [];
+        opts.forEach(function(opt){
+          opt.selected = chosen.has(String(opt.value).toLowerCase());
+        });
+      }catch(e){}
+    };
+  }catch(e){}
+})();
+
+
+
+(function(){
+  try{
     var __origGet = document.getElementById.bind(document);
     document.getElementById = function(id){
       var el = __origGet(id);
@@ -2635,7 +2654,8 @@ function applyTeamCoachesToUI(){
   const coachSel=document.getElementById("coach");
   if(!coachSel) return;
   const chosen=new Set(loadTeamCoaches().map(x=>String(x).toLowerCase()));
-  for(const opt of (coachSel.options||[])){
+  const opts = coachSel.options ? Array.from(coachSel.options) : [];
+  for(const opt of opts){
     opt.selected=chosen.has(String(opt.value).toLowerCase());
   }
 }
@@ -4194,7 +4214,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.57");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.58");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4227,7 +4247,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.57</div>
+<div class="app-version">V 1.9.58</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
