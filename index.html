@@ -1330,6 +1330,26 @@ body.coach-screen-active #coachView{
 
 <script>
 
+(function(){
+  try{
+    var __origGet = document.getElementById.bind(document);
+    document.getElementById = function(id){
+      var el = __origGet(id);
+      if(el) return el;
+      if(id==="arena" || id==="teamSize" || id==="onCourt" || id==="periodsCount" || id==="periodMin" || id==="shiftSec" || id==="matchCount" || id==="matchNo"){
+        var dummy = document.createElement("select");
+        dummy.id = id;
+        dummy.style.display = "none";
+        document.body.appendChild(dummy);
+        return dummy;
+      }
+      return el;
+    };
+  }catch(e){}
+})();
+
+
+
 
 
 // ===== AUTH + ROLES (Supabase Magic Link) =====
@@ -3319,18 +3339,71 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); arena.innerHTML="";
-  for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
-  const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
-  for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
-  const onCourt=document.getElementById("onCourt"); onCourt.innerHTML="";
-  [3,4,5].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); onCourt.appendChild(o);});
-  const periods=document.getElementById("periodsCount"); periods.innerHTML="";
-  [1,2,3].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); periods.appendChild(o);});
-  const period=document.getElementById("periodMin"); period.innerHTML="";
-  for(let m=8;m<=20;m++){const o=document.createElement("option"); o.value=String(m); o.textContent=String(m); period.appendChild(o);}
-  const shift=document.getElementById("shiftSec"); shift.innerHTML="";
-  for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
+  const arena=document.getElementById("arena");
+  if(arena){
+    arena.innerHTML="";
+    for(let i=1;i<=4;i++){
+      const o=document.createElement("option");
+      o.value=String(i);
+      o.textContent=String(i);
+      arena.appendChild(o);
+    }
+  }
+
+  const teamSize=document.getElementById("teamSize");
+  if(teamSize){
+    teamSize.innerHTML="";
+    for(let i=1;i<=25;i++){
+      const o=document.createElement("option");
+      o.value=String(i);
+      o.textContent=String(i);
+      teamSize.appendChild(o);
+    }
+  }
+
+  const onCourt=document.getElementById("onCourt");
+  if(onCourt){
+    onCourt.innerHTML="";
+    [3,4,5].forEach(n=>{
+      const o=document.createElement("option");
+      o.value=String(n);
+      o.textContent=String(n);
+      onCourt.appendChild(o);
+    });
+  }
+
+  const periods=document.getElementById("periodsCount");
+  if(periods){
+    periods.innerHTML="";
+    [1,2,3].forEach(n=>{
+      const o=document.createElement("option");
+      o.value=String(n);
+      o.textContent=String(n);
+      periods.appendChild(o);
+    });
+  }
+
+  const period=document.getElementById("periodMin");
+  if(period){
+    period.innerHTML="";
+    for(let m=8;m<=20;m++){
+      const o=document.createElement("option");
+      o.value=String(m);
+      o.textContent=String(m);
+      period.appendChild(o);
+    }
+  }
+
+  const shift=document.getElementById("shiftSec");
+  if(shift){
+    shift.innerHTML="";
+    for(let s=30;s<=180;s+=5){
+      const o=document.createElement("option");
+      o.value=String(s);
+      o.textContent=String(s);
+      shift.appendChild(o);
+    }
+  }
 }
 async function initEditForCurrentPool(){
   if(!(await gateEditIfTeamCompleted())) return;
@@ -4118,7 +4191,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.55");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.56");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4151,7 +4224,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.55</div>
+<div class="app-version">V 1.9.56</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
