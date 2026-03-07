@@ -1190,6 +1190,7 @@ body.coach-screen-active #coachView{
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
         <button class="ghost" type="button" onclick="openCoachScreen()">Coachskärm</button>
+        <button class="ghost" type="button" onclick="openCoachScreen()">Coachskärm</button>
         <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
         <button class="ghost" type="button" onclick="toggleArenaMode()">Arena Mode</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
@@ -4143,7 +4144,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.46");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.47");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4176,7 +4177,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.46</div>
+<div class="app-version">V 1.9.47</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
