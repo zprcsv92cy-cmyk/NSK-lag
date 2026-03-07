@@ -1036,6 +1036,18 @@ body.coach-screen-active #coachView{
   .coachScreenBtns button{ min-height:64px; font-size:22px; }
 }
 
+
+/* ===== V49 CLEAN RUN HEADER ===== */
+#runHeaderCard .btnrow button{
+  min-height:56px;
+}
+#runHeaderCard .btnrow button:not(.ghost){
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.30),
+    0 0 0 1px rgba(0,0,0,.35),
+    0 0 18px rgba(177,18,38,.25);
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1100,104 +1112,13 @@ body.coach-screen-active #coachView{
         <div id="editSub" class="small"></div>
       </div>
       <div class="btnrow">
-        <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
-        <button class="ghost" type="button" onclick="showRun()">Poolspel-läge</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- team hidden select -->
-  <select id="teamSelect" style="display:none">
-    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-  </select>
-
-  <div class="card no-print">
-    <div class="row">
-
-      <div><label>Lag</label>
-        <div class="btnrow">
-          <button class="ghost" type="button" onclick="switchTeam('1')" id="tbtn1">Lag 1</button>
-          <button class="ghost" type="button" onclick="switchTeam('2')" id="tbtn2">Lag 2</button>
-          <button class="ghost" type="button" onclick="switchTeam('3')" id="tbtn3">Lag 3</button>
-        </div>
-      </div>
-      <div><label>Antal matcher</label><select id="matchCount"></select></div>
-      <div><label>Match</label><select id="matchNo"></select></div>
-      <div><label>Datum</label><input id="matchDate" type="date"></div>
-      <div><label>Starttid</label><input id="matchTime" type="time"></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Motståndare</label><input id="opponent" placeholder="Skriv motståndare"></div>
-      <div><label>Plan</label><select id="arena"></select></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Antal i laget</label><select id="teamSize"></select></div>
-      <div><label>Antal på plan</label><select id="onCourt"></select></div>
-      <div><label>Perioder per match</label><select id="periodsCount"></select></div>
-      <div><label>Periodtid (min)</label><select id="periodMin"></select></div>
-      <div><label>Bytestid (sek)</label><select id="shiftSec"></select></div>
-    </div>
-    <div class="small" style="margin-top:10px;">
-      Allt sparas automatiskt per poolspel + lag + match.
-      <span id="saveState" class="pill" style="margin-left:8px;">Redo</span>
-    </div>
-  </div>
-
-  <div class="card no-print">
-    <b>Spelare (denna match)</b>
-    <div id="playersContainer" class="row" style="margin-top:10px;"></div>
-    <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
-
-    <div class="row" style="margin-top:10px;">
-      <div>
-        <label>Målvakt</label>
-        <select id="goalie"></select>
-      </div>
-      <div>
-        <label>Tränare (samma för alla matcher i laget)</label>
-        <select id="coach" multiple></select>
-        <div class="hint">Tips: Markera flera genom att trycka flera gånger (mobil) / Ctrl/⌘ (dator).</div>
-      </div>
-    </div>
-
-    <div id="msg" class="small" style="margin-top:10px;"></div>
-
-    <div class="btnrow" style="margin-top:12px;">
-      <button type="button" onclick="renderEditOutput()">Skapa matchblad</button>
-      <button class="ghost" type="button" onclick="exportPDF()">Dela PDF</button>
-      <button class="ghost" type="button" onclick="clearTeamMatch()">Rensa (lag+match)</button>
-    </div>
-
-    <div id="exportHelp" class="small" style="margin-top:8px;display:none;"></div>
-  </div>
-
-  <!-- Detta är det som ska synas i PDF -->
-  <div class="card print-card" id="editOutput">
-    <b>Matchblad</b>
-    <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
-  </div>
-</div>
-
-<!-- RUN VIEW -->
-<div id="runView" class="view no-print">
-  <div id="runNowBar" class="runNowBar" style="display:none;"></div>
-  <div class="card" id="runHeaderCard">
-    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-      <div>
-        <b>Poolspel-läge</b>
-        <div id="runSub" class="small"></div>
-      </div>
-      <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
-        <button class="ghost" type="button" onclick="openCoachPage()">Coachskärm</button>
-        <button class="ghost" type="button" onclick="openCoachPage()">Coachskärm</button>
-        <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
-        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena Mode</button>
+        <button type="button" onclick="openCoachPage()">Coachskärm</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
 </div>
-    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
+    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
 
   <div class="card" id="runOutput">
@@ -4144,7 +4065,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.48");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.49");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4177,7 +4098,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.48</div>
+<div class="app-version">V 1.9.49</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
