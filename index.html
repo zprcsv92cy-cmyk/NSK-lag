@@ -2825,12 +2825,21 @@ function renderPlayerSelectors(n, values){
 }
 function refreshAllDropdownsAndPlayers(){
   const {players,coaches}=loadRegister();
-  const g=document.getElementById("goalie"); const cur=g.value;
-  fillSelect(g, players, "Välj..."); g.value=cur;
+
+  const g=document.getElementById("goalie");
+  const cur=g ? (g.value||"") : "";
+  if(g){
+    fillSelect(g, players, "Välj...");
+    g.value=cur;
+  }
+
   const c=document.getElementById("coach");
-  fillMultiSelect(c, coaches);
-  applyTeamCoachesToUI();
-  const st=getFormState();
+  if(c) fillMultiSelect(c, coaches);
+
+  try{ applyTeamCoachesToUI(); }catch(e){}
+
+  let st = defaultsState();
+  try{ st=getFormState(); }catch(e){}
   renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players||[]);
 }
 
@@ -4171,7 +4180,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.52");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.53");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4204,7 +4213,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.52</div>
+<div class="app-version">V 1.9.53</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
