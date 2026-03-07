@@ -1020,11 +1020,28 @@ body.coach-mode #runNowBar .runNowHint{
   }
 }
 
+
+/* ===== V41 ULTRA STABLE ===== */
+body.coach-mode #runNowBar{
+  inset:0 0 30vh 0 !important;
+}
+body.coach-mode #runNowBar .runNowMain{
+  font-size:62px !important;
+  font-weight:950 !important;
+}
+body.coach-mode #runOutput{
+  top:72vh !important;
+}
+@media (max-width:600px){
+  body.coach-mode #runNowBar .runNowMain{
+    font-size:46px !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
-<pre id="bootDebug" style="display:block;position:fixed;left:12px;right:12px;top:90px;z-index:100000;background:rgba(0,0,0,.72);color:#00ff5a;padding:12px 14px;border-radius:18px;font:14px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;white-space:pre-wrap;pointer-events:none;"></pre>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
@@ -2350,6 +2367,20 @@ function syncCoachModeFromRunContent(){
   }catch(e){}
 }
 
+
+function ultraEnsureVisibleView(){
+  try{
+    var active = document.querySelector(".view.active");
+    if(active) return true;
+    if(window.UI && UI.showView){
+      UI.showView("homeView");
+      try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
 // ---------- Pool actions ----------
 const Actions = {
   goHome(){
@@ -3581,15 +3612,7 @@ function hideBootDebugLater(){
   }catch(e){}
 }
 
-function bootLog(msg){
-  try{
-    var el=document.getElementById("bootDebug");
-    if(!el) return;
-    var d=new Date();
-    var ts=("0"+d.getHours()).slice(-2)+":"+("0"+d.getMinutes()).slice(-2)+":"+("0"+d.getSeconds()).slice(-2);
-    el.textContent += "["+ts+"] "+msg+"\n";
-  }catch(e){}
-}
+function bootLog(msg){}
 
 function forceShowHomeFallback(reason){
   try{ bootLog("fallback — "+String(reason||"home")); }catch(e){}
@@ -3605,12 +3628,20 @@ function forceShowHomeFallback(reason){
   try{ UI && UI.renderPoolList && UI.renderPoolList(); }catch(e){}
 }
 
+
+function safeShowHome(){
+  try{
+    if(window.UI && UI.showView) UI.showView("homeView");
+    try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+  }catch(e){}
+}
+
 function safeInit(){
   bootLog("load — start");
   try{
     init();
     bootLog("init — ok");
-    try{ if(typeof hideBootDebugLater==="function") hideBootDebugLater(); }catch(e){}
+    
   }catch(e){
     bootLog("init — fail: " + (e && e.message ? e.message : e));
     forceShowHomeFallback("init-error");
@@ -3642,7 +3673,17 @@ function safeInit(){
   }, 1200);
 }
 
-window.addEventListener("load", safeInit);
+window.addEventListener("load", function(){
+  try{ safeInit(); }catch(e){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }
+  setTimeout(function(){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }, 120);
+  setTimeout(function(){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }, 700);
+});
 
 
 
@@ -3696,18 +3737,13 @@ function restoreLastRouteOnLoad(){
       return true;
     }
     if(r.route==="edit"){
-      // För att inte fastna i kod-prompt vid auto-restore går vi till startsidan.
       UI.showView("homeView");
       UI.renderPoolList();
       return true;
     }
     if(r.route==="teamSelect"){
-      try{
-        App.state.pendingPoolId = r.pendingPoolId || (r.poolId||"");
-        App.state.teamSelectTarget = (r.target==="edit") ? "edit" : "run";
-        App.state.readOnly = !!r.readOnly;
-      }catch(e){}
-      try{ Actions.openTeamSelect(); }catch(e){}
+      UI.showView("homeView");
+      UI.renderPoolList();
       return true;
     }
     if(r.route==="home"){
@@ -4135,7 +4171,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.40");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.41");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4168,7 +4204,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.40</div>
+<div class="app-version">V 1.9.41</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
