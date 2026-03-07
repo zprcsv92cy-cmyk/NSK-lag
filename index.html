@@ -997,6 +997,29 @@ body.coach-mode #runOutput{
   }
 }
 
+
+/* ===== STABIL PRO V40 ===== */
+body.coach-mode #bootDebug{ display:none !important; }
+body.coach-mode #runNowBar .runNowMain{
+  font-size:60px !important;
+  line-height:1.02 !important;
+}
+body.coach-mode #runNowBar .runNowTitle{
+  font-size:22px !important;
+  font-weight:950 !important;
+}
+body.coach-mode #runNowBar .runNowCol{
+  min-height:220px !important;
+}
+body.coach-mode #runNowBar .runNowHint{
+  font-size:18px !important;
+}
+@media (max-width:600px){
+  body.coach-mode #runNowBar .runNowMain{
+    font-size:44px !important;
+  }
+}
+
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1151,7 +1174,7 @@ body.coach-mode #runOutput{
       </div>
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
-        <button class="ghost" type="button" onclick="toggleCoachMode()">Coach-läge</button>
+        <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
@@ -1739,6 +1762,7 @@ function hideMatchDateInEdit(){
     if(/lock was stolen/i.test(String(reason))) return;
     if(/browsing context is going away/i.test(String(reason))) return;
     if(/the page was hidden/i.test(String(reason))) return;
+    if(/terminated/i.test(String(reason))) return;
     var msg = "Promise-fel: " + reason;
     showErr(msg);
   });
@@ -3545,6 +3569,18 @@ function init(){
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
 
+function hideBootDebugLater(){
+  try{
+    setTimeout(function(){
+      var el=document.getElementById("bootDebug");
+      if(!el) return;
+      el.style.transition="opacity .3s ease";
+      el.style.opacity="0";
+      setTimeout(function(){ el.style.display="none"; }, 320);
+    }, 1800);
+  }catch(e){}
+}
+
 function bootLog(msg){
   try{
     var el=document.getElementById("bootDebug");
@@ -3574,7 +3610,7 @@ function safeInit(){
   try{
     init();
     bootLog("init — ok");
-    hideBootDebugLater();
+    try{ if(typeof hideBootDebugLater==="function") hideBootDebugLater(); }catch(e){}
   }catch(e){
     bootLog("init — fail: " + (e && e.message ? e.message : e));
     forceShowHomeFallback("init-error");
@@ -3739,7 +3775,7 @@ function updateRunProUI(){
     // Collect ALL shift rows across all matches (DOM order)
     var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
     if(!rows.length){
-      bar.innerHTML = `<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Välj lag</div><div class="runNowHint">Öppna ett poolspel → Påbörja poolspel → välj lag.</div></div></div>`;
+      bar.innerHTML = `<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach PRO</div><div class="runNowMain">Välj lag</div><div class="runNowHint">Öppna ett poolspel → Påbörja poolspel → välj lag.</div></div></div>`;
       bar.style.display="block";
       return;
     }
@@ -3834,7 +3870,7 @@ function updateRunProUI(){
     var curMetaLines = metaLines(cur);
     var nxtMetaLines = nextRow ? metaLines(nxt) : '';
     if(!cur.players || cur.players==='—'){
-      bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Schema saknas</div><div class="runNowHint">Redigera poolspelet och välj spelare för att få Pågående/Nästa byte.</div><div class="runNowActions"><button type="button" onclick="showEdit()">Redigera</button><button type="button" class="ghost" onclick="goHome()">Till startsidan</button></div></div></div>';
+      bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach PRO</div><div class="runNowMain">Schema saknas</div><div class="runNowHint">Redigera poolspelet och välj spelare för att få Pågående/Nästa byte.</div><div class="runNowActions"><button type="button" onclick="showEdit()">Redigera</button><button type="button" class="ghost" onclick="goHome()">Till startsidan</button></div></div></div>';
       bar.style.display='block';
       return;
     }
@@ -4099,7 +4135,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.39");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.40");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4132,7 +4168,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.39</div>
+<div class="app-version">V 1.9.40</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
