@@ -7,10 +7,10 @@
 <meta name="theme-color" content="#b11226">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="NSK Lag">
+<meta name="apple-mobile-web-app-title" content="NSK Team 18">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
-<title>NSK Lag</title>
+<title>NSK Team 18</title>
 <style>
 :root{
   /* Bas */
@@ -44,7 +44,7 @@ h1{margin:0;font-size:22px}
 .small{font-size:12px;color:var(--muted)}
 .card{border:1px solid var(--line);border-radius:var(--radius);padding:12px;margin:12px 0;background:var(--card)}
 label{display:block;font-size:12px;color:var(--muted);margin:0 0 6px}
-select,input{width:100%;padding:10px;border-radius:12px;border:1px solid #ccc;background:#fff;color:var(--text);outline:none}
+select,input{width:100%;padding:10px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.04);color:var(--text);outline:none}
 .row{display:flex;gap:10px;flex-wrap:wrap}
 .row>*{flex:1 1 160px}
 .btnrow{display:flex;gap:10px;flex-wrap:wrap}
@@ -441,23 +441,658 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   font-weight:700;
 }
 
+
+/* Team select: make team cards larger even when coach text is visible */
+#teamSelectModal:not(.hide-coach) .row button{
+  min-height:86px;
+  padding:20px 18px;
+}
+
+#teamSelectModal:not(.hide-coach) .row button b{
+  font-size:18px;
+  display:block;
+  margin-bottom:4px;
+}
+
+#teamSelectModal:not(.hide-coach) .row button .small{
+  font-size:13px;
+  opacity:.9;
+}
+
+
+/* Fix: done (avbockad) rad ska inte bli ljus/vit i mörkt tema */
+#runView table td,
+#runView table th,
+#editView table td,
+#editView table th{
+  background: transparent;
+}
+
+#runView .doneRow td,
+#editView .doneRow td{
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(245,245,247,.9) !important;
+}
+
+#runView .doneRow td.chkCell,
+#editView .doneRow td.chkCell{
+  background: transparent !important;
+}
+
+
+/* Finish pool footer button */
+.finishPoolFooter{
+  margin-top:14px;
+  display:flex;
+  justify-content:center;
+}
+.finishPoolFooter button{
+  width:100%;
+  max-width:520px;
+}
+
+
+/* Completed pool visual state */
+.poolCard.completed button.startBtn,
+.poolCard.completed button.editBtn{
+  opacity:0.45;
+  filter:grayscale(0.4);
+}
+
+
+/* Pool status badges */
+.status-completed{
+  border:2px solid #d41f34;
+  color:#d41f34;
+  padding:2px 8px;
+  border-radius:12px;
+  font-size:12px;
+}
+
+.status-active{
+  border:2px solid #2ecc71;
+  color:#2ecc71;
+  padding:2px 8px;
+  border-radius:12px;
+  font-size:12px;
+}
+
+
+/* Read-only (Arkiv) checkboxes look */
+.chk:disabled{
+  opacity:.6;
+  cursor:not-allowed;
+}
+
+
+/* Remove match date field in edit view */
+#editView label[for="matchDate"],
+#editView #matchDate{ display:none !important; }
+
+/* Mobile-friendly match header lines */
+.matchHdrLine1{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.matchHdrLine2{ margin-top:6px; opacity:.9; }
+@media (max-width:600px){
+  .matchHdrLine1 b{ font-size:18px; }
+  .matchHdrLine2{ font-size:13px; }
+}
+
+
+/* Edit view tweaks: smaller Starttid, bigger Motståndare */
+#editView #matchTime{ max-width:140px; }
+
+/* Motståndare / Plan row proportions */
+#editView #opponent{ width:100%; }
+#editView #arena{ max-width:120px; }
+#editView .row > div:first-child{ flex:3; }
+#editView .row > div:last-child{ flex:1; }
+
+
+/* Finish button disabled state */
+.finishPoolFooter button:disabled{
+  opacity:.45;
+  cursor:not-allowed;
+}
+
+
+/* NSK confirm + prompt modal (iOS-lik, men med NSK accent) */
+#nskConfirmModal, #nskPromptModal{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+}
+#nskConfirmModal .nskConfirmBackdrop,
+#nskPromptModal .nskPromptBackdrop{
+  position:absolute;
+  inset:0;
+  background:rgba(0,0,0,.45);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+#nskConfirmModal .nskConfirmCard,
+#nskPromptModal .nskPromptCard{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:min(560px, calc(100vw - 28px));
+  background:#f2f2f7;
+  color:#111;
+  border-radius:20px;
+  box-shadow: 0 22px 70px rgba(0,0,0,.45);
+  padding:18px 16px 14px;
+}
+#nskConfirmModal .nskConfirmTitle,
+#nskPromptModal .nskConfirmTitle{
+  font-weight:800;
+  font-size:20px;
+  margin-bottom:10px;
+}
+#nskConfirmModal .nskConfirmMsg,
+#nskPromptModal .nskConfirmMsg{
+  font-size:16px;
+  line-height:1.35;
+  color:#111;
+  opacity:.95;
+}
+#nskPromptModal .nskPromptInput{
+  width:100%;
+  margin-top:14px;
+  height:48px;
+  font-size:18px;
+  padding:10px 12px;
+  border-radius:14px;
+  border:1px solid rgba(0,0,0,.18);
+  background:#fff;
+  color:#111;
+  outline:none;
+}
+#nskPromptModal .nskPromptInput:focus{
+  border-color: rgba(177,18,38,.75);
+  box-shadow: 0 0 0 4px rgba(177,18,38,.15);
+}
+#nskConfirmModal .nskConfirmBtns,
+#nskPromptModal .nskConfirmBtns{
+  display:flex;
+  gap:18px;
+  justify-content:flex-end;
+  margin-top:16px;
+}
+#nskConfirmModal .nskConfirmBtns button,
+#nskPromptModal .nskConfirmBtns button{
+  background:transparent;
+  border:0;
+  padding:10px 6px;
+  border-radius:12px;
+  font-size:18px;
+  font-weight:700;
+  box-shadow:none;
+}
+#nskConfirmModal #nskConfirmCancel,
+#nskPromptModal #nskPromptCancel{
+  color:#007aff;
+}
+#nskConfirmModal #nskConfirmOk,
+#nskPromptModal #nskPromptOk{
+  color:var(--nsk-red);
+  font-weight:900;
+}
+
+/* Clear disabled look for finish button */
+.finishPoolFooter button:disabled{
+  opacity:.35 !important;
+  cursor:not-allowed !important;
+  filter: grayscale(.4);
+}
+
+
+/* ===== POOLSPEL PRO (Run view) ===== */
+
+/* ===== RUN NOW BAR (Pågående/Nästa) ===== */
+.runNowBar{
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  margin: 0 -16px 14px;
+  padding: 22px 18px;
+  background: rgba(10,12,16,.94);
+  border-bottom: 1px solid rgba(255,255,255,.12);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  min-height: 46vh;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+/* Banner modes */
+.runNowBar.fullscreen{
+  position:fixed;
+  inset:0;
+  margin:0;
+  border-radius:0;
+  min-height:100vh;
+  padding:24px 18px 18px;
+  overflow:auto;
+}
+.runNowBar.minimized{
+  position:sticky;
+  top:0;
+  margin:0 -16px 12px;
+  border-radius:0 0 18px 18px;
+  min-height:auto;
+  padding:12px 16px;
+}
+.runNowActions{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;}
+.runNowActions button{flex:1 1 200px; min-height:56px; font-size:18px; border-radius:18px;}
+.runNowActions button.ghost{font-weight:900;}
+.runNowInfoLine{font-size:13px; opacity:.9; margin-top:10px;}
+@keyframes nskBlink{0%,100%{opacity:1}50%{opacity:.35}}
+.nextBlink{animation:nskBlink 1s infinite;}
+.runNowMeta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:14px;
+}
+.runNowMeta .left{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.runNowMeta .right{display:flex;gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-end}
+.runNowMeta .pill{
+  padding:8px 12px;
+  border-radius:999px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.14);
+  font-size: 14px;
+  font-weight: 900;
+}
+.runNowMeta .small{font-size:14px; opacity:.9}
+.runNowGrid{
+  display:flex;
+  gap:18px;
+  flex-wrap:wrap;
+  align-items:stretch;
+}
+.runNowCol{
+  flex: 1 1 320px;
+  border:1px solid rgba(255,255,255,.12);
+  border-radius:18px;
+  padding:16px 14px;
+  background: rgba(255,255,255,.06);
+}
+.runNowTitle{
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: .8px;
+  text-transform: uppercase;
+  opacity: .9;
+}
+.runNowMain{
+  font-size: 36px;
+  font-weight: 950;
+  margin-top: 10px;
+  line-height: 1.06;
+  word-break: break-word;
+}
+.runNowHint{
+  font-size: 14px;
+  opacity: .9;
+  margin-top: 10px;
+}
+@keyframes nskBlink{0%,49%{opacity:1}50%,100%{opacity:.20}}
+.blink{ animation: nskBlink 1s infinite; }
+@media (max-width:600px){
+  .runNowBar{ min-height: 52vh; padding: 22px 16px; }
+  .runNowMain{ font-size: 40px; }
+  .runNowTitle{ font-size: 15px; }
+  .runNowMeta .pill{ font-size: 13px; }
+}
+
+#runView tr.current-row td{
+  background: rgba(255,255,255,.08) !important;
+}
+#runView tr.current-row td:first-child{
+  box-shadow: inset 6px 0 0 #22c55e;
+}
+#runView tr.next-row td{
+  background: rgba(255,255,255,.05) !important;
+}
+#runView tr.next-row td:first-child{
+  box-shadow: inset 6px 0 0 #f59e0b;
+}
+#runView tr.done-row td{
+  opacity:.75;
+}
+#runView tr.current-row{
+  transform: scale(1.01);
+}
+
+
+/* ===== AUTH (Login) ===== */
+#loginView .card{
+  border-left: 6px solid rgba(255,255,255,.10);
+}
+#loginView input{
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+}
+
+
+/* ===== ADMIN (Behörigheter) ===== */
+#adminView .tbl th, #adminView .tbl td{
+  padding:10px 10px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  font-size:14px;
+}
+#adminView .tbl th{
+  opacity:.9;
+  font-weight:900;
+}
+#adminView select{
+  height:40px;
+  border-radius:12px;
+  padding:6px 10px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.10);
+  color: #fff;
+}
+#adminView code{ opacity:.85; }
+
+
+
+/* ===== CLEAN COACH + ARENA ===== */
+body.coach-mode .nsk-top,
+body.coach-mode #homeView,
+body.coach-mode #editView,
+body.coach-mode #adminView,
+body.coach-mode #loginView,
+body.arena-mode .nsk-top,
+body.arena-mode #homeView,
+body.arena-mode #editView,
+body.arena-mode #adminView,
+body.arena-mode #loginView{
+  display:none !important;
+}
+
+body.coach-mode,
+body.arena-mode{
+  overflow:hidden !important;
+}
+
+body.coach-mode #runView,
+body.arena-mode #runView{
+  display:block !important;
+  position:fixed !important;
+  inset:0 !important;
+  margin:0 !important;
+  padding:0 !important;
+  min-height:100vh !important;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98) !important;
+}
+
+body.coach-mode #runHeaderCard,
+body.arena-mode #runHeaderCard{
+  display:none !important;
+}
+
+body.coach-mode #runNowBar,
+body.arena-mode #runNowBar{
+  display:block !important;
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  margin:0 !important;
+  z-index:40 !important;
+  padding:16px 16px 14px !important;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98) !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
+}
+
+body.coach-mode #runNowBar{
+  bottom:34vh !important;
+  overflow:auto !important;
+}
+
+body.arena-mode #runNowBar{
+  bottom:0 !important;
+  overflow:auto !important;
+}
+
+body.coach-mode #runOutput{
+  display:block !important;
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  top:66vh !important;
+  overflow:auto !important;
+  margin:0 !important;
+  border-radius:22px 22px 0 0 !important;
+  background:rgba(18,20,24,.96) !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  z-index:20 !important;
+}
+
+body.arena-mode #runOutput{
+  display:none !important;
+}
+
+body.coach-mode #runNowBar .runNowGrid,
+body.arena-mode #runNowBar .runNowGrid{
+  display:flex !important;
+  flex-direction:column !important;
+  gap:14px !important;
+}
+
+body.coach-mode #runNowBar .runNowCol,
+body.arena-mode #runNowBar .runNowCol{
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:24px !important;
+  padding:16px 14px !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.35) !important;
+}
+
+body.coach-mode #runNowBar .runNowTitle,
+body.arena-mode #runNowBar .runNowTitle{
+  font-size:18px !important;
+  font-weight:950 !important;
+  letter-spacing:1px !important;
+}
+
+body.coach-mode #runNowBar .runNowMain{
+  font-size:44px !important;
+  line-height:1.04 !important;
+  font-weight:950 !important;
+}
+
+body.arena-mode #runNowBar .runNowMain{
+  font-size:52px !important;
+  line-height:1.02 !important;
+  font-weight:950 !important;
+}
+
+body.coach-mode #runNowBar .runNowHint,
+body.coach-mode #runNowBar .small,
+body.arena-mode #runNowBar .runNowHint,
+body.arena-mode #runNowBar .small{
+  font-size:16px !important;
+}
+
+body.coach-mode #runNowBar .runNowActions button{
+  min-height:64px !important;
+  font-size:22px !important;
+  border-radius:20px !important;
+}
+body.arena-mode #runNowBar .runNowActions button{
+  min-height:72px !important;
+  font-size:24px !important;
+  border-radius:22px !important;
+}
+
+body.coach-mode.coach-show-table #runOutput{ display:block !important; }
+
+@media (max-width:600px){
+  body.coach-mode #runNowBar .runNowMain{ font-size:36px !important; }
+  body.arena-mode #runNowBar .runNowMain{ font-size:40px !important; }
+}
+
+
+
+/* ===== V46 COACH SCREEN ===== */
+#coachView{
+  display:none;
+  min-height:100vh;
+  padding:12px 12px 120px;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98);
+}
+#coachView.active{ display:block; }
+body.coach-screen-active .nsk-top,
+body.coach-screen-active #homeView,
+body.coach-screen-active #editView,
+body.coach-screen-active #runView,
+body.coach-screen-active #adminView,
+body.coach-screen-active #loginView{
+  display:none !important;
+}
+body.coach-screen-active #coachView{
+  display:block !important;
+}
+.coachScreenWrap{
+  max-width:980px;
+  margin:0 auto;
+}
+.coachScreenCard{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:24px;
+  padding:18px 16px;
+  background:rgba(255,255,255,.05);
+  box-shadow:0 14px 34px rgba(0,0,0,.35);
+  margin-bottom:14px;
+}
+.coachScreenTitle{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.coachScreenMatch{
+  font-size:20px;
+  font-weight:900;
+  margin-top:6px;
+}
+.coachScreenMain{
+  font-size:52px;
+  line-height:1.04;
+  font-weight:950;
+  margin-top:14px;
+}
+.coachScreenSub{
+  font-size:18px;
+  opacity:.9;
+  margin-top:8px;
+}
+.coachScreenMeta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.coachScreenMeta .pill{
+  padding:10px 14px;
+  font-size:16px;
+  font-weight:900;
+}
+.coachScreenBtns{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.coachScreenBtns button{
+  flex:1 1 220px;
+  min-height:68px;
+  font-size:24px;
+  border-radius:22px;
+}
+.coachScreenNext{
+  animation:nskBlink 1s infinite;
+}
+@media (max-width:600px){
+  #coachView{ padding:10px 10px 110px; }
+  .coachScreenMain{ font-size:40px; }
+  .coachScreenBtns button{ min-height:64px; font-size:22px; }
+}
+
+
+/* ===== V49 CLEAN RUN HEADER ===== */
+#runHeaderCard .btnrow button{
+  min-height:56px;
+}
+#runHeaderCard .btnrow button:not(.ghost){
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.30),
+    0 0 0 1px rgba(0,0,0,.35),
+    0 0 18px rgba(177,18,38,.25);
+}
+
 </style>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="nsk-top">
   <img class="nsk-logo" src="./icon-192.png" alt="NSK">
   <div>
-    <h1>NSK Lag</h1>
-    <div class="small">Poolspel • Lag • Byten • PDF</div>
+    <h1>Nyköpings Sportklubb • Team 18</h1>
+    <div class="small">Poolspel • Lag • Byten • PDF • Behörigheter</div>
+  </div>
+</div>
+
+
+<!-- LOGIN -->
+<div id="loginView" class="view no-print" style="display:none;">
+  <div class="card" style="max-width:560px;margin:20px auto;">
+    <b style="font-size:20px;">Logga in</b>
+    <div class="small" style="margin-top:6px;opacity:.9;">
+      Ange din e-post. Du får en inloggningslänk (utan lösenord).
+    </div>
+
+    <label style="display:block;margin-top:14px;font-weight:800;opacity:.9;">E-post</label>
+    <input id="loginEmail" type="email" autocomplete="email" placeholder="namn@exempel.se"
+      style="height:52px;font-size:18px;padding:10px 14px;border-radius:14px;width:100%;" />
+
+    <div class="btnrow" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button id="btnSendLink" type="button">Skicka inloggningslänk</button>
+      <button id="btnLogout" class="ghost" type="button" style="display:none;">Logga ut</button>
+    </div>
+
+    <div id="loginMsg" class="small" style="margin-top:12px;opacity:.95;"></div>
+
+    <div class="small" style="margin-top:12px;opacity:.85;">
+      Status: <span id="authStatus">Ej inloggad</span> • Roll: <span id="roleStatus">—</span>
+    </div>
   </div>
 </div>
 
 <!-- HOME -->
-<div id="homeView" class="view active no-print">
+<div id="homeView" class="view no-print active" style="display:block;">
   <div class="card">
     <div class="homeActions">
       <button type="button" onclick="openRegister()">Truppen team 18</button>
-      <button class="ghost" type="button" onclick="openNewPool()">Skapa nytt poolspel</button>
+      <button class="ghost" type="button" onclick="openNewPool()" data-perm="full">Skapa nytt poolspel</button>
+      <button type="button" class="ghost" data-perm="admin" onclick="UI.showView('adminView'); Admin.reload();">Behörigheter</button>
       <button type="button" onclick="openGoalieStats()">Statistik målvakter</button>
     </div>
   </div>
@@ -477,98 +1112,13 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
         <div id="editSub" class="small"></div>
       </div>
       <div class="btnrow">
-        <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
-        <button class="ghost" type="button" onclick="showRun()">Poolspel-läge</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- team hidden select -->
-  <select id="teamSelect" style="display:none">
-    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-  </select>
-
-  <div class="card no-print">
-    <div class="row">
-      <div><label>Lag</label>
-        <div class="btnrow">
-          <button class="ghost" type="button" onclick="switchTeam('1')" id="tbtn1">Lag 1</button>
-          <button class="ghost" type="button" onclick="switchTeam('2')" id="tbtn2">Lag 2</button>
-          <button class="ghost" type="button" onclick="switchTeam('3')" id="tbtn3">Lag 3</button>
-        </div>
-      </div>
-      <div><label>Antal matcher</label><select id="matchCount"></select></div>
-      <div><label>Match</label><select id="matchNo"></select></div>
-      <div><label>Datum</label><input id="matchDate" type="date"></div>
-      <div><label>Starttid</label><input id="matchTime" type="time"></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Motståndare</label><input id="opponent" placeholder="Skriv motståndare"></div>
-      <div><label>Plan</label><select id="arena"></select></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Antal i laget</label><select id="teamSize"></select></div>
-      <div><label>Antal på plan</label><select id="onCourt"></select></div>
-      <div><label>Perioder per match</label><select id="periodsCount"></select></div>
-      <div><label>Periodtid (min)</label><select id="periodMin"></select></div>
-      <div><label>Bytestid (sek)</label><select id="shiftSec"></select></div>
-    </div>
-    <div class="small" style="margin-top:10px;">
-      Allt sparas automatiskt per poolspel + lag + match.
-      <span id="saveState" class="pill" style="margin-left:8px;">Redo</span>
-    </div>
-  </div>
-
-  <div class="card no-print">
-    <b>Spelare (denna match)</b>
-    <div id="playersContainer" class="row" style="margin-top:10px;"></div>
-    <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
-
-    <div class="row" style="margin-top:10px;">
-      <div>
-        <label>Målvakt</label>
-        <select id="goalie"></select>
-      </div>
-      <div>
-        <label>Tränare (samma för alla matcher i laget)</label>
-        <select id="coach" multiple></select>
-        <div class="hint">Tips: Markera flera genom att trycka flera gånger (mobil) / Ctrl/⌘ (dator).</div>
-      </div>
-    </div>
-
-    <div id="msg" class="small" style="margin-top:10px;"></div>
-
-    <div class="btnrow" style="margin-top:12px;">
-      <button type="button" onclick="renderEditOutput()">Skapa matchblad</button>
-      <button class="ghost" type="button" onclick="exportPDF()">Dela PDF</button>
-      <button class="ghost" type="button" onclick="clearTeamMatch()">Rensa (lag+match)</button>
-    </div>
-
-    <div id="exportHelp" class="small" style="margin-top:8px;display:none;"></div>
-  </div>
-
-  <!-- Detta är det som ska synas i PDF -->
-  <div class="card print-card" id="editOutput">
-    <b>Matchblad</b>
-    <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
-  </div>
-</div>
-
-<!-- RUN VIEW -->
-<div id="runView" class="view no-print">
-  <div class="card">
-    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-      <div>
-        <b>Poolspel-läge</b>
-        <div id="runSub" class="small"></div>
-      </div>
-      <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
+        <button type="button" onclick="openCoachPage()">Coachskärm</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
-    </div>
-    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
+</div>
+    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
 
   <div class="card" id="runOutput">
@@ -600,6 +1150,7 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
         </button>
       </div>
     </div>
+    <div id="teamSelectFooter" style="margin-top:12px;"></div>
   </div>
 </div>
 
@@ -614,6 +1165,15 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
       <div class="row">
         <div><label>Datum</label><input id="poolDate" type="date"/></div>
         <div><label>Ort</label><input id="poolPlace" placeholder="Ort"/></div>
+
+    <div>
+      <label>Antal lag</label>
+      <select id="teamCount">
+        <option value="1">1 lag</option>
+        <option value="2" selected>2 lag</option>
+        <option value="3">3 lag</option>
+      </select>
+    </div>
       </div>
       <div class="btnrow" style="margin-top:12px;">
         <button type="button" onclick="saveNewPool()">Spara</button>
@@ -682,7 +1242,563 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
   </div>
 </div>
 
+
+<!-- ADMIN: BEHÖRIGHETER -->
+<div id="adminView" class="view no-print" style="display:none;">
+  <div class="card" style="max-width:860px;margin:18px auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+      <b style="font-size:20px;">Behörigheter</b>
+      <div class="btnrow" style="display:flex;gap:10px;flex-wrap:wrap;">
+        <button type="button" class="ghost" onclick="UI.showView('homeView')">Till startsidan</button>
+        <button type="button" onclick="Admin.reload()">Uppdatera</button>
+      </div>
+    </div>
+    <div class="small" style="margin-top:8px;opacity:.9;">
+      Här kan admin ändra roll för inloggade användare.
+    </div>
+
+    <div id="adminMsg" class="small" style="margin-top:10px;opacity:.95;"></div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+      <input id="adminSearch" type="text" placeholder="Sök e‑post eller user id..." oninput="Admin.filter()" style="flex:1;min-width:240px;height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
+      <button type="button" class="ghost" onclick="Admin.clearSearch()">Rensa</button>
+    </div>
+
+    <div id="adminSetupHint" class="small" style="margin-top:10px;opacity:.85;display:none;"></div>
+    <div class="card" style="margin-top:12px;">
+      <b>Ge behörighet via e‑post (innan första inloggning)</b>
+      <div class="small" style="margin-top:6px;opacity:.9;">
+        Spara en “inbjudan” i tabellen <code>invites</code>. När personen loggar in första gången får den rollen automatiskt.
+      </div>
+      <div class="row" style="margin-top:10px;">
+        <div style="flex:2;min-width:220px;">
+          <label>E‑post</label>
+          <input id="inviteEmail" type="email" placeholder="namn@exempel.se" style="height:44px;font-size:16px;padding:8px 12px;border-radius:14px;width:100%;" />
+        </div>
+        <div style="flex:1;min-width:200px;">
+          <label>Roll</label>
+          <select id="inviteRole">
+            <option value="coach_run">coach_run</option>
+            <option value="coach_full">coach_full</option>
+            <option value="admin">admin</option>
+          </select>
+        </div>
+        <div style="flex:0 0 auto;align-self:flex-end;">
+          <button type="button" onclick="Admin.saveInvite()">Spara inbjudan</button>
+        </div>
+      </div>
+      <div id="inviteMsg" class="small" style="margin-top:8px;opacity:.95;"></div>
+      <div class="small" style="margin-top:8px;opacity:.85;">
+        Kräver att du har satt upp Supabase-tabellen <code>invites</code> + RLS-policy för admin (se instruktion längst ned i filen).
+      </div>
+    </div>
+
+
+    <div style="overflow:auto;margin-top:12px;">
+      <table class="tbl" style="width:100%;min-width:680px;">
+        <thead>
+          <tr>
+            <th style="text-align:left;">E‑post</th>
+            <th style="text-align:left;">User ID</th>
+            <th style="text-align:left;">Roll</th>
+            <th style="text-align:left;">Åtgärd</th>
+          </tr>
+        </thead>
+        <tbody id="adminUsersTbody"></tbody>
+      </table>
+    </div>
+
+    <div class="small" style="margin-top:12px;opacity:.85;">
+      Roller: <b>admin</b> (allt + behörigheter), <b>coach_full</b> (allt utom behörigheter), <b>coach_run</b> (endast poolspelsläge).
+    </div>
+  </div>
+</div>
+
+
+<!-- COACH VIEW -->
+<div id="coachView" class="view no-print">
+  <div class="coachScreenWrap">
+    <div id="coachScreenContent" class="coachScreenCard">
+      <div class="coachScreenTitle">Coachskärm</div>
+      <div class="coachScreenSub">Ingen data ännu.</div>
+    </div>
+  </div>
+</div>
+
 <script>
+
+
+
+// ===== AUTH + ROLES (Supabase Magic Link) =====
+const SUPABASE_URL = "https://tonbbmxzotsjwuimobkn.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbmJibXh6b3Rzand1aW1vYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODExMTIsImV4cCI6MjA4ODI1NzExMn0.lYByBwAhjbxlSYpOcv8W3JboNkf8ldTiieQ4goMtopc";
+const ADMIN_EMAIL = "peter_hasselberg@hotmail.com";
+
+// ADMIN BOOTSTRAP RLS POLICY (run in Supabase SQL Editor, once):
+// 1) Ensure profiles has columns: id (uuid, PK), role (text), email (text)
+// 2) Enable RLS on profiles
+// 3) Allow everyone to read their own profile row:
+//    create policy "profiles: read own" on public.profiles
+//    for select using (auth.uid() = id);
+// 4) Allow ONLY this email to promote itself to admin:
+//    create policy "profiles: bootstrap admin (peter)" on public.profiles
+//    for update using (auth.uid() = id and lower(auth.email()) = lower(\'peter_hasselberg@hotmail.com\'))
+//    with check (auth.uid() = id and lower(auth.email()) = lower(\'peter_hasselberg@hotmail.com\') and role = \'admin\');
+// NOTE: This is safer than hardcoding secrets client-side, because the server enforces the rule.
+
+
+const Auth = {
+  supabase: null,
+  role: null,
+  user: null,
+
+  isLoggedIn(){ return !!this.user; },
+  isAdmin(){ return this.role === "admin"; },
+  canFull(){ return this.role === "admin" || this.role === "coach_full"; },
+  canRun(){ return this.role === "admin" || this.role === "coach_full" || this.role === "coach_run"; },
+  canDelete(){ return this.role === "admin"; },
+
+  async init(){
+    try{
+      if(!window.supabase || !window.supabase.createClient) return;
+      this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      this.supabase.auth.onAuthStateChange(async () => {
+        await this.refresh();
+      });
+      await this.refresh();
+    }catch(e){}
+  },
+
+  async refresh(){
+    try{
+      if(!this.supabase) return;
+      const { data: sessionData } = await this.supabase.auth.getSession();
+      const session = sessionData ? sessionData.session : null;
+      this.user = session ? session.user : null;
+
+      if(!this.user){
+        this.role = null;
+        this.updateLoginUI();
+        try{
+          if(window.UI && UI.showView) UI.showView("loginView");
+          const loginEl = document.getElementById("loginView");
+          if(loginEl) loginEl.style.display = "block";
+        }catch(e){}
+        return;
+      }
+
+      let role = await this.fetchRole();
+      if(!role){
+        await this.ensureProfileRow();
+        role = await this.fetchRole();
+      }
+      this.role = role || "coach_run";
+
+      this.updateLoginUI();
+
+      try{
+        const hint=document.getElementById('adminSetupHint');
+        if(hint){
+          const isAdminEmail = this.user && this.user.email && this.user.email.toLowerCase()===String(ADMIN_EMAIL).toLowerCase();
+          if(isAdminEmail && this.role!=='admin'){
+            hint.style.display='block';
+            hint.textContent='Tips: För att kunna ändra behörigheter måste ' + (this.user.email||'') + ' sättas till role=admin i tabellen profiles (görs en gång i Supabase Table Editor).';
+          }else{
+            hint.style.display='none';
+            hint.textContent='';
+          }
+        }
+      }catch(e){}
+
+      this.applyRoleUI();
+
+      try{
+        const active = document.querySelector(".view.active");
+        if(active && active.id === "loginView"){
+          if(window.UI && UI.showView) UI.showView("homeView");
+          if(window.UI && UI.renderPoolList) UI.renderPoolList();
+        }
+      }catch(e){}
+    }catch(e){}
+  },
+
+  async fetchRole(){
+    try{
+      const { data, error } = await this.supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", this.user.id)
+        .single();
+      if(error) return null;
+      return data && data.role ? data.role : null;
+    }catch(e){ return null; }
+  },
+
+  async ensureProfileRow(){
+    try{
+      let payload = { id: this.user.id, role: "coach_run" };
+      if(this.user && this.user.email) payload.email = this.user.email;
+      let res = await this.supabase.from("profiles").insert(payload);
+      if(res && res.error && payload.email){
+        await this.supabase.from("profiles").insert({ id: this.user.id, role: "coach_run" });
+      }
+    }catch(e){}
+  },
+
+  async sendMagicLink(email){
+    const msg = document.getElementById("loginMsg");
+    if(msg) msg.textContent = "";
+    const { error } = await this.supabase.auth.signInWithOtp({
+      email,
+      options: { emailRedirectTo: window.location.href }
+    });
+    if(error){
+      if(msg) msg.textContent = "Kunde inte skicka länk: " + error.message;
+      return;
+    }
+    if(msg) msg.textContent = "Länk skickad! Öppna mejlet på mobilen och klicka på länken.";
+  },
+
+  async logout(){
+    try{ await this.supabase.auth.signOut(); }catch(e){}
+  },
+
+  updateLoginUI(){
+    const status = document.getElementById("authStatus");
+    const roleEl = document.getElementById("roleStatus");
+    const btnLogout = document.getElementById("btnLogout");
+    const loginMsg = document.getElementById("loginMsg");
+
+    if(!this.user){
+      if(status) status.textContent = "Ej inloggad";
+      if(roleEl) roleEl.textContent = "—";
+      if(btnLogout) btnLogout.style.display = "none";
+      if(loginMsg) loginMsg.textContent = "";
+      return;
+    }
+    if(status) status.textContent = "Inloggad";
+    if(roleEl) roleEl.textContent = this.role || "coach_run";
+    if(btnLogout) btnLogout.style.display = "inline-block";
+  },
+
+  applyRoleUI(){
+    var canRun = this.canRun();
+    var canFull = this.canFull();
+    var canAdmin = this.isAdmin();
+
+    document.querySelectorAll("[data-perm='run']").forEach(el => {
+      el.style.display = canRun ? "" : "none";
+    });
+    document.querySelectorAll("[data-perm='full']").forEach(el => {
+      el.style.display = canFull ? "" : "none";
+    });
+    document.querySelectorAll("[data-perm='admin']").forEach(el => {
+      el.style.display = canAdmin ? "" : "none";
+    });
+  }
+};
+
+document.addEventListener("click", function(e){
+  const t = e.target;
+  if(!t) return;
+  if(t.id==="btnSendLink"){
+    const email = (document.getElementById("loginEmail")?.value || "").trim();
+    if(!email){
+      const msg = document.getElementById("loginMsg");
+      if(msg) msg.textContent = "Skriv din e-post.";
+      return;
+    }
+    Auth.sendMagicLink(email);
+  }
+  if(t.id==="btnLogout") Auth.logout();
+});
+
+
+
+
+
+
+
+
+
+
+function requireCode2018(message){
+  var code = prompt(message || "Ange kod:");
+  if(code===null) return false;
+  if(String(code).trim()!=="2018"){
+    alert("Fel kod.");
+    return false;
+  }
+  return true;
+}
+
+async function gateEditAlways(){
+  // Redigera kräver alltid kod
+  if(!(await requireCode2018("Ange kod för att redigera:", "Redigera"))){
+    return false;
+  }
+  return true;
+}
+
+
+
+async function gateEditIfTeamCompleted(){
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    var team = "";
+    try{
+      var sel=document.getElementById("teamSelect");
+      team = sel ? sel.value : (Storage.currentTeam ? Storage.currentTeam() : (localStorage.getItem("nsk_current_team")||"1"));
+    }catch(e){ team = "1"; }
+    if(pid && isTeamCompleted(pid, team)){
+      if(!(await requireCode2018("Laget är avslutat. Ange kod:", "Kod krävs"))){
+        // bounce back to home if code not provided
+        try{ if(Actions && Actions.goHome) Actions.goHome(); else if(typeof goHome==="function") goHome(); }catch(e){}
+        return false;
+      }
+    }
+  }catch(e){}
+  return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function nskConfirm(message, title){
+  return new Promise(function(resolve){
+    try{
+      var modal=document.getElementById("nskConfirmModal");
+      var msg=document.getElementById("nskConfirmMsg");
+      var ttl=document.getElementById("nskConfirmTitle");
+      var btnOk=document.getElementById("nskConfirmOk");
+      var btnCancel=document.getElementById("nskConfirmCancel");
+      if(!modal||!msg||!ttl||!btnOk||!btnCancel){
+        resolve(window.confirm(message));
+        return;
+      }
+      ttl.textContent = title || "Bekräfta";
+      msg.textContent = message || "";
+      modal.style.display="block";
+
+      var done=false;
+      var backdrop = modal.querySelector(".nskConfirmBackdrop");
+
+      function cleanup(){
+        btnOk.removeEventListener("click", onOk);
+        btnCancel.removeEventListener("click", onCancel);
+        document.removeEventListener("keydown", onKey);
+        if(backdrop) backdrop.removeEventListener("click", onBackdrop);
+      }
+      function close(ok){
+        if(done) return;
+        done=true;
+        modal.style.display="none";
+        cleanup();
+        resolve(!!ok);
+      }
+      function onOk(){ close(true); }
+      function onCancel(){ close(false); }
+      function onBackdrop(){ close(false); }
+      function onKey(e){
+        if(e.key==="Escape") close(false);
+        if(e.key==="Enter") close(true);
+      }
+
+      btnOk.addEventListener("click", onOk);
+      btnCancel.addEventListener("click", onCancel);
+      document.addEventListener("keydown", onKey);
+      if(backdrop) backdrop.addEventListener("click", onBackdrop);
+    }catch(e){
+      resolve(window.confirm(message));
+    }
+  });
+}
+
+// Simple info-alert using the same modal (hides Cancel)
+function nskAlert(message, title){
+  return new Promise(function(resolve){
+    try{
+      var modal=document.getElementById("nskConfirmModal");
+      var cancel=document.getElementById("nskConfirmCancel");
+      if(!modal||!cancel){
+        alert(message||"");
+        resolve(true);
+        return;
+      }
+      var prev=cancel.style.display;
+      cancel.style.display="none";
+      nskConfirm(message, title||"Info").then(function(){
+        cancel.style.display=prev;
+        resolve(true);
+      });
+    }catch(e){
+      alert(message||"");
+      resolve(true);
+    }
+  });
+}
+
+let finishingPool = false;
+
+
+
+
+
+
+
+function hideMatchDateInEdit(){
+  try{
+    var el=document.getElementById("matchDate");
+    if(el && el.parentElement) el.parentElement.style.display="none";
+  }catch(e){}
+}
+
+
+
+
+
+
+// ---- diagnostics: show JS errors on screen ----
+(function(){
+  function showErr(msg){
+    // Ignore known harmless Supabase WebLock race
+    try{ if(/lock was stolen by another request/i.test(String(msg||""))) return; }catch(e){}
+    try{
+      var b=document.getElementById("jsErrorBanner");
+      var t=document.getElementById("jsErrorText");
+      if(!b||!t) return;
+      t.textContent = msg;
+      b.style.display = "block";
+      b.onclick=function(){
+        try{ navigator.clipboard && navigator.clipboard.writeText(msg); }catch(e){}
+      };
+    }catch(e){}
+  }
+  window.addEventListener("error", function(e){
+    var msg = (e && e.message ? e.message : "Okänt fel");
+    if(e && e.filename) msg += " @ " + e.filename + ":" + (e.lineno||0) + ":" + (e.colno||0);
+    showErr(msg);
+  });
+  window.addEventListener("unhandledrejection", function(e){
+    var reason = (e && e.reason) ? (e.reason.message||String(e.reason)) : "okänt";
+    // Supabase/auth (och vissa webbläsare) kan ibland kasta ett ofarligt lock-fel
+    // när flera auth-anrop sker samtidigt. Vi filtrerar bort det så det inte stör.
+    if(/lock was stolen/i.test(String(reason))) return;
+    if(/browsing context is going away/i.test(String(reason))) return;
+    if(/the page was hidden/i.test(String(reason))) return;
+    if(/terminated/i.test(String(reason))) return;
+    var msg = "Promise-fel: " + reason;
+    showErr(msg);
+  });
+})()
+
+
+
+function setRouteHash(route, poolId, team){
+  try{
+    var parts=[route||"home", poolId||"", team||""];
+    // encode to keep safe
+    location.hash = parts.map(function(x){ return encodeURIComponent(String(x)); }).join("|");
+  }catch(e){}
+}
+function getRouteHash(){
+  try{
+    var h=(location.hash||"").replace(/^#/,"");
+    if(!h) return null;
+    var parts=h.split("|").map(function(x){ return decodeURIComponent(x||""); });
+    return { route: parts[0]||"home", poolId: parts[1]||"", team: parts[2]||"" };
+  }catch(e){ return null; }
+}
+
+function saveLastRoute(route, extra){
+  try{
+    var obj = extra || {};
+    obj.route = route;
+    obj.ts = Date.now();
+    localStorage.setItem("nsk_last_route", JSON.stringify(obj));
+  }catch(e){}
+}
+function loadLastRoute(){
+  try{
+    var s = localStorage.getItem("nsk_last_route");
+    return s ? JSON.parse(s) : null;
+  }catch(e){ return null; }
+}
+
+function persistCurrentView(){
+  try{
+    // Determine which main view is visible
+    var view="home";
+    var ids=["homeView","runView","editView"];
+    for(var i=0;i<ids.length;i++){
+      var el=document.getElementById(ids[i]);
+      if(el && el.style.display!=="none"){
+        view = (ids[i]==="homeView") ? "home" : (ids[i]==="runView" ? "run" : "edit");
+      }
+    }
+    var pid=Storage.currentPoolId();
+    var tm=(Storage.currentTeam ? Storage.currentTeam() : "");
+    saveLastRoute(view, { poolId: pid, team: tm });
+    setRouteHash(view, pid, tm);
+  }catch(e){}
+}
+
+
+
+// ---- globals used by multiple handlers (must exist on window) ----
+window.isPoolCompleted = function(poolId){ return isPoolFullyCompleted(poolId); };
+
+window.requireCode2018ForCompletedPool = function(poolId){
+  var p = getPoolById(poolId);
+  if(!p) return true;
+  ensureTeamStatus(p);
+  var keys=getTeamKeys();
+  var anyCompleted=false;
+  for(var i=0;i<keys.length;i++){
+    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed){ anyCompleted=true; break; }
+  }
+  if(!anyCompleted) return true;
+  var code = prompt("Poolspelet har avslutade lag. Ange kod:");
+  if(code===null) return false;
+  if(String(code).trim()!=="2018"){
+    alert("Fel kod.");
+    return false;
+  }
+  return true;
+};
+
+;
+
+
+
+
+
 /*
   ============================
   LÄTTARE ATT REDIGERA
@@ -697,9 +1813,15 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 const App = {
   state: {
     pendingPoolId: "",
-    teamSelectTarget: "run" // "run" or "edit"
+    teamSelectTarget: "run", // "run" or "edit"
+    readOnly: false // archive mode for completed pools
   }
 };
+
+
+function getEl(id){
+  try{ return document.getElementById(id); }catch(e){ return null; }
+}
 
 // ---------- Utils ----------
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m]));}
@@ -712,6 +1834,36 @@ function shortName(full){
   if(!parts.length) return "";
   if(parts.length===1) return parts[0];
   return parts[0]+" "+(parts[parts.length-1][0]||"").toUpperCase();
+}
+
+
+
+function ensureTeamSelectExists(){
+  try{
+    var el=document.getElementById("teamSelect");
+    if(el) return el;
+    var sel=document.createElement("select");
+    sel.id="teamSelect";
+    sel.style.display="none";
+    sel.innerHTML='<option value="1">1</option><option value="2">2</option><option value="3">3</option>';
+    document.body.appendChild(sel);
+    sel.value=getSelectedTeamSafe();
+    return sel;
+  }catch(e){ return null; }
+}
+
+function getSelectedTeamSafe(){
+  try{
+    var el=document.getElementById("teamSelect");
+    if(el && el.value) return String(el.value);
+  }catch(e){}
+  try{
+    if(window.Storage && Storage.currentTeam) return String(Storage.currentTeam()||"1");
+  }catch(e){}
+  try{
+    return String(localStorage.getItem("nsk_current_team")||"1");
+  }catch(e){}
+  return "1";
 }
 
 // ---------- Storage ----------
@@ -732,7 +1884,7 @@ const Storage = {
     localStorage.setItem("nsk_current_pool", String(id||""));
   },
   poolPrefix(idOverride=null){
-    const id = idOverride ?? Storage.currentPoolId();
+    const id = ((idOverride)!=null ? (idOverride) : (Storage.currentPoolId()));
     const safe = id ? String(id) : "default";
     return `nsk_pool_${safe}_`;
   },
@@ -744,36 +1896,407 @@ const Storage = {
   }
 };
 
+// --- team helpers (compat) ---
+if(!Storage.setCurrentTeam){
+  Storage.setCurrentTeam = function(team){
+    try{ localStorage.setItem("nsk_current_team", String(team||"1")); }catch(e){}
+  };
+}
+if(!Storage.currentTeam){
+  Storage.currentTeam = function(){
+    try{ return localStorage.getItem("nsk_current_team") || "1"; }catch(e){ return "1"; }
+  };
+}
+
+
+
+// --- pool helpers (compat) ---
+if(!Storage.setCurrentPool){
+  Storage.setCurrentPool = function(id){
+    try{ localStorage.setItem("nsk_current_pool", String(id||"")); }catch(e){}
+  };
+}
+if(!Storage.currentPoolId){
+  Storage.currentPoolId = function(){
+    try{ return localStorage.getItem("nsk_current_pool") || ""; }catch(e){ return ""; }
+  };
+}
+
+
+
+
+// ---- per-team completion helpers (supports any number of teams) ----
+function getTeamKeys(){
+  // Prefer teams stored on the current pool (supports 1..N teams)
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    if(pid){
+      var p = getPoolById(pid);
+      if(p && p.teams && p.teams.length){
+        // normalize to strings and unique
+        var keys=[];
+        for(var i=0;i<p.teams.length;i++){
+          var v=String(p.teams[i]||"").trim();
+          if(v && keys.indexOf(v)===-1) keys.push(v);
+        }
+        if(keys.length) return keys;
+      }
+    }
+  }catch(e){}
+
+  // Fallback to teamSelect options in UI
+  try{
+    var sel=document.getElementById("teamSelect");
+    if(sel && sel.options && sel.options.length){
+      var keys2=[];
+      for(var j=0;j<sel.options.length;j++){
+        var vv=String(sel.options[j].value||"").trim();
+        if(vv && keys2.indexOf(vv)===-1) keys2.push(vv);
+      }
+      if(keys2.length) return keys2;
+    }
+  }catch(e){}
+
+  return ["1","2","3"];
+}
+
+function ensureTeamStatus(p){
+  if(!p) return p;
+  if(!p.teamStatus) p.teamStatus = {};
+  var keys=getTeamKeys();
+  for(var i=0;i<keys.length;i++){
+    var k=keys[i];
+    if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
+    if(typeof p.teamStatus[k].completed!=="boolean") p.teamStatus[k].completed = !!p.teamStatus[k].completed;
+  }
+  return p;
+}
+
+function getPoolById(poolId){
+  var pools=Storage.loadPools()||[];
+  for(var i=0;i<pools.length;i++){
+    if(pools[i] && pools[i].id===poolId){
+      ensureTeamStatus(pools[i]);
+      return pools[i];
+    }
+  }
+  return null;
+}
+
+function isTeamCompleted(poolId, teamNo){
+  var p=getPoolById(poolId);
+  if(!p) return false;
+  var k=String(teamNo||"");
+  return !!(p.teamStatus[k] && p.teamStatus[k].completed);
+}
+
+function isPoolFullyCompleted(poolId){
+  var p=getPoolById(poolId);
+  if(!p) return false;
+  ensureTeamStatus(p);
+  var keys=getTeamKeys();
+  for(var i=0;i<keys.length;i++){
+    if(!(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed)) return false;
+  }
+  return true;
+}
+
+function setTeamCompleted(poolId, teamNo, completed){
+  var pools=Storage.loadPools()||[];
+  for(var i=0;i<pools.length;i++){
+    var p=pools[i];
+    if(p && p.id===poolId){
+      ensureTeamStatus(p);
+      var k=String(teamNo||"");
+      if(!p.teamStatus[k]) p.teamStatus[k] = { completed:false };
+      p.teamStatus[k].completed = !!completed;
+      p.teamStatus[k].completedAt = completed ? Date.now() : null;
+
+      // pool is completed only when ALL teams are completed
+      p.completed = isPoolFullyCompleted(poolId);
+      p.updatedAt = Date.now();
+      Storage.savePools(pools);
+      return;
+    }
+  }
+}
+
+
+
+
+
+function setTeamsAndContinue(count){
+  try{
+    var n = parseInt(count,10);
+    if(!n || n<1) n=1;
+    if(n>6) n=6; // safety
+    var poolId = App.state.pendingPoolId || Storage.currentPoolId();
+    if(!poolId) return;
+
+    var pools = Storage.loadPools() || [];
+    var p=null;
+    for(var i=0;i<pools.length;i++){
+      if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; }
+    }
+    if(!p) return;
+
+    // store participating teams for this pool
+    p.teams = [];
+    for(var t=1;t<=n;t++){ p.teams.push(String(t)); }
+
+    // init team status for participating teams
+    ensureTeamStatus(p);
+
+    p.updatedAt = Date.now();
+    Storage.savePools(pools);
+
+    UI.closeModal("teamCountModal");
+
+    // proceed to team selection for running
+    App.state.teamSelectTarget = "run";
+    App.state.readOnly = false;
+    Actions.openTeamSelect();
+  }catch(e){}
+}
+
+
+function refreshTeamSelectUI(){
+  try{
+    var modal=document.getElementById("teamSelectModal");
+    var footer=document.getElementById("teamSelectFooter");
+    var pid = App.state.pendingPoolId || Storage.currentPoolId();
+    var p = pid ? getPoolById(pid) : null;
+
+    // buttons (1..3)
+    var btn1 = modal.querySelector('button[onclick="chooseTeam(\'1\')"]') || modal.querySelector('#coachHint1')?.closest('button');
+    var btn2 = modal.querySelector('button[onclick="chooseTeam(\'2\')"]') || modal.querySelector('#coachHint2')?.closest('button');
+    var btn3 = modal.querySelector('button[onclick="chooseTeam(\'3\')"]') || modal.querySelector('#coachHint3')?.closest('button');
+    var buttons=[{t:"1",btn:btn1,hint:document.getElementById("coachHint1")},
+                 {t:"2",btn:btn2,hint:document.getElementById("coachHint2")},
+                 {t:"3",btn:btn3,hint:document.getElementById("coachHint3")}];
+    // determine participating teams (if saved)
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : ["1","2","3"];
+
+    if(App.state.teamSetupMode){
+      modal.classList.add("hide-coach");
+      if(!App.state.teamSetupSelected) App.state.teamSetupSelected=[];
+      // show all buttons for selection
+      for(var i=0;i<buttons.length;i++){
+        var t=buttons[i].t;
+        var b=buttons[i].btn;
+        if(!b) continue;
+        b.parentElement.style.display="block";
+        b.setAttribute("onclick", "toggleSetupTeam('"+t+"')");
+        var on = App.state.teamSetupSelected.indexOf(t)!==-1;
+        b.innerHTML = (on? "✓ " : "") + "Lag " + t;
+        b.classList.toggle("selected-team", on);
+      }
+      if(footer){
+        footer.innerHTML = `
+          <div class="small" style="opacity:.85;">Välj vilka lag som deltar i detta poolspel.</div>
+          <div class="btnrow" style="margin-top:10px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+            <button type="button" class="ghost" onclick="closeTeamSelect()">Avbryt</button>
+            <button type="button" onclick="continueTeamSetup()">Fortsätt</button>
+          </div>`;
+      }
+      return;
+    }
+
+    // normal mode: show only participating teams
+    modal.classList.toggle("hide-coach", App.state.teamSelectTarget==="edit");
+    for(var j=0;j<buttons.length;j++){
+      var tt=buttons[j].t;
+      var bb=buttons[j].btn;
+      if(!bb) continue;
+      var show = teams.indexOf(tt)!==-1;
+      bb.parentElement.style.display = show ? "block" : "none";
+      bb.setAttribute("onclick", "chooseTeam('"+tt+"')");
+      // restore label with coach hint
+      var hintTxt = buttons[j].hint ? buttons[j].hint.textContent : "Tränare: —";
+      bb.innerHTML = "Lag " + tt + "<br><span class='small' id='coachHint"+tt+"'>"+hintTxt.replace(/</g,"&lt;")+"</span>";
+      bb.classList.remove("selected-team");
+    }
+    if(footer) footer.innerHTML = "";
+  }catch(e){}
+}
+
+function toggleSetupTeam(teamNo){
+  try{
+    var t=String(teamNo);
+    if(!App.state.teamSetupSelected) App.state.teamSetupSelected=[];
+    var arr=App.state.teamSetupSelected;
+    var i=arr.indexOf(t);
+    if(i===-1) arr.push(t); else arr.splice(i,1);
+    arr.sort(function(a,b){ return parseInt(a,10)-parseInt(b,10); });
+    refreshTeamSelectUI();
+  }catch(e){}
+}
+
+function continueTeamSetup(){
+  try{
+    var pid = App.state.pendingPoolId || Storage.currentPoolId();
+    if(!pid) return;
+    var sel = App.state.teamSetupSelected || [];
+    if(!sel.length){
+      alert("Välj minst ett lag.");
+      return;
+    }
+    var pools=Storage.loadPools()||[];
+    var p=null;
+    for(var i=0;i<pools.length;i++){
+      if(pools[i] && pools[i].id===pid){ p=pools[i]; break; }
+    }
+    if(!p) return;
+    p.teams = sel.slice();
+    ensureTeamStatus(p);
+    p.updatedAt = Date.now();
+    Storage.savePools(pools);
+
+    // Switch to normal team picker (single-select) to open Edit for a team
+    App.state.teamSetupMode = false;
+    App.state.teamSetupSelected = null;
+    App.state.teamSelectTarget = "edit";
+    App.state.readOnly = false;
+    refreshTeamSelectUI();
+  }catch(e){}
+}
+
+
+
+function syncTeamUIForPool(poolId){
+  try{
+    var pid = poolId || (Storage.currentPoolId ? Storage.currentPoolId() : "");
+    if(!pid) return;
+    var p = (typeof getPoolById==="function") ? getPoolById(pid) : null;
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : null;
+    if(!teams || !teams.length) return;
+
+    // Sync the teamSelect <select> options to only participating teams
+    var sel = document.getElementById("teamSelect");
+    if(sel){
+      sel.innerHTML = teams.map(function(t){
+        return '<option value="'+String(t).replace(/"/g,"&quot;")+'">Lag '+t+'</option>';
+      }).join("");
+
+      // keep current team if still valid, else set first team
+      var cur = (Storage.currentTeam ? Storage.currentTeam() : (localStorage.getItem("nsk_current_team")||"1"));
+      if(teams.indexOf(String(cur))===-1){
+        cur = teams[0];
+        if(Storage.setCurrentTeam) Storage.setCurrentTeam(cur);
+      }
+      sel.value = String(cur);
+    }
+
+    // Show/hide team switch buttons (Lag 1/2/3...) based on participating teams
+    for(var tb=1; tb<=6; tb++){
+      var btn=document.getElementById("tbtn"+tb);
+      if(!btn) continue;
+      btn.style.display = (teams.indexOf(String(tb))!==-1) ? "" : "none";
+    }
+
+    // If only one team, hide the whole switch row for a cleaner UI
+    var sw = document.getElementById("teamSwitchRow");
+    if(sw){
+      sw.style.display = (teams.length===1) ? "none" : "";
+    }
+  }catch(e){}
+}
+
+function getCurrentPoolDate(){
+  var id = Storage.currentPoolId();
+  if(!id) return "—";
+  var pools = Storage.loadPools() || [];
+  for(var i=0;i<pools.length;i++){
+    var p=pools[i];
+    if(p && p.id===id) return p.date || "—";
+  }
+  return "—";
+}
+
+
+
 // ---------- UI ----------
 const UI = {
   showView(id){
-    ["homeView","editView","runView"].forEach(v=>{
-      const el=document.getElementById(v);
-      if(!el) return;
-      el.classList.toggle("active", v===id);
-      el.style.display = (v===id) ? "block" : "none";
+    try{ bootLog("view — "+id); }catch(e){}
+    try{
+      // Dölj alla vyer och visa bara den valda (inkl login/admin)
+      document.querySelectorAll(".view").forEach(function(el){
+        if(!el || !el.id) return;
+        var on = (el.id===id);
+        el.classList.toggle("active", on);
+        el.style.display = on ? "block" : "none";
+      });
+    }catch(e){}
+    // Coach-mode får aldrig aktiveras automatiskt bara för att runView visas.
+    // Det slås på först EFTER att bannern faktiskt har fått innehåll.
+    try{
+      if(id!=='runView'){
+        document.body.classList.remove('coach-mode');
+        document.body.classList.remove('coach-show-table');
+      }
+    }catch(e){}
+  },
+  openModal(id){
+    const el=document.getElementById(id);
+    if(el) el.style.display="block";
+  },
+  closeModal(id){
+    const el=document.getElementById(id);
+    if(el) el.style.display="none";
+  },
+  renderPoolList(){
+    const el=document.getElementById("poolList");
+    if(!el) return;
+    const pools=Storage.loadPools()||[];
+
+    // Sort: active first, then completed; newest updated first
+    pools.sort(function(a,b){
+      var ac = (a && a.completed) ? 1 : 0;
+      var bc = (b && b.completed) ? 1 : 0;
+      if(ac!==bc) return ac-bc;
+      return (b && b.updatedAt ? b.updatedAt : 0) - (a && a.updatedAt ? a.updatedAt : 0);
     });
+
+    if(!pools.length){
+      el.innerHTML = "<div class='small'>Inga sparade poolspel ännu.</div>";
+      return;
+    }
+
+    var html="";
+    pools.forEach(function(p){
+      if(!p || !p.id) return;
+      ensureTeamStatus(p);
+      var fully = isPoolFullyCompleted(p.id);
+      var status = fully
+        ? "<span class='status-completed'>Avslutad</span>"
+        : "<span class='status-active'>Aktiv</span>";
+      var keys=getTeamKeys();
+      var parts=[];
+      for(var ti=0;ti<keys.length;ti++){
+        var k=keys[ti];
+        parts.push(`Lag ${k}: ${p.teamStatus[k] && p.teamStatus[k].completed ? "Avslutad" : "Aktiv"}`);
+      }
+      var teamLine = `<div class="small">${parts.join(" • ")}</div>`;
+
+      html += `
+        <div class="poolCard ${p.completed ? "completed" : ""}">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <b>${escapeHtml(p.date||"—")} • ${escapeHtml(p.place||"—")}</b>
+            ${status}
+          </div>
+          ${p.msg ? `<div class="small">${escapeHtml(p.msg)}</div>` : ""}${teamLine}
+          <div class="btnrow" style="margin-top:10px;">
+  <button class="startBtn" type="button" onclick="startPoolRun('${p.id}')" data-pool-action="start" data-pool-id="${p.id}">Påbörja poolspel</button>
+  <button class="editBtn ghost" type="button" onclick="openPoolEdit('${p.id}')" data-pool-action="edit" data-pool-id="${p.id}">Redigera</button>
+  <button class="ghost" type="button" onclick="deletePool('${p.id}')" data-pool-action="delete" data-pool-id="${p.id}">Ta bort</button>
+</div>
+        </div>`;
+    });
+
+    el.innerHTML = html;
   },
 
-  renderPoolList(){
-    const wrap=document.getElementById("poolList");
-    const pools=Storage.loadPools().slice().sort((a,b)=>(b?.updatedAt||b?.createdAt||0)-(a?.updatedAt||a?.createdAt||0));
-    if(!pools.length){wrap.innerHTML="<div class='small'>Inga sparade poolspel ännu.</div>"; return;}
-    wrap.innerHTML=pools.map(p=>{
-      const date=escapeHtml(p?.date||"—");
-      const place=escapeHtml(p?.place||"—");
-      const done=p?.completed? "<span class='pill' style='margin-left:6px;'>Klar</span>":"";
-      return `
-        <div class="card poolCard">
-          <div><b>${date}</b> • ${place}${done}</div>
-          <div class="btnrow" style="margin-top:10px;">
-            <button type="button" onclick="startPoolRun('${escapeHtml(p.id)}')">Påbörja poolspel</button>
-            <button class="ghost" type="button" onclick="openPoolEdit('${escapeHtml(p.id)}')">Redigera</button>
-            <button class="ghost" type="button" onclick="deletePool('${escapeHtml(p.id)}')">Ta bort</button>
-          </div>
-        </div>`;
-    }).join("");
-  },
 
   updateEditHeader(){
     const id=Storage.currentPoolId();
@@ -786,10 +2309,46 @@ const UI = {
     const id=Storage.currentPoolId();
     const pools=Storage.loadPools();
     const p=pools.find(x=>x&&x.id===id);
-    const team=document.getElementById("teamSelect").value||"1";
-    document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}` : `Lag ${team}`;
+    const team=getSelectedTeamSafe();
+    var runSubEl=document.getElementById("runSub"); if(!runSubEl) return;
+    runSubEl.textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
   }
 };
+
+
+function shouldEnableCoachMode(){
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(!bar) return false;
+    var txt=(bar.textContent||"").replace(/\s+/g," ").trim();
+    if(!txt) return false;
+    // fallback/empty states ska inte köra helskärms coach-mode
+    if(/inget aktivt poolspel|schema saknas|ingen data tillgänglig|välj lag|poolspel-läge/i.test(txt)) return false;
+    return true;
+  }catch(e){ return false; }
+}
+
+function syncCoachModeFromRunContent(){
+  try{
+    var on = shouldEnableCoachMode();
+    document.body.classList.toggle("coach-mode", !!on);
+    if(!on) document.body.classList.remove("coach-show-table");
+  }catch(e){}
+}
+
+
+function ultraEnsureVisibleView(){
+  try{
+    var active = document.querySelector(".view.active");
+    if(active) return true;
+    if(window.UI && UI.showView){
+      UI.showView("homeView");
+      try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
 
 // ---------- Pool actions ----------
 const Actions = {
@@ -812,31 +2371,70 @@ const Actions = {
   },
   closeNewPool(){ document.getElementById("newPoolModal").style.display="none"; },
   saveNewPool(){
-    const d=(document.getElementById("poolDate").value||"").trim();
+    const date=(document.getElementById("poolDate").value||"").trim();
     const place=(document.getElementById("poolPlace").value||"").trim();
-    const msg=document.getElementById("poolMsg");
-    if(!d||!place){msg.innerHTML="<span class='error'>✖ Fyll i datum och ort.</span>"; return;}
-    localStorage.setItem("nsk_last_place", place);
-    const id=Date.now().toString(36);
+    if(!date){ alert("Välj datum."); return; }
+    if(!place){ alert("Skriv ort."); return; }
+
+    // antal lag
+    let n=parseInt((document.getElementById("teamCount")||{}).value||"2",10);
+    if(!n||n<1) n=1;
+    if(n>3) n=3;
+
     const pools=Storage.loadPools();
-    pools.push({id,date:d,place,createdAt:Date.now(),updatedAt:Date.now(),completed:false});
+    const id=Date.now().toString(36);
+    const newPool={
+      id:id,
+      date:date,
+      place:place,
+      createdAt:Date.now(),
+      updatedAt:Date.now(),
+      completed:false,
+      teamStatus:{},
+      teams: []
+    };
+
+    for(let t=1;t<=n;t++){ newPool.teams.push(String(t)); }
+    ensureTeamStatus(newPool);
+
+    pools.push(newPool);
     Storage.savePools(pools);
+
+    // close modal and go directly to Edit for Lag 1
+    App.state.pendingPoolId = id;
+    Storage.setCurrentPool(id);
+    Storage.setCurrentTeam("1");
+    App.state.readOnly = false;
+    App.state.teamSelectTarget = "edit";
     Actions.closeNewPool();
-    Actions.startPoolRun(id, "edit");
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+    Actions.showEdit();
   },
 
-  deletePool(id){
-    if(!confirm("Ta bort poolspel och all sparad data?")) return;
-    const prefix=Storage.poolPrefix(id);
+  async deletePool(poolId){
+    if(!(await requireCode2018("Ange kod för att ta bort:", "Ta bort"))) return;
+
+    const ok = await nskConfirm("Ta bort poolspel och all sparad data?", "Ta bort");
+    if(!ok) return;
+
+    // If the pool is marked as completed, require code 2018 to delete
+    const poolsBefore=Storage.loadPools();
+    const poolObj=poolsBefore.find(p=>p && p.id===poolId);
+    if(poolObj && poolObj.completed){
+      if(!(await requireCode2018("Poolspelet är avslutat. Ange kod för att ta bort:", "Kod krävs"))) return;
+    }
+
+    const prefix=Storage.poolPrefix(poolId);
     const keys=[];
     for(let i=0;i<localStorage.length;i++){
       const k=localStorage.key(i);
       if(k && k.startsWith(prefix)) keys.push(k);
     }
     keys.forEach(k=>localStorage.removeItem(k));
-    const pools=Storage.loadPools().filter(p=>p && p.id!==id);
+    const pools=Storage.loadPools().filter(p=>p && p.id!==poolId);
     Storage.savePools(pools);
-    if(Storage.currentPoolId()===id) Storage.setCurrentPool("");
+    if(Storage.currentPoolId()===poolId) Storage.setCurrentPool("");
     UI.renderPoolList();
   },
 
@@ -852,11 +2450,22 @@ const Actions = {
     const modal=document.getElementById("teamSelectModal");
     modal.classList.toggle("hide-coach", App.state.teamSelectTarget==="edit");
     modal.style.display="block";
+    refreshTeamSelectUI();
   },
   closeTeamSelect(){ document.getElementById("teamSelectModal").style.display="none"; },
 
-  startPoolRun(id, target="run"){
-    App.state.pendingPoolId = String(id||"");
+  startPoolRun(id, target){
+    target = target || "run";
+    const pid = String(id||"");
+    if(!pid) return;
+    const completed = window.isPoolCompleted(pid);
+    if(completed && target!=="edit"){
+      // archive: allow opening without code
+      App.state.readOnly = true;
+    }else{
+      App.state.readOnly = false;
+          }
+    App.state.pendingPoolId = pid;
     App.state.teamSelectTarget = (target==="edit") ? "edit" : "run";
     Actions.openTeamSelect();
   },
@@ -865,35 +2474,85 @@ const Actions = {
     if(!id){ Actions.goHome(); return; }
     App.state.pendingPoolId = id;
     App.state.teamSelectTarget = "run";
+    // keep current readOnly state
     Actions.openTeamSelect();
   },
-  chooseTeam(teamNo){
+  async chooseTeam(teamNo){
     Actions.closeTeamSelect();
     if(!App.state.pendingPoolId) return;
-    Storage.setCurrentPool(App.state.pendingPoolId);
-    document.getElementById("teamSelect").value = String(teamNo||"1");
-    // New pool -> go directly to edit. Otherwise keep current behavior.
+
+    const pid = String(App.state.pendingPoolId||"");
+    const tno = String(teamNo||"1");
+
+    // set current pool + team
+    try{ Storage.setCurrentPool(pid); }catch(e){}
+    try{
+      if(Storage.setCurrentTeam) Storage.setCurrentTeam(tno);
+      else localStorage.setItem("nsk_current_team", tno);
+    }catch(e){}
+
+    // Kod krävs bara om valt lag är avslutat (gäller både Påbörja och Redigera)
+    try{
+      if(isTeamCompleted(pid, tno)){
+        if(!(await requireCode2018("Laget är avslutat. Ange kod:", "Kod krävs"))) return;
+      }
+    }catch(e){}
+
+    // keep select in sync if present
+    try{
+      var sel=document.getElementById("teamSelect");
+      if(sel) sel.value = tno;
+    }catch(e){}
+
+    const poolCompleted = (window.isPoolCompleted && window.isPoolCompleted(pid)) ? true : false;
+    App.state.readOnly = (poolCompleted && App.state.teamSelectTarget!=="edit");
+
     if(App.state.teamSelectTarget==="edit"){
+      try{ syncTeamUIForPool(pid); }catch(e){}
       Actions.showEdit();
     }else{
+      try{ syncTeamUIForPool(pid); }catch(e){}
       Actions.showRun();
-    }
+}
+
   },
 
   // ----- navigation edit/run -----
   openPoolEdit(id){
-    Storage.setCurrentPool(id);
+    const pid=String(id||"");
+    if(!pid) return;
+        App.state.readOnly = false;
+    Storage.setCurrentPool(pid);
+    syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     Actions.showEdit();
   },
-  showEdit(){
+  async showEdit(){
+    // Redigera är låst: fråga kod innan vi byter vy
+    if(!(await gateEditAlways())) return;
     UI.showView("editView");
     UI.updateEditHeader();
-    initEditForCurrentPool();
+    await initEditForCurrentPool();
   },
   showRun(){
+    // Visa först vanlig runView utan coach-mode så att sidan aldrig blir svart.
+    try{
+      document.body.classList.remove("coach-mode");
+      document.body.classList.remove("coach-show-table");
+    }catch(e){}
     UI.showView("runView");
     UI.updateRunHeader();
     renderRunAll();
+    try{
+      var b=document.getElementById("runNowBar");
+      if(b) b.style.display="block";
+    }catch(e){}
+    try{
+      setTimeout(function(){
+        try{ updateRunProUI(); }catch(e){}
+        try{ syncCoachModeFromRunContent(); }catch(e){}
+        try{ if(document.body.classList.contains("coach-mode")) updateRunProUI(); }catch(e){}
+      }, 80);
+    }catch(e){}
   }
 };
 
@@ -950,7 +2609,7 @@ function editCoach(i){const {players,coaches}=loadRegister(); const cur=coaches[
 
 // ---------- per pool + team coaches ----------
 function teamCoachKey(teamOverride=null){
-  const team = teamOverride ?? (document.getElementById("teamSelect").value || "1");
+  const team = ((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value || "1");
   return `${Storage.poolPrefix()}team_coaches_team_${team}`;
 }
 function loadTeamCoaches(){const raw=localStorage.getItem(teamCoachKey()); const arr=raw?safeParseJSON(raw,[]):[]; return Array.isArray(arr)?arr:[];}
@@ -962,27 +2621,41 @@ function applyTeamCoachesToUI(){
 }
 
 // ---------- match count per team ----------
-function matchCountKey(){const team=document.getElementById("teamSelect").value||"1"; return `${Storage.poolPrefix()}matchCount_team_${team}`;}
+function matchCountKey(){const team=getSelectedTeamSafe(); return `${Storage.poolPrefix()}matchCount_team_${team}`;}
 function loadMatchCount(){const raw=localStorage.getItem(matchCountKey()); const n=raw?parseInt(raw,10):4; return (Number.isFinite(n)&&n>=1&&n<=30)?n:4;}
 function saveMatchCount(n){localStorage.setItem(matchCountKey(), String(n));}
 function fillMatchCountDropdown(){
-  const sel=document.getElementById("matchCount"); sel.innerHTML="";
-  for(let i=1;i<=30;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); sel.appendChild(o);}
+  const sel=document.getElementById("matchCount");
+  if(!sel) return;
+  sel.innerHTML="";
+  for(let i=1;i<=30;i++){
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent=String(i);
+    sel.appendChild(o);
+  }
 }
 function applyMatchCount(){
   const count=loadMatchCount();
-  document.getElementById("matchCount").value=String(count);
+  const matchCountSel=document.getElementById("matchCount");
+  if(matchCountSel) matchCountSel.value=String(count);
   const matchNoSel=document.getElementById("matchNo");
+  if(!matchNoSel) return;
   const cur=parseInt(matchNoSel.value||"1",10);
   matchNoSel.innerHTML="";
-  for(let i=1;i<=count;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=`Match ${i}`; matchNoSel.appendChild(o);}
+  for(let i=1;i<=count;i++){
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent=`Match ${i}`;
+    matchNoSel.appendChild(o);
+  }
   matchNoSel.value=String(Math.min(Math.max(cur||1,1),count));
 }
 
 // ---------- state per pool+team+match ----------
 function stateKey(teamOverride=null, matchOverride=null){
-  const team=teamOverride ?? (document.getElementById("teamSelect").value||"1");
-  const matchNo=matchOverride ?? (document.getElementById("matchNo").value||"1");
+  const team=((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value||"1");
+  const matchNo=((matchOverride)!=null ? (matchOverride) : ((document.getElementById("matchNo"))).value||"1");
   return `${Storage.poolPrefix()}state_team_${team}_match_${matchNo}`;
 }
 function defaultsState(){return {matchDate:"",matchTime:"",opponent:"",arena:"1",teamSize:"10",onCourt:"3",periodsCount:"1",periodMin:"15",shiftSec:"90",players:[],goalie:"",inheritedFromMatch1:true};}
@@ -1030,7 +2703,7 @@ function setFormState(s){
   document.getElementById("goalie").value=d.goalie||"";
 }
 function ensureInheritanceOnLoad(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)==="1") return;
   const key=stateKey();
@@ -1066,7 +2739,7 @@ function setManualOverrideForCurrentMatch(){
   localStorage.setItem(stateKey(), JSON.stringify(Object.assign(defaultsState(), st)));
 }
 function propagateMatch1ToOtherMatches(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)!=="1") return;
   const count=loadMatchCount();
@@ -1113,8 +2786,11 @@ function shiftDoneKey(teamNo,matchNo,idx){return `${Storage.poolPrefix()}shiftDo
 function isShiftDone(teamNo,matchNo,idx){return localStorage.getItem(shiftDoneKey(teamNo,matchNo,idx))==="1";}
 function setShiftDone(teamNo,matchNo,idx,done){localStorage.setItem(shiftDoneKey(teamNo,matchNo,idx), done?"1":"0"); Storage.touchPoolUpdated();}
 function toggleShiftDone(teamNo,matchNo,idx,done){
+  if(App.state.readOnly) return;
   setShiftDone(teamNo,matchNo,idx,done);
-  const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
+      updateFinishButtons();
+markPoolActiveIfNeeded(Storage.currentPoolId());
+const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
   if(row) row.classList.toggle("doneRow", !!done);
 }
 
@@ -1130,7 +2806,9 @@ function fillMultiSelect(el, items){
 }
 function renderPlayerSelectors(n, values){
   const {players}=loadRegister();
-  const cont=document.getElementById("playersContainer"); cont.innerHTML="";
+  const cont=document.getElementById("playersContainer");
+  if(!cont) return;
+  cont.innerHTML="";
   const wanted=Math.min(25, Math.max(1, parseInt(n,10)||1));
   const vals=Array.isArray(values)?values.slice(0,wanted):[];
   while(vals.length<wanted) vals.push("");
@@ -1205,7 +2883,7 @@ function makeLineupsForMatch(st, globalCounts, shiftTimes){
   const lineups=[];
   for(let i=0;i<shiftTimes.length;i++){
     const countsArr=roster.map(n=>({n, c:globalCounts[n.toLowerCase()]||0, r:ratings[n.toLowerCase()]||0}));
-    countsArr.sort((a,b)=>a.c!==b.c? a.c-b.c : b.r-a.r);
+    countsArr.sort((a,b)=> a.c!==b.c ? (a.c-b.c) : (b.r!==a.r ? (b.r-a.r) : String(a.n).localeCompare(String(b.n),'sv')));
     const pool=countsArr.map(x=>x.n).slice(0, Math.min(10, roster.length));
     const candidates=[];
     function rec(start,left,chosen){
@@ -1229,8 +2907,8 @@ function makeLineupsForMatch(st, globalCounts, shiftTimes){
       }
     }
     rec(0,k,[]);
-    candidates.sort((a,b)=>b.score-a.score);
-    const best=candidates[0]?.lineup||[];
+    candidates.sort((a,b)=> (b.score-a.score) || String(a.lineup.join('|')).localeCompare(String(b.lineup.join('|')),'sv'));
+    const best=(candidates[0] && candidates[0].lineup)||[];
     for(const n of best){const key=n.toLowerCase(); globalCounts[key]=(globalCounts[key]||0)+1;}
     lineups.push(best); prev=best;
   }
@@ -1286,10 +2964,13 @@ function renderEditOutput(){
   const msg=document.getElementById("msg");
   msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
 
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
+  var poolObj=null;
+  try{ poolObj=getPoolById(Storage.currentPoolId()); }catch(e){}
+  var normalizedMatches=getRunMatchesFromPool(poolObj);
   for(let m=1;m<=matchCount;m++){
     const st=loadStateFor(teamNo,m);
     const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
@@ -1299,17 +2980,82 @@ function renderEditOutput(){
     const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
     html += renderEditMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
+  // Finish pool footer in edit view (always visible)
+  const id=Storage.currentPoolId();
+  const pools=Storage.loadPools();
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===id){ p=pools[i]; break; } }
+  const completed=!!(p && p.completed);
+  if(html && !completed && !App.state.readOnly){
+    const doneNow = allShiftsDoneForCurrentTeam();
+    html += `
+    <div class="finishPoolFooter">
+      <button type="button" onclick="finishPool()">
+        Avsluta poolspel
+      </button>
+    </div>`;
+  }
+
   document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
+  updateFinishButtons();
+  syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+}
+
+
+function getRunMatchesFromPool(pool){
+  try{
+    if(!pool) return [];
+    var a = null;
+    if(Array.isArray(pool.matches)) a = pool.matches;
+    else if(Array.isArray(pool.games)) a = pool.games;
+    else if(Array.isArray(pool.schedule)) a = pool.schedule;
+    if(!a) return [];
+    return a.filter(function(x){ return !!x; });
+  }catch(e){ return []; }
 }
 
 // ---------- run view ----------
+function renderRunFallback(title, msg){
+  try{
+    document.body.classList.remove("coach-mode");
+    document.body.classList.remove("coach-show-table");
+  }catch(e){}
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(bar){
+      bar.innerHTML = `
+        <div class="runNowGrid">
+          <div class="runNowCol">
+            <div class="runNowTitle">${escapeHtml(title||"Poolspel-läge")}</div>
+            <div class="runNowMain">${escapeHtml(msg||"Ingen data tillgänglig")}</div>
+            <div class="runNowHint">Välj poolspel från startsidan eller redigera matcherna först.</div>
+            <div class="runNowActions">
+              <button type="button" onclick="goHome()">Till startsidan</button>
+              <button type="button" class="ghost" onclick="showEdit()">Redigera</button>
+            </div>
+          </div>
+        </div>`;
+      bar.style.display="block";
+    }
+  }catch(e){}
+  try{
+    var out=document.getElementById("runOutput");
+    if(out){
+      out.innerHTML = `<div class="card"><b>${escapeHtml(title||"Poolspel-läge")}</b><div class="small" style="margin-top:8px;">${escapeHtml(msg||"Ingen data tillgänglig")}</div></div>`;
+    }
+  }catch(e){}
+}
+
 function renderRunAll(){
-  if(!Storage.currentPoolId()) return;
+  if(!Storage.currentPoolId()){ renderRunFallback("Inget aktivt poolspel", "Välj ett poolspel först."); return; }
   UI.updateRunHeader();
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
+  var poolObj=null;
+  try{ poolObj=getPoolById(Storage.currentPoolId()); }catch(e){}
+  var normalizedMatches=getRunMatchesFromPool(poolObj);
   for(let m=1;m<=matchCount;m++){
     const st=loadStateFor(teamNo,m);
     const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
@@ -1319,8 +3065,132 @@ function renderRunAll(){
     const lineups=makeLineupsForMatch(st, globalCounts, shiftTimes);
     html += renderRunMatchBlock(teamNo,m,st,shiftTimes,lineups);
   }
-  document.getElementById("runOutput").innerHTML = html || "<b>Poolspel-läge</b><div class='small'>Inga matcher.</div>";
+  
+  // Finish pool footer: always show button at bottom (disabled until all shifts are checked)
+  const id=Storage.currentPoolId();
+  const pools=Storage.loadPools();
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===id){ p=pools[i]; break; } }
+  const completed=!!(p && p.completed);
+  if(html && !completed && !App.state.readOnly){
+    const doneNow = allShiftsDoneForCurrentTeam();
+    html += `
+      <div class="finishPoolFooter">
+        <button type="button" onclick="finishPool()">Avsluta poolspel</button>
+      </div>`;
+  }
+document.getElementById("runOutput").innerHTML = html || "<div class='card'><b>Poolspel-läge</b><div class='small'>Inga matcher.</div></div>";
+  if(!html){
+    var msg = normalizedMatches.length
+      ? "Matcher finns i poolspelet men kunde inte visas för valt lag. Kontrollera lag, spelare och matchinställningar i Redigera."
+      : "Det finns inga matcher i poolspelet ännu. Lägg till matcher i Redigera poolspel.";
+    renderRunFallback("Schema saknas", msg);
+    return;
+  }
+  updateFinishButtons();
+  try{
+    updateRunProUI();
+  }catch(e){
+    renderRunFallback("RunView-fel", (e && e.message) ? e.message : "Kunde inte visa coach-läge.");
+    return;
+  }
+  try{ syncCoachModeFromRunContent(); }catch(e){}
+
 }
+
+function allShiftsDoneForCurrentTeam(){
+  if(!Storage.currentPoolId()) return false;
+  const teamNo=getSelectedTeamSafe();
+  const matchCount=loadMatchCount();
+  if(!matchCount || matchCount<1) return false;
+
+  for(let m=1;m<=matchCount;m++){
+    const st=loadStateFor(teamNo,m);
+    const periodsCount=Math.min(3, Math.max(1, parseInt(st.periodsCount,10)||1));
+    const periodMin=parseInt(st.periodMin,10)||15;
+    const shiftSec=parseInt(st.shiftSec,10)||90;
+    const shiftTimes=buildShiftTimes(periodMin*periodsCount, shiftSec);
+
+    if(!shiftTimes.length) return false;
+
+    for(let i=0;i<shiftTimes.length;i++){
+      if(!isShiftDone(teamNo,m,i)) return false;
+    }
+  }
+  return true;
+}
+
+function updateFinishButtons(){
+  try{
+    var doneNow = allShiftsDoneForCurrentTeam();
+    var btns = document.querySelectorAll(".finishPoolFooter button");
+    for(var i=0;i<btns.length;i++){
+      btns[i].disabled = !doneNow;
+    }
+  }catch(e){}
+}
+
+
+
+function markPoolActiveIfNeeded(poolId){
+  if(!poolId) return;
+  var pools=Storage.loadPools()||[];
+  var p=null;
+  for(var i=0;i<pools.length;i++){ if(pools[i] && pools[i].id===poolId){ p=pools[i]; break; } }
+  if(!p || !p.completed) return;
+
+  // If ANY shift is not done for current team, re-activate the pool
+  if(!allShiftsDoneForCurrentTeam()){
+    p.completed=false;
+    p.updatedAt=Date.now();
+    Storage.savePools(pools);
+    try{ UI.renderPoolList(); }catch(e){}
+  }
+}
+
+
+
+
+function finishPool(){
+  if(finishingPool) return;
+  finishingPool = true;
+
+  // Disable ALL finish buttons (edit + run)
+  var btns = document.querySelectorAll(".finishPoolFooter button");
+  btns.forEach(function(b){ try{ b.disabled = true; }catch(e){} });
+
+  nskConfirm("Avsluta poolspelet för detta lag?", "Avsluta").then(function(ok){
+    function unlock(){
+      finishingPool = false;
+      try{
+        updateFinishButtons();
+      }catch(e){}
+    }
+
+    if(!ok){ unlock(); return; }
+
+    var id = Storage.currentPoolId();
+    var team = getSelectedTeamSafe();
+    if(!id || !team){ unlock(); return; }
+
+    if(!allShiftsDoneForCurrentTeam()){
+      alert("Alla byten måste vara avbockade innan laget kan avslutas.");
+      unlock();
+      return;
+    }
+
+    setTeamCompleted(id, team, true);
+
+    try{ UI.renderPoolList(); }catch(e){}
+    try{
+      if(Actions && Actions.goHome) Actions.goHome();
+      else if(typeof goHome==="function") goHome();
+    }catch(e){}
+
+    unlock();
+  });
+}
+
 function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
   const goalie=st.goalie||"—";
   const coaches=loadTeamCoaches(); const coachText=coaches.length?coaches.join(", "):"—";
@@ -1344,8 +3214,12 @@ function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
         <tbody>
           ${shiftTimes.map((t,i)=>{const done=isShiftDone(teamNo,matchNo,i); return `
             <tr id="shiftRow_${teamNo}_${matchNo}_${i}" class="${done?"doneRow":""}">
-              <td class="chkCell"><input class="chk" type="checkbox" ${done?"checked":""}
-                onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked); renderRunAll();"></td>
+              <td class="chkCell">${
+              App.state.readOnly
+                ? `<input class="chk" type="checkbox" ${done?"checked":""} disabled>`
+                : `<input class="chk" type="checkbox" ${done?"checked":""}
+                    onchange="toggleShiftDone('${teamNo}','${matchNo}',${i}, this.checked); renderRunAll();">`
+            }</td>
               <td>${i+1}</td><td class="nowrap">${escapeHtml(t)}</td><td>${escapeHtml(lineupToShortText(lineups[i]||[]))}</td>
             </tr>`;}).join("")}
         </tbody>
@@ -1353,7 +3227,52 @@ function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
     </div>`;
 }
 
-// ---------- navigation helpers ----------
+
+function setCoachMode(on){
+  try{
+    if(on) document.body.classList.remove("arena-mode");
+    document.body.classList.toggle("coach-mode", !!on);
+    if(!on) document.body.classList.remove("coach-show-table");
+  }catch(e){}
+}
+
+function toggleCoachMode(){
+  try{
+    var next = !document.body.classList.contains("coach-mode");
+    document.body.classList.remove("arena-mode");
+    if(next){
+      updateRunProUI();
+      setCoachMode(true);
+    }else{
+      setCoachMode(false);
+    }
+  }catch(e){}
+}
+
+function setArenaMode(on){
+  try{
+    if(on){
+      document.body.classList.remove("coach-mode");
+      document.body.classList.remove("coach-show-table");
+    }
+    document.body.classList.toggle("arena-mode", !!on);
+  }catch(e){}
+}
+
+function toggleArenaMode(){
+  try{
+    var next = !document.body.classList.contains("arena-mode");
+    document.body.classList.remove("coach-mode");
+    document.body.classList.remove("coach-show-table");
+    if(next){
+      updateRunProUI();
+      setArenaMode(true);
+    }else{
+      setArenaMode(false);
+    }
+  }catch(e){}
+}
+
 function setActiveTeamButtons(team){
   const t=String(team||"1");
   ["1","2","3"].forEach(x=>{
@@ -1363,8 +3282,27 @@ function setActiveTeamButtons(team){
     b.classList.toggle("ghost", !active);
   });
 }
-function switchTeam(team){
-  document.getElementById("teamSelect").value=String(team||"1");
+async function switchTeam(team){
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    // require code if target team is completed
+    if(pid && isTeamCompleted(pid, team)){
+      if(!(await requireCode2018("Laget är avslutat. Ange kod:", "Kod krävs"))){
+        return;
+      }
+    }
+  }catch(e){}
+
+  try{
+    var pid = Storage.currentPoolId ? Storage.currentPoolId() : "";
+    var p = (typeof getPoolById==="function") ? getPoolById(pid) : null;
+    var teams = (p && p.teams && p.teams.length) ? p.teams.map(String) : null;
+    if(teams && teams.length && teams.indexOf(String(team))===-1){
+      return;
+    }
+  }catch(e){}
+
+  var __tsel=document.getElementById("teamSelect"); if(__tsel) __tsel.value=String(team||"1");
   setActiveTeamButtons(team);
   onTeamChanged();
 }
@@ -1379,27 +3317,81 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena"); arena.innerHTML="";
-  for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
-  const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
-  for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
-  const onCourt=document.getElementById("onCourt"); onCourt.innerHTML="";
-  [3,4,5].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); onCourt.appendChild(o);});
-  const periods=document.getElementById("periodsCount"); periods.innerHTML="";
-  [1,2,3].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); periods.appendChild(o);});
-  const period=document.getElementById("periodMin"); period.innerHTML="";
-  for(let m=8;m<=20;m++){const o=document.createElement("option"); o.value=String(m); o.textContent=String(m); period.appendChild(o);}
-  const shift=document.getElementById("shiftSec"); shift.innerHTML="";
-  for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
+  const arena=document.getElementById("arena");
+  if(arena){
+    arena.innerHTML="";
+    for(let i=1;i<=4;i++){
+      const o=document.createElement("option");
+      o.value=String(i);
+      o.textContent=String(i);
+      arena.appendChild(o);
+    }
+  }
+
+  const teamSize=document.getElementById("teamSize");
+  if(teamSize){
+    teamSize.innerHTML="";
+    for(let i=1;i<=25;i++){
+      const o=document.createElement("option");
+      o.value=String(i);
+      o.textContent=String(i);
+      teamSize.appendChild(o);
+    }
+  }
+
+  const onCourt=document.getElementById("onCourt");
+  if(onCourt){
+    onCourt.innerHTML="";
+    [3,4,5].forEach(n=>{
+      const o=document.createElement("option");
+      o.value=String(n);
+      o.textContent=String(n);
+      onCourt.appendChild(o);
+    });
+  }
+
+  const periods=document.getElementById("periodsCount");
+  if(periods){
+    periods.innerHTML="";
+    [1,2,3].forEach(n=>{
+      const o=document.createElement("option");
+      o.value=String(n);
+      o.textContent=String(n);
+      periods.appendChild(o);
+    });
+  }
+
+  const period=document.getElementById("periodMin");
+  if(period){
+    period.innerHTML="";
+    for(let m=8;m<=20;m++){
+      const o=document.createElement("option");
+      o.value=String(m);
+      o.textContent=String(m);
+      period.appendChild(o);
+    }
+  }
+
+  const shift=document.getElementById("shiftSec");
+  if(shift){
+    shift.innerHTML="";
+    for(let s=30;s<=180;s+=5){
+      const o=document.createElement("option");
+      o.value=String(s);
+      o.textContent=String(s);
+      shift.appendChild(o);
+    }
+  }
 }
-function initEditForCurrentPool(){
+async function initEditForCurrentPool(){
+  if(!(await gateEditIfTeamCompleted())) return;
   fillMatchCountDropdown();
   applyMatchCount();
   refreshAllDropdownsAndPlayers();
   applyTeamCoachesToUI();
   loadState();
   renderEditOutput();
-  setActiveTeamButtons(document.getElementById("teamSelect").value||"1");
+  setActiveTeamButtons(getSelectedTeamSafe());
 }
 
 // ---------- PDF ----------
@@ -1485,65 +3477,701 @@ function wireImport(){
   });
 }
 
+
+// ---------- Delegated handlers (stabilare än inline onclick, speciellt i iOS/PWA) ----------
+(function(){
+  function closestWithAttr(el, attr){
+    while(el && el !== document){
+      try{
+        if(el.getAttribute && el.getAttribute(attr)) return el;
+      }catch(e){}
+      el = el.parentNode;
+    }
+    return null;
+  }
+
+  document.addEventListener("click", function(e){
+    try{
+      var btn = closestWithAttr(e.target, "data-pool-action");
+      if(!btn) return;
+
+      var action = btn.getAttribute("data-pool-action");
+      var pid = btn.getAttribute("data-pool-id") || "";
+      if(!action || !pid) return;
+
+      // stop så inget annat "tar" klicken
+      try{ e.preventDefault(); }catch(e){}
+      try{ e.stopPropagation(); }catch(e){}
+
+      if(action==="start") startPoolRun(pid);
+      else if(action==="edit") openPoolEdit(pid);
+      else if(action==="delete") deletePool(pid);
+    }catch(err){}
+  }, true); // capture för att funka även om andra handlers stör
+})();
+
 // ---------- public wrappers (onclick-kompatibelt) ----------
-function goHome(){ Actions.goHome(); }
-function openNewPool(){ Actions.openNewPool(); }
+function goHome(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.goHome(); }
+function openNewPool(){
+  // AUTH_GUARD_openNewPool
+  if(window.Auth && !(Auth.canFull && Auth.canFull())){
+    alert("Du saknar behörighet att skapa poolspel.");
+    return;
+  }
+ Actions.openNewPool(); }
 function closeNewPool(){ Actions.closeNewPool(); }
 function saveNewPool(){ Actions.saveNewPool(); }
-function deletePool(id){ Actions.deletePool(id); }
-function startPoolRun(id){ Actions.startPoolRun(id); }
+async function deletePool(id){
+  // AUTH_GUARD_deletePool
+  if(window.Auth && !(Auth.canDelete && Auth.canDelete())){
+    alert("Endast admin kan ta bort.");
+    return;
+  }
+ await Actions.deletePool(id); }
+function startPoolRun(id, target){
+  // AUTH_GUARD_startPoolRun
+  if(window.Auth && !(Auth.canRun && Auth.canRun())){
+    alert("Du saknar behörighet att starta poolspel.");
+    return;
+  }
+ Actions.startPoolRun(id, target); }
 function openTeamSelectForCurrentPool(){ Actions.openTeamSelectForCurrentPool(); }
 function openTeamSelect(){ Actions.openTeamSelect(); }
 function closeTeamSelect(){ Actions.closeTeamSelect(); }
-function chooseTeam(teamNo){ Actions.chooseTeam(teamNo); }
-function openPoolEdit(id){ Actions.openPoolEdit(id); }
-function showEdit(){ Actions.showEdit(); }
-function showRun(){ Actions.showRun(); }
+async function chooseTeam(teamNo){ await Actions.chooseTeam(teamNo); }
+function openPoolEdit(id){
+  // AUTH_GUARD_openPoolEdit
+  if(window.Auth && !(Auth.canFull && Auth.canFull())){
+    alert("Du saknar behörighet att redigera.");
+    return;
+  }
+ Actions.openPoolEdit(id); }
+async function showEdit(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+    await Actions.showEdit(); }
+function showRun(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.showRun(); }
 
+
+
+// ===== Pool list button fallback (iOS safe tap) =====
+(function(){
+  var lastTouchTs = 0;
+  function runAction(btn){
+    try{
+      if(!btn) return;
+      var action = btn.getAttribute("data-pool-action");
+      var pid = btn.getAttribute("data-pool-id");
+      if(!action || !pid) return;
+      // Call the same global wrappers used by onclick
+      if(action==="start") startPoolRun(pid);
+      else if(action==="edit") openPoolEdit(pid);
+      else if(action==="delete") deletePool(pid);
+    }catch(e){
+      try{
+        var b=document.getElementById("jsErrorBanner");
+        var t=document.getElementById("jsErrorText");
+        if(b&&t){
+          t.textContent = "Klickfel: " + (e && e.message ? e.message : e);
+          b.style.display="block";
+        }
+      }catch(_){}
+    }
+  }
+
+  document.addEventListener("touchend", function(e){
+    try{
+      var btn = e.target && e.target.closest ? e.target.closest("button[data-pool-action]") : null;
+      if(!btn) return;
+      lastTouchTs = Date.now();
+      e.preventDefault();
+      runAction(btn);
+    }catch(_){}
+  }, {passive:false});
+
+  document.addEventListener("click", function(e){
+    try{
+      // Avoid double-fire after touch
+      if(Date.now() - lastTouchTs < 700) return;
+      var btn = e.target && e.target.closest ? e.target.closest("button[data-pool-action]") : null;
+      if(!btn) return;
+      e.preventDefault();
+      runAction(btn);
+    }catch(_){}
+  });
+})();
 // ---------- init ----------
 function init(){
+  ensureTeamSelectExists();
+  hideMatchDateInEdit();
   initSettingsDropdowns();
   wireImport();
+
+  // Admin search filter
+  try{
+    const s=document.getElementById('adminSearch');
+    if(s) s.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} });
+  }catch(e){}
+  try{ const as=document.getElementById('adminSearch'); if(as){ as.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} }); } }catch(e){}
+
+  // Admin search live filter
+  try{
+    var s=document.getElementById('adminSearch');
+    if(s){
+      s.addEventListener('input', function(){ try{ Admin.filter(); }catch(e){} });
+    }
+  }catch(e){}
 
   // Close modals on backdrop click
   ["newPoolModal","registerModal","goalieStatsModal","teamSelectModal"].forEach(id=>{
     const m=document.getElementById(id);
-    m.addEventListener("click",(e)=>{ if(e.target.id===id) m.style.display="none"; });
+    if(!m) return;
+    m.addEventListener("click",(e)=>{ if(e.target && e.target.id===id) m.style.display="none"; });
   });
 
   // edit listeners
-  
   ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
     el.addEventListener("change", ()=>{saveState(); renderEditOutput(); renderRunAll();});
     el.addEventListener("input", ()=>{saveState();});
   });
-  document.getElementById("goalie").addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
-  document.getElementById("teamSize").addEventListener("change", ()=>{
+
+  const goalieEl=document.getElementById("goalie");
+  if(goalieEl) goalieEl.addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
+
+  const teamSizeEl=document.getElementById("teamSize");
+  if(teamSizeEl) teamSizeEl.addEventListener("change", ()=>{
     const newN=parseInt(document.getElementById("teamSize").value||"10",10);
     const st=getFormState(); st.teamSize=String(newN);
     renderPlayerSelectors(newN, st.players||[]);
     setManualOverrideForCurrentMatch();
     saveState(); renderEditOutput(); renderRunAll();
   });
-  document.getElementById("coach").addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
-  document.getElementById("matchCount").addEventListener("change", ()=>{
+
+  const coachEl=document.getElementById("coach");
+  if(coachEl) coachEl.addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
+
+  const matchCountEl=document.getElementById("matchCount");
+  if(matchCountEl) matchCountEl.addEventListener("change", ()=>{
     const n=parseInt(document.getElementById("matchCount").value||"4",10);
     saveMatchCount(n); applyMatchCount(); loadState(); renderEditOutput(); renderRunAll();
   });
-  document.getElementById("matchNo").addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
+
+  const matchNoEl=document.getElementById("matchNo");
+  if(matchNoEl) matchNoEl.addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
 
   // Start
-  Actions.goHome();
+// Start
+  if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
-window.addEventListener("load", init);
+
+function hideBootDebugLater(){
+  try{
+    setTimeout(function(){
+      var el=document.getElementById("bootDebug");
+      if(!el) return;
+      el.style.transition="opacity .3s ease";
+      el.style.opacity="0";
+      setTimeout(function(){ el.style.display="none"; }, 320);
+    }, 1800);
+  }catch(e){}
+}
+
+function bootLog(msg){}
+
+function forceShowHomeFallback(reason){
+  try{ bootLog("fallback — "+String(reason||"home")); }catch(e){}
+  try{ document.body.classList.remove("coach-mode","coach-show-table"); }catch(e){}
+  try{
+    document.querySelectorAll(".view").forEach(function(el){
+      if(!el || !el.id) return;
+      var on = (el.id==="homeView");
+      el.classList.toggle("active", on);
+      el.style.display = on ? "block" : "none";
+    });
+  }catch(e){}
+  try{ UI && UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+}
+
+
+function safeShowHome(){
+  try{
+    if(window.UI && UI.showView) UI.showView("homeView");
+    try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+  }catch(e){}
+}
+
+function safeInit(){
+  bootLog("load — start");
+  try{
+    init();
+    bootLog("init — ok");
+    
+  }catch(e){
+    bootLog("init — fail: " + (e && e.message ? e.message : e));
+    forceShowHomeFallback("init-error");
+    try{
+      var b=document.getElementById("jsErrorBanner");
+      var t=document.getElementById("jsErrorText");
+      if(b&&t){
+        t.textContent = "Init-fel: " + (e && e.message ? e.message : e);
+        b.style.display = "block";
+      }
+    }catch(_){}
+  }
+
+  setTimeout(function(){
+    try{
+      var active=document.querySelector(".view.active");
+      var runBar=document.getElementById("runNowBar");
+      var inCoach=document.body.classList.contains("coach-mode");
+      if(!active){
+        forceShowHomeFallback("no-active-view");
+        return;
+      }
+      if(inCoach && (!runBar || !String(runBar.innerHTML||"").trim())){
+        forceShowHomeFallback("empty-coach");
+      }
+    }catch(e){
+      forceShowHomeFallback("watchdog-error");
+    }
+  }, 1200);
+}
+
+window.addEventListener("load", function(){
+  try{ safeInit(); }catch(e){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }
+  setTimeout(function(){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }, 120);
+  setTimeout(function(){
+    try{ ultraEnsureVisibleView(); }catch(_){}
+  }, 700);
+});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// keep finish button state in sync without needing a full re-render
+document.addEventListener("change", function(e){
+  try{
+    var t=e && e.target;
+    if(t && t.classList && t.classList.contains("chk")){
+      updateFinishButtons();
+    }
+  }catch(err){}
+});
+
+
+
+
+function restoreLastRouteOnLoad(){
+  try{ bootLog("route — restore"); }catch(e){}
+  var r = getRouteHash() || loadLastRoute();
+  if(!r || !r.route) return false;
+
+  try{
+    if(r.poolId) Storage.setCurrentPool(r.poolId);
+    if(r.team && Storage.setCurrentTeam) Storage.setCurrentTeam(r.team);
+  }catch(e){}
+
+  try{
+    if(r.route==="run"){
+      UI.showView("homeView");
+      UI.renderPoolList();
+      return true;
+    }
+    if(r.route==="edit"){
+      UI.showView("homeView");
+      UI.renderPoolList();
+      return true;
+    }
+    if(r.route==="teamSelect"){
+      UI.showView("homeView");
+      UI.renderPoolList();
+      return true;
+    }
+    if(r.route==="home"){
+      UI.showView("homeView");
+      UI.renderPoolList();
+      return true;
+    }
+  }catch(e){}
+  return false;
+}
+
+
+
+
+window.addEventListener("beforeunload", function(){
+  try{ persistCurrentView(); }catch(e){}
+});
+
+
+
+function markTeamActiveIfNeeded(){
+  try{
+    var id=Storage.currentPoolId();
+    var team=getSelectedTeamSafe();
+    if(!id || !team) return;
+    if(!isTeamCompleted(id, team)) return;
+    if(!allShiftsDoneForCurrentTeam()){
+      setTeamCompleted(id, team, false);
+      try{ UI.renderPoolList(); }catch(e){}
+    }
+  }catch(e){}
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// ===== POOLSPEL PRO (Run view) =====
+function updateRunProUI(){
+  try{
+    var runView=document.getElementById("runView");
+    var bar=document.getElementById("runNowBar");
+    if(!runView || !bar) return;
+
+    var rows=[].slice.call(runView.querySelectorAll("#runOutput table tbody tr"));
+    if(!rows.length){
+      bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Schema saknas</div><div class="runNowHint">Redigera poolspelet och välj spelare.</div></div></div>';
+      bar.style.display="block";
+      return;
+    }
+
+    var curRow=null, nextRow=null;
+    for(var i=0;i<rows.length;i++){
+      var chk=rows[i].querySelector("input.chk");
+      if(chk && !chk.checked){ curRow=rows[i]; break; }
+    }
+    if(!curRow) curRow=rows[rows.length-1];
+    if(curRow){
+      for(var j=rows.indexOf(curRow)+1; j<rows.length; j++){
+        var chk2=rows[j].querySelector("input.chk");
+        if(chk2 && !chk2.checked){ nextRow=rows[j]; break; }
+      }
+    }
+
+    function rowInfo(r){
+      if(!r) return {no:"—", time:"—", players:"—", match:"", goalie:""};
+      var tds=r.querySelectorAll("td");
+      var no=((tds[1]&&tds[1].textContent)||"").trim()||"—";
+      var time=((tds[2]&&tds[2].textContent)||"").trim()||"—";
+      var players=((tds[3]&&tds[3].textContent)||"").trim()||"—";
+      var mb=r.closest(".matchBlock");
+      var match="", goalie="";
+      if(mb){
+        var b=mb.querySelector("b");
+        if(b) match=(b.textContent||"").trim();
+        var txt=(mb.textContent||"");
+        var m=txt.match(/Målvakt\s+([^\n]+)/i);
+        if(m) goalie=(m[1]||"").trim();
+      }
+      return {no:no,time:time,players:players,match:match,goalie:goalie};
+    }
+
+    var cur=rowInfo(curRow);
+    var nxt=rowInfo(nextRow);
+    if(curRow && !curRow.id) curRow.id="runCurRow_" + Date.now();
+    if(curRow) bar.dataset.curRowId=curRow.id;
+
+    var readOnly=!!(window.App && App.state && App.state.readOnly);
+    var showTable=document.body.classList.contains("coach-show-table");
+
+    bar.innerHTML =
+      '<div class="runNowGrid">' +
+        '<div class="runNowCol">' +
+          '<div class="runNowTitle">Pågående byte</div>' +
+          (cur.match ? '<div class="small" style="opacity:.85;margin-top:4px;">'+escapeHtml(cur.match)+'</div>' : '') +
+          (cur.goalie ? '<div class="small" style="opacity:.85;margin-top:4px;">Målvakt: '+escapeHtml(cur.goalie)+'</div>' : '') +
+          '<div class="runNowMain">'+escapeHtml(cur.players || "—")+'</div>' +
+          '<div class="runNowMeta"><span class="pill">#'+escapeHtml(cur.no)+'</span><span class="pill">Tid kvar: '+escapeHtml(cur.time)+'</span></div>' +
+          '<div class="runNowActions">' +
+            (readOnly ? '' : '<button type="button" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
+            '<button type="button" class="ghost" onclick="toggleCoachShowTable()">'+(showTable?'Dölj schema':'Visa schema')+'</button>' +
+          '</div>' +
+        '</div>' +
+        (nextRow ? (
+          '<div class="runNowCol">' +
+            '<div class="runNowTitle">Nästa byte</div>' +
+            (nxt.match ? '<div class="small" style="opacity:.85;margin-top:4px;">'+escapeHtml(nxt.match)+'</div>' : '') +
+            '<div class="runNowMain blink nextBlink">'+escapeHtml(nxt.players || "—")+'</div>' +
+            '<div class="runNowMeta"><span class="pill">#'+escapeHtml(nxt.no)+'</span><span class="pill">Tid kvar: '+escapeHtml(nxt.time)+'</span></div>' +
+          '</div>'
+        ) : '') +
+      '</div>';
+    bar.style.display="block";
+  }catch(e){
+    try{
+      var bar=document.getElementById("runNowBar");
+      if(bar){
+        bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Fel i coach-bannern</div><div class="runNowHint">'+escapeHtml(e && e.message ? e.message : "okänt fel")+'</div></div></div>';
+        bar.style.display='block';
+      }
+    }catch(_){}
+  }
+}
+
+// Tick current (pågående) shift from the banner
+function bockCurrentShiftFromBanner(){
+  try{
+    var bar=document.getElementById("runNowBar");
+    if(!bar) return;
+    if(window.App && App.state && App.state.readOnly) return;
+
+    var id = bar.dataset ? (bar.dataset.curRowId || "") : "";
+    var row = id ? document.getElementById(id) : null;
+    if(!row){
+      // fallback: find first unchecked again
+      var runView=document.getElementById("runView");
+      if(!runView) return;
+      var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
+      for(var i=0;i<rows.length;i++){
+        var chk=rows[i].querySelector("input.chk, input[type=checkbox].chk");
+        if(chk && !chk.checked){ row = rows[i]; break; }
+      }
+    }
+    if(!row) return;
+
+    var chk=row.querySelector("input.chk, input[type=checkbox].chk");
+    if(!chk || chk.disabled) return;
+
+    // Use click so existing onchange handlers run
+    chk.click();
+
+    // Refresh banner quickly (renderRunAll is called by onchange on run rows, but be safe)
+    try{ updateRunProUI(); }catch(e){}
+  }catch(e){}
+}
+
+
+// Toggle showing the full schema table in coach-mode (optional)
+function toggleCoachShowTable(){
+  try{
+    if(!document.body.classList.contains('coach-mode')) return;
+    document.body.classList.toggle('coach-show-table');
+    // Refresh banner text quickly
+    try{ updateRunProUI(); }catch(e){}
+  }catch(e){}
+}
+
+function isElementInViewport(el){
+  var rect=el.getBoundingClientRect();
+  return rect.top >= 0 && rect.top <= (window.innerHeight || document.documentElement.clientHeight) * 0.8;
+}
+
+
+document.addEventListener("change", function(e){
+  try{
+    var t=e.target;
+    if(t && (t.matches("input.chk") || t.matches("input[type=checkbox].chk"))){
+      if(document.getElementById("runView") && document.getElementById("runView").contains(t)){
+        updateRunProUI();
+      }
+    }
+  }catch(err){}
+});
+
+
+
+
+// Init auth
+try{ Auth.init(); }catch(e){}
+
+
+
+// ===== ADMIN UI (Behörigheter) =====
+const Admin = {
+  async reload(){
+    try{
+      if(!window.Auth || !Auth.isAdmin || !Auth.isAdmin()){
+        const msg=document.getElementById("adminMsg");
+        if(msg) msg.textContent = "Endast admin.";
+        return;
+      }
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Laddar...";
+      const tbody=document.getElementById("adminUsersTbody");
+      if(tbody) tbody.innerHTML = "";
+
+      // fetch profiles (requires policy: admin read all)
+      const { data, error } = await Auth.supabase
+        .from("profiles")
+        .select("id, role, email")
+        .order("role", { ascending: true });
+
+      if(error){
+        if(msg) msg.textContent = "Kunde inte läsa användare. Kontrollera RLS-policy (admin read all) och att kolumn email finns. ("+error.message+")";
+        return;
+      }
+
+      if(!data || !data.length){
+        if(msg) msg.textContent = "Inga användare ännu. (De dyker upp efter första inloggning.)";
+        return;
+      }
+
+      if(msg) msg.textContent = "Antal användare: " + data.length;
+
+      data.forEach(u=>{
+        const tr=document.createElement("tr");
+
+        const email = (u.email || "—");
+        try{ tr.setAttribute("data-search", (email+" "+(u.id||"")).toLowerCase()); }catch(e){}
+        tr.setAttribute("data-search", (u.email||"") + " " + (u.id||"") + " " + (u.role||""));
+
+      try{ tr.setAttribute("data-search", (email+" "+(u.id||"")+" "+(u.role||"")).toLowerCase()); }catch(e){}
+        tr.innerHTML = `
+          <td>${escapeHtml(email)}</td>
+          <td><code>${escapeHtml(u.id)}</code></td>
+          <td>
+            <select data-userid="${escapeHtml(u.id)}">
+              <option value="coach_run" ${u.role==="coach_run"?"selected":""}>coach_run</option>
+              <option value="coach_full" ${u.role==="coach_full"?"selected":""}>coach_full</option>
+              <option value="admin" ${u.role==="admin"?"selected":""}>admin</option>
+            </select>
+          </td>
+          <td>
+            <button type="button" class="ghost" onclick="Admin.saveRole('${escapeHtml(u.id)}')">Spara</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }catch(e){
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Fel: " + (e && e.message ? e.message : e);
+    }
+  },
+
+  clearSearch(){
+    const inp=document.getElementById("adminSearch");
+    if(inp) inp.value="";
+    this.filter();
+  },
+
+  filter(){
+    const q=(document.getElementById("adminSearch")?.value||"").trim().toLowerCase();
+    const tbody=document.getElementById("adminUsersTbody");
+    if(!tbody) return;
+    [...tbody.querySelectorAll("tr")].forEach(tr=>{
+      const txt=(tr.getAttribute("data-search")||"").toLowerCase();
+      tr.style.display = (!q || txt.includes(q)) ? "" : "none";
+    });
+  },
+
+  
+  async saveInvite(){
+    try{
+      if(!window.Auth || !Auth.isAdmin || !Auth.isAdmin()){
+        const m=document.getElementById("inviteMsg");
+        if(m) m.innerHTML = "<span class='error'>✖ Endast admin.</span>";
+        return;
+      }
+      const email=(document.getElementById("inviteEmail")?.value||"").trim().toLowerCase();
+      const role=(document.getElementById("inviteRole")?.value||"coach_run");
+      const m=document.getElementById("inviteMsg");
+      if(!email){
+        if(m) m.innerHTML = "<span class='error'>✖ Skriv en e‑post.</span>";
+        return;
+      }
+      if(m) m.textContent = "Sparar...";
+      const { error } = await Auth.supabase
+        .from("invites")
+        .upsert({ email, role, updated_at: new Date().toISOString() }, { onConflict: "email" });
+      if(error){
+        if(m) m.innerHTML = "<span class='error'>✖ Kunde inte spara: " + escapeHtml(error.message) + "</span>";
+        return;
+      }
+      if(m) m.innerHTML = "<span class='ok'>✔ Sparat! Rollen gäller vid första inloggning (och kan auto‑uppgradera vid nästa refresh).</span>";
+      // refresh list
+      try{ await this.reload(); }catch(e){}
+    }catch(e){
+      const m=document.getElementById("inviteMsg");
+      if(m) m.innerHTML = "<span class='error'>✖ Fel: " + escapeHtml(e && e.message ? e.message : e) + "</span>";
+    }
+  },
+
+async saveRole(userId){
+    try{
+      if(!Auth.isAdmin()) return;
+      const sel=document.querySelector(`#adminUsersTbody select[data-userid="${CSS.escape(userId)}"]`);
+      const role=sel ? sel.value : null;
+      // Skydd: admin kan inte råka ta bort sin egen admin-roll
+      try{
+        if(Auth.user && userId===Auth.user.id && role!=='admin'){
+          alert('Du kan inte ta bort admin-behörighet på dig själv.');
+          sel.value='admin';
+          return;
+        }
+      }catch(e){}
+
+      if(!role) return;
+
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Sparar...";
+
+      const { error } = await Auth.supabase
+        .from("profiles")
+        .update({ role })
+        .eq("id", userId);
+
+      if(error){
+        if(msg) msg.textContent = "Kunde inte spara: " + error.message;
+        return;
+      }
+      if(msg) msg.textContent = "Sparat!";
+    }catch(e){
+      const msg=document.getElementById("adminMsg");
+      if(msg) msg.textContent = "Fel: " + (e && e.message ? e.message : e);
+    }
+  }
+};
+
+
+
 </script>
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.52");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -1556,12 +4184,152 @@ if ("serviceWorker" in navigator) {
         });
       });
       // Also check for updates in the background
-      reg.update?.();
+      if (reg.update) reg.update().catch(()=>{});
     }catch(e){}
   });
-}</script>
+}
+</script>
 
-<div class="app-version">V 1.0</div>
+<!-- NSK prompt modal -->
+<div id="nskPromptModal" style="display:none;">
+  <div class="nskPromptBackdrop"></div>
+  <div class="nskPromptCard" role="dialog" aria-modal="true" aria-labelledby="nskPromptTitle">
+    <div id="nskPromptTitle" class="nskConfirmTitle">Ange</div>
+    <div id="nskPromptMsg" class="nskConfirmMsg"></div>
+    <input id="nskPromptInput" type="text" class="nskPromptInput" />
+    <div class="nskConfirmBtns">
+      <button id="nskPromptCancel" class="ghost" type="button">Avbryt</button>
+      <button id="nskPromptOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="app-version">V 1.9.52</div>
+
+
+<div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
+  <div style="font-weight:900;margin-bottom:6px;">JavaScript-fel (klicka för att kopiera)</div>
+  <div id="jsErrorText" style="opacity:.95;word-break:break-word;"></div>
+</div>
+
+
+<!-- NSK confirm modal -->
+<div id="nskConfirmModal" style="display:none;">
+  <div class="nskConfirmBackdrop"></div>
+  <div class="nskConfirmCard" role="dialog" aria-modal="true" aria-labelledby="nskConfirmTitle">
+    <div id="nskConfirmTitle" class="nskConfirmTitle">Bekräfta</div>
+    <div id="nskConfirmMsg" class="nskConfirmMsg"></div>
+    <div class="nskConfirmBtns">
+      <button id="nskConfirmCancel" class="ghost" type="button">Avbryt</button>
+      <button id="nskConfirmOk" type="button">OK</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Select number of teams after creating a pool -->
+<div id="teamCountModal" class="modal" style="display:none;">
+  <div class="modalContent" style="max-width:520px;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <h3 style="margin:0;">Välj antal lag</h3>
+      <button type="button" class="closeX" onclick="UI.closeModal('teamCountModal')">✕</button>
+    </div>
+    <div class="small" style="margin-top:6px;opacity:.9;">
+      Hur många lag ska spela i detta poolspel?
+    </div>
+    <div class="btnrow" style="margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button type="button" onclick="setTeamsAndContinue(1)">1 lag</button>
+      <button type="button" onclick="setTeamsAndContinue(2)">2 lag</button>
+      <button type="button" onclick="setTeamsAndContinue(3)">3 lag</button>
+    </div>
+    <div class="small" style="margin-top:10px;opacity:.75;">
+      Du kan ändra detta senare genom att redigera poolspelet och justera lag (om vi lägger till det).
+    </div>
+  </div>
+</div>
+
+
+<!--
+==========================
+SUPABASE: INVITES (förinställ roll via e‑post)
+==========================
+Skapa tabellen invites (SQL i Supabase SQL Editor):
+
+create table if not exists public.invites (
+  email text primary key,
+  role text not null default 'coach_run',
+  updated_at timestamptz not null default now()
+);
+
+-- Rekommenderat: bara admin ska kunna läsa/skriva invites.
+-- Exempel med RLS:
+alter table public.invites enable row level security;
+
+-- Admin read/write (kräver att du har profiles.role och en policy som låter auth-baserad kontroll).
+-- OBS: Supabase kan inte läsa andra tabeller direkt i policy utan en funktion.
+-- En enkel lösning är att skapa en SECURITY DEFINER funktion is_admin() och använda den.
+
+-- Exempel (anpassa efter din setup):
+create or replace function public.is_admin()
+returns boolean
+language sql
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1 from public.profiles
+    where id = auth.uid() and role = 'admin'
+  );
+$$;
+
+create policy "admin can read invites"
+on public.invites for select
+to authenticated
+using (public.is_admin());
+
+create policy "admin can write invites"
+on public.invites for insert
+to authenticated
+with check (public.is_admin());
+
+create policy "admin can update invites"
+on public.invites for update
+to authenticated
+using (public.is_admin())
+with check (public.is_admin());
+
+==========================
+VIKTIGT
+==========================
+1) profiles-tabellen måste ha kolumner: id (uuid), role (text), email (text valfri).
+2) Auth.ensureProfileRow() försöker skriva email. Om kolumnen saknas faller den tillbaka.
+3) Vill du göra peter_hasselberg@hotmail.com till admin:
+   - Logga in med den e‑posten (så att profilen skapas), eller skapa invite först när du är admin.
+   - Alternativt: sätt role='admin' för den användarens id direkt i Supabase Table Editor.
+-->
+
+
+<script>
+setTimeout(function(){
+  try{
+    var active=document.querySelector(".view.active");
+    if(!active && window.UI && UI.showView){
+      UI.showView("homeView");
+      try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+    }
+  }catch(e){}
+},50);
+
+setTimeout(function(){
+  try{
+    var active=document.querySelector(".view.active");
+    if(!active && window.UI && UI.showView){
+      UI.showView("homeView");
+      try{ UI.renderPoolList && UI.renderPoolList(); }catch(e){}
+    }
+  }catch(e){}
+},300);
+</script>
 
 </body>
 </html>
