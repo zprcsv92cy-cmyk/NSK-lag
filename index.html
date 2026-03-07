@@ -947,9 +947,110 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
 
 
 
-/* ===== V54 STABIL CORE ===== */
-#runView .btnrow button{ min-height:56px; }
+/* ===== V46 COACH SCREEN ===== */
+#coachView{
+  display:none;
+  min-height:100vh;
+  padding:12px 12px 120px;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98);
+}
+#coachView.active{ display:block; }
+body.coach-screen-active .nsk-top,
+body.coach-screen-active #homeView,
+body.coach-screen-active #editView,
+body.coach-screen-active #runView,
+body.coach-screen-active #adminView,
+body.coach-screen-active #loginView{
+  display:none !important;
+}
+body.coach-screen-active #coachView{
+  display:block !important;
+}
+.coachScreenWrap{
+  max-width:980px;
+  margin:0 auto;
+}
+.coachScreenCard{
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:24px;
+  padding:18px 16px;
+  background:rgba(255,255,255,.05);
+  box-shadow:0 14px 34px rgba(0,0,0,.35);
+  margin-bottom:14px;
+}
+.coachScreenTitle{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:1px;
+  text-transform:uppercase;
+  opacity:.95;
+}
+.coachScreenMatch{
+  font-size:20px;
+  font-weight:900;
+  margin-top:6px;
+}
+.coachScreenMain{
+  font-size:52px;
+  line-height:1.04;
+  font-weight:950;
+  margin-top:14px;
+}
+.coachScreenSub{
+  font-size:18px;
+  opacity:.9;
+  margin-top:8px;
+}
+.coachScreenMeta{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.coachScreenMeta .pill{
+  padding:10px 14px;
+  font-size:16px;
+  font-weight:900;
+}
+.coachScreenBtns{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
+.coachScreenBtns button{
+  flex:1 1 220px;
+  min-height:68px;
+  font-size:24px;
+  border-radius:22px;
+}
+.coachScreenNext{
+  animation:nskBlink 1s infinite;
+}
+@media (max-width:600px){
+  #coachView{ padding:10px 10px 110px; }
+  .coachScreenMain{ font-size:40px; }
+  .coachScreenBtns button{ min-height:64px; font-size:22px; }
+}
 
+
+/* ===== V49 CLEAN RUN HEADER ===== */
+#runHeaderCard .btnrow button{
+  min-height:56px;
+}
+#runHeaderCard .btnrow button:not(.ghost){
+  box-shadow:
+    0 10px 18px rgba(0,0,0,.30),
+    0 0 0 1px rgba(0,0,0,.35),
+    0 0 18px rgba(177,18,38,.25);
+}
+
+
+/* ===== V55 NO SPLIT SCREEN ===== */
+#runNowBar{display:none !important;}
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -1014,102 +1115,13 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
         <div id="editSub" class="small"></div>
       </div>
       <div class="btnrow">
-        <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
-        <button class="ghost" type="button" onclick="showRun()">Poolspel-läge</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- team hidden select -->
-  <select id="teamSelect" style="display:none">
-    <option value="1">1</option><option value="2">2</option><option value="3">3</option>
-  </select>
-
-  <div class="card no-print">
-    <div class="row">
-
-      <div><label>Lag</label>
-        <div class="btnrow">
-          <button class="ghost" type="button" onclick="switchTeam('1')" id="tbtn1">Lag 1</button>
-          <button class="ghost" type="button" onclick="switchTeam('2')" id="tbtn2">Lag 2</button>
-          <button class="ghost" type="button" onclick="switchTeam('3')" id="tbtn3">Lag 3</button>
-        </div>
-      </div>
-      <div><label>Antal matcher</label><select id="matchCount"></select></div>
-      <div><label>Match</label><select id="matchNo"></select></div>
-      <div><label>Datum</label><input id="matchDate" type="date"></div>
-      <div><label>Starttid</label><input id="matchTime" type="time"></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Motståndare</label><input id="opponent" placeholder="Skriv motståndare"></div>
-      <div><label>Plan</label><select id="arena"></select></div>
-    </div>
-    <div class="row" style="margin-top:10px;">
-      <div><label>Antal i laget</label><select id="teamSize"></select></div>
-      <div><label>Antal på plan</label><select id="onCourt"></select></div>
-      <div><label>Perioder per match</label><select id="periodsCount"></select></div>
-      <div><label>Periodtid (min)</label><select id="periodMin"></select></div>
-      <div><label>Bytestid (sek)</label><select id="shiftSec"></select></div>
-    </div>
-    <div class="small" style="margin-top:10px;">
-      Allt sparas automatiskt per poolspel + lag + match.
-      <span id="saveState" class="pill" style="margin-left:8px;">Redo</span>
-    </div>
-  </div>
-
-  <div class="card no-print">
-    <b>Spelare (denna match)</b>
-    <div id="playersContainer" class="row" style="margin-top:10px;"></div>
-    <div class="hint">Spelare 1 är bäst, spelare 2 näst bäst osv (används i bytestipsen).</div>
-
-    <div class="row" style="margin-top:10px;">
-      <div>
-        <label>Målvakt</label>
-        <select id="goalie"></select>
-      </div>
-      <div>
-        <label>Tränare (samma för alla matcher i laget)</label>
-        <select id="coach" multiple></select>
-        <div class="hint">Tips: Markera flera genom att trycka flera gånger (mobil) / Ctrl/⌘ (dator).</div>
-      </div>
-    </div>
-
-    <div id="msg" class="small" style="margin-top:10px;"></div>
-
-    <div class="btnrow" style="margin-top:12px;">
-      <button type="button" onclick="renderEditOutput()">Skapa matchblad</button>
-      <button class="ghost" type="button" onclick="exportPDF()">Dela PDF</button>
-      <button class="ghost" type="button" onclick="clearTeamMatch()">Rensa (lag+match)</button>
-    </div>
-
-    <div id="exportHelp" class="small" style="margin-top:8px;display:none;"></div>
-  </div>
-
-  <!-- Detta är det som ska synas i PDF -->
-  <div class="card print-card" id="editOutput">
-    <b>Matchblad</b>
-    <div class="small">Fyll i och tryck “Skapa matchblad”.</div>
-  </div>
-</div>
-
-<!-- RUN VIEW -->
-<div id="runView" class="view no-print">
-  <div id="runNowBar" class="runNowBar" style="display:none;"></div>
-  <div class="card" id="runHeaderCard">
-    <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
-      <div>
-        <b>Poolspel-läge</b>
-        <div id="runSub" class="small"></div>
-      </div>
-      <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
-        <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
-        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena Mode</button>
+        <button type="button" onclick="openCoachPage()">Coachskärm</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
 </div>
-    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
+    <div class="small" style="margin-top:8px;">Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>Match nr, lag, start, motståndare, plan, tränare, målvakt + bytesschema med avbockning.</div>
   </div>
 
   <div class="card" id="runOutput">
@@ -1301,6 +1313,17 @@ body.coach-mode.coach-show-table #runOutput{ display:block !important; }
 
     <div class="small" style="margin-top:12px;opacity:.85;">
       Roller: <b>admin</b> (allt + behörigheter), <b>coach_full</b> (allt utom behörigheter), <b>coach_run</b> (endast poolspelsläge).
+    </div>
+  </div>
+</div>
+
+
+<!-- COACH VIEW -->
+<div id="coachView" class="view no-print">
+  <div class="coachScreenWrap">
+    <div id="coachScreenContent" class="coachScreenCard">
+      <div class="coachScreenTitle">Coachskärm</div>
+      <div class="coachScreenSub">Ingen data ännu.</div>
     </div>
   </div>
 </div>
@@ -1811,6 +1834,22 @@ function shortName(full){
   return parts[0]+" "+(parts[parts.length-1][0]||"").toUpperCase();
 }
 
+
+
+function ensureTeamSelectExists(){
+  try{
+    var el=document.getElementById("teamSelect");
+    if(el) return el;
+    var sel=document.createElement("select");
+    sel.id="teamSelect";
+    sel.style.display="none";
+    sel.innerHTML='<option value="1">1</option><option value="2">2</option><option value="3">3</option>';
+    document.body.appendChild(sel);
+    sel.value=getSelectedTeamSafe();
+    return sel;
+  }catch(e){ return null; }
+}
+
 function getSelectedTeamSafe(){
   try{
     var el=document.getElementById("teamSelect");
@@ -1823,42 +1862,6 @@ function getSelectedTeamSafe(){
     return String(localStorage.getItem("nsk_current_team")||"1");
   }catch(e){}
   return "1";
-}
-
-function getValueSafe(id, fallback){
-  try{
-    var el=document.getElementById(id);
-    if(!el) return fallback;
-    return (el.value!=null && el.value!=="") ? el.value : fallback;
-  }catch(e){ return fallback; }
-}
-
-function setValueSafe(id, value){
-  try{
-    var el=document.getElementById(id);
-    if(el) el.value = value;
-  }catch(e){}
-}
-
-function setHtmlSafe(id, html){
-  try{
-    var el=document.getElementById(id);
-    if(el) el.innerHTML = html;
-  }catch(e){}
-}
-
-function ensureTeamSelectExists(){
-  try{
-    var el=document.getElementById("teamSelect");
-    if(el) return el;
-    var sel=document.createElement("select");
-    sel.id="teamSelect";
-    sel.style.display="none";
-    sel.innerHTML='<option value="1">1</option><option value="2">2</option><option value="3">3</option>';
-    document.body.appendChild(sel);
-    sel.value = getSelectedTeamSafe();
-    return sel;
-  }catch(e){ return null; }
 }
 
 // ---------- Storage ----------
@@ -2304,8 +2307,9 @@ const UI = {
     const id=Storage.currentPoolId();
     const pools=Storage.loadPools();
     const p=pools.find(x=>x&&x.id===id);
-    const team=document.getElementById("teamSelect").value||"1";
-    document.getElementById("runSub").textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
+    const team=getSelectedTeamSafe();
+    var runSubEl=document.getElementById("runSub"); if(!runSubEl) return;
+    runSubEl.textContent = p ? `${p.date||"—"} • ${p.place||"—"} • Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}` : `Lag ${team}${App.state.readOnly ? " • Arkiv" : ""}`;
   }
 };
 
@@ -2542,8 +2546,7 @@ const Actions = {
     }catch(e){}
     try{
       setTimeout(function(){
-        try{ updateRunProUI(); }catch(e){}
-        try{ syncCoachModeFromRunContent(); }catch(e){}
+              try{ syncCoachModeFromRunContent(); }catch(e){}
         try{ if(document.body.classList.contains("coach-mode")) updateRunProUI(); }catch(e){}
       }, 80);
     }catch(e){}
@@ -2603,14 +2606,13 @@ function editCoach(i){const {players,coaches}=loadRegister(); const cur=coaches[
 
 // ---------- per pool + team coaches ----------
 function teamCoachKey(teamOverride=null){
-  const team = ((teamOverride)!=null ? (teamOverride) : getSelectedTeamSafe());
+  const team = ((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value || "1");
   return `${Storage.poolPrefix()}team_coaches_team_${team}`;
 }
 function loadTeamCoaches(){const raw=localStorage.getItem(teamCoachKey()); const arr=raw?safeParseJSON(raw,[]):[]; return Array.isArray(arr)?arr:[];}
 function saveTeamCoaches(vals){localStorage.setItem(teamCoachKey(), JSON.stringify(uniq(vals)));}
 function applyTeamCoachesToUI(){
   const coachSel=document.getElementById("coach");
-  if(!coachSel) return;
   const chosen=new Set(loadTeamCoaches().map(x=>String(x).toLowerCase()));
   for(const opt of coachSel.options){opt.selected=chosen.has(String(opt.value).toLowerCase());}
 }
@@ -2623,7 +2625,12 @@ function fillMatchCountDropdown(){
   const sel=document.getElementById("matchCount");
   if(!sel) return;
   sel.innerHTML="";
-  for(let i=1;i<=30;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); sel.appendChild(o);}
+  for(let i=1;i<=30;i++){
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent=String(i);
+    sel.appendChild(o);
+  }
 }
 function applyMatchCount(){
   const count=loadMatchCount();
@@ -2633,14 +2640,19 @@ function applyMatchCount(){
   if(!matchNoSel) return;
   const cur=parseInt(matchNoSel.value||"1",10);
   matchNoSel.innerHTML="";
-  for(let i=1;i<=count;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=`Match ${i}`; matchNoSel.appendChild(o);}
+  for(let i=1;i<=count;i++){
+    const o=document.createElement("option");
+    o.value=String(i);
+    o.textContent=`Match ${i}`;
+    matchNoSel.appendChild(o);
+  }
   matchNoSel.value=String(Math.min(Math.max(cur||1,1),count));
 }
 
 // ---------- state per pool+team+match ----------
 function stateKey(teamOverride=null, matchOverride=null){
-  const team=((teamOverride)!=null ? (teamOverride) : getSelectedTeamSafe());
-  const matchNo=((matchOverride)!=null ? (matchOverride) : (getValueSafe("matchNo","1")));
+  const team=((teamOverride)!=null ? (teamOverride) : ((document.getElementById("teamSelect"))).value||"1");
+  const matchNo=((matchOverride)!=null ? (matchOverride) : ((document.getElementById("matchNo"))).value||"1");
   return `${Storage.poolPrefix()}state_team_${team}_match_${matchNo}`;
 }
 function defaultsState(){return {matchDate:"",matchTime:"",opponent:"",arena:"1",teamSize:"10",onCourt:"3",periodsCount:"1",periodMin:"15",shiftSec:"90",players:[],goalie:"",inheritedFromMatch1:true};}
@@ -2650,7 +2662,7 @@ function loadStateFor(teamNo,matchNo){
   return Object.assign(defaultsState(), st||{});
 }
 function getFormState(){
-  const teamSize=getValueSafe("teamSize","10");
+  const teamSize=document.getElementById("teamSize").value||"10";
   const players=[];
   for(let i=1;i<=parseInt(teamSize,10);i++){
     const sel=document.getElementById("p"+i);
@@ -2659,36 +2671,36 @@ function getFormState(){
   const raw=localStorage.getItem(stateKey());
   const prev=raw?safeParseJSON(raw,{}):{};
   return {
-    matchDate:getValueSafe("matchDate",""),
-    matchTime:getValueSafe("matchTime",""),
-    opponent:getValueSafe("opponent",""),
-    arena:getValueSafe("arena","1"),
+    matchDate:document.getElementById("matchDate").value||"",
+    matchTime:document.getElementById("matchTime").value||"",
+    opponent:document.getElementById("opponent").value||"",
+    arena:document.getElementById("arena").value||"1",
     teamSize:teamSize,
-    onCourt:getValueSafe("onCourt","3"),
-    periodsCount:getValueSafe("periodsCount","1"),
-    periodMin:getValueSafe("periodMin","15"),
-    shiftSec:getValueSafe("shiftSec","90"),
+    onCourt:document.getElementById("onCourt").value||"3",
+    periodsCount:document.getElementById("periodsCount").value||"1",
+    periodMin:document.getElementById("periodMin").value||"15",
+    shiftSec:document.getElementById("shiftSec").value||"90",
     players,
-    goalie:getValueSafe("goalie",""),
+    goalie:document.getElementById("goalie").value||"",
     inheritedFromMatch1: (typeof prev.inheritedFromMatch1==="boolean")?prev.inheritedFromMatch1:true
   };
 }
 function setFormState(s){
   const d=Object.assign(defaultsState(), s||{});
-  setValueSafe("matchDate", d.matchDate||"");
-  setValueSafe("matchTime", d.matchTime||"");
-  setValueSafe("opponent", d.opponent||"");
-  setValueSafe("arena", d.arena||"1");
-  setValueSafe("teamSize", d.teamSize||"10");
-  setValueSafe("onCourt", d.onCourt||"3");
-  setValueSafe("periodsCount", d.periodsCount||"1");
-  setValueSafe("periodMin", d.periodMin||"15");
-  setValueSafe("shiftSec", d.shiftSec||"90");
+  document.getElementById("matchDate").value=d.matchDate||"";
+  document.getElementById("matchTime").value=d.matchTime||"";
+  document.getElementById("opponent").value=d.opponent||"";
+  document.getElementById("arena").value=d.arena||"1";
+  document.getElementById("teamSize").value=d.teamSize||"10";
+  document.getElementById("onCourt").value=d.onCourt||"3";
+  document.getElementById("periodsCount").value=d.periodsCount||"1";
+  document.getElementById("periodMin").value=d.periodMin||"15";
+  document.getElementById("shiftSec").value=d.shiftSec||"90";
   renderPlayerSelectors(parseInt(d.teamSize,10)||10, Array.isArray(d.players)?d.players:[]);
-  setValueSafe("goalie", d.goalie||"");
+  document.getElementById("goalie").value=d.goalie||"";
 }
 function ensureInheritanceOnLoad(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)==="1") return;
   const key=stateKey();
@@ -2724,7 +2736,7 @@ function setManualOverrideForCurrentMatch(){
   localStorage.setItem(stateKey(), JSON.stringify(Object.assign(defaultsState(), st)));
 }
 function propagateMatch1ToOtherMatches(){
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchNo=document.getElementById("matchNo").value||"1";
   if(String(matchNo)!=="1") return;
   const count=loadMatchCount();
@@ -2756,7 +2768,7 @@ function loadState(){
   ensureInheritanceOnLoad();
   const raw=localStorage.getItem(stateKey());
   setFormState(raw?safeParseJSON(raw,{}):{});
-  setHtmlSafe("msg","");
+  document.getElementById("msg").innerHTML="";
 }
 function clearTeamMatch(){
   localStorage.removeItem(stateKey());
@@ -2781,13 +2793,11 @@ const row=document.getElementById(`shiftRow_${teamNo}_${matchNo}_${idx}`);
 
 // ---------- selectors ----------
 function fillSelect(el, items, placeholder="Välj..."){
-  if(!el) return;
   el.innerHTML="";
   const o0=document.createElement("option"); o0.value=""; o0.textContent=placeholder; el.appendChild(o0);
   for(const name of items){const o=document.createElement("option"); o.value=name; o.textContent=name; el.appendChild(o);}
 }
 function fillMultiSelect(el, items){
-  if(!el) return;
   el.innerHTML="";
   for(const name of items){const o=document.createElement("option"); o.value=name; o.textContent=name; el.appendChild(o);}
 }
@@ -2814,12 +2824,14 @@ function refreshAllDropdownsAndPlayers(){
   const {players,coaches}=loadRegister();
   const g=document.getElementById("goalie");
   const cur=g ? (g.value||"") : "";
-  fillSelect(g, players, "Välj...");
-  if(g) g.value=cur;
+  if(g){
+    fillSelect(g, players, "Välj...");
+    g.value=cur;
+  }
   const c=document.getElementById("coach");
-  fillMultiSelect(c, coaches);
-  applyTeamCoachesToUI();
-  let st=defaultsState();
+  if(c) fillMultiSelect(c, coaches);
+  try{ applyTeamCoachesToUI(); }catch(e){}
+  let st = defaultsState();
   try{ st=getFormState(); }catch(e){}
   renderPlayerSelectors(parseInt(st.teamSize,10)||10, st.players||[]);
 }
@@ -2954,7 +2966,7 @@ function renderEditOutput(){
   const msg=document.getElementById("msg");
   msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
 
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
@@ -3039,7 +3051,7 @@ function renderRunFallback(title, msg){
 function renderRunAll(){
   if(!Storage.currentPoolId()){ renderRunFallback("Inget aktivt poolspel", "Välj ett poolspel först."); return; }
   UI.updateRunHeader();
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   const globalCounts={};
   let html="";
@@ -3090,7 +3102,7 @@ document.getElementById("runOutput").innerHTML = html || "<div class='card'><b>P
 
 function allShiftsDoneForCurrentTeam(){
   if(!Storage.currentPoolId()) return false;
-  const teamNo=document.getElementById("teamSelect").value||"1";
+  const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
   if(!matchCount || matchCount<1) return false;
 
@@ -3160,7 +3172,7 @@ function finishPool(){
     if(!ok){ unlock(); return; }
 
     var id = Storage.currentPoolId();
-    var team = document.getElementById("teamSelect").value || "1";
+    var team = getSelectedTeamSafe();
     if(!id || !team){ unlock(); return; }
 
     if(!allShiftsDoneForCurrentTeam()){
@@ -3292,7 +3304,7 @@ async function switchTeam(team){
     }
   }catch(e){}
 
-  document.getElementById("teamSelect").value=String(team||"1");
+  var __tsel=document.getElementById("teamSelect"); if(__tsel) __tsel.value=String(team||"1");
   setActiveTeamButtons(team);
   onTeamChanged();
 }
@@ -3307,36 +3319,18 @@ function onTeamChanged(){
 
 // ---------- init dropdowns ----------
 function initSettingsDropdowns(){
-  const arena=document.getElementById("arena");
-  if(arena){
-    arena.innerHTML="";
-    for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
-  }
-  const teamSize=document.getElementById("teamSize");
-  if(teamSize){
-    teamSize.innerHTML="";
-    for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
-  }
-  const onCourt=document.getElementById("onCourt");
-  if(onCourt){
-    onCourt.innerHTML="";
-    [3,4,5].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); onCourt.appendChild(o);});
-  }
-  const periods=document.getElementById("periodsCount");
-  if(periods){
-    periods.innerHTML="";
-    [1,2,3].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); periods.appendChild(o);});
-  }
-  const period=document.getElementById("periodMin");
-  if(period){
-    period.innerHTML="";
-    for(let m=8;m<=20;m++){const o=document.createElement("option"); o.value=String(m); o.textContent=String(m); period.appendChild(o);}
-  }
-  const shift=document.getElementById("shiftSec");
-  if(shift){
-    shift.innerHTML="";
-    for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
-  }
+  const arena=document.getElementById("arena"); arena.innerHTML="";
+  for(let i=1;i<=4;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); arena.appendChild(o);}
+  const teamSize=document.getElementById("teamSize"); teamSize.innerHTML="";
+  for(let i=1;i<=25;i++){const o=document.createElement("option"); o.value=String(i); o.textContent=String(i); teamSize.appendChild(o);}
+  const onCourt=document.getElementById("onCourt"); onCourt.innerHTML="";
+  [3,4,5].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); onCourt.appendChild(o);});
+  const periods=document.getElementById("periodsCount"); periods.innerHTML="";
+  [1,2,3].forEach(n=>{const o=document.createElement("option"); o.value=String(n); o.textContent=String(n); periods.appendChild(o);});
+  const period=document.getElementById("periodMin"); period.innerHTML="";
+  for(let m=8;m<=20;m++){const o=document.createElement("option"); o.value=String(m); o.textContent=String(m); period.appendChild(o);}
+  const shift=document.getElementById("shiftSec"); shift.innerHTML="";
+  for(let s=30;s<=180;s+=5){const o=document.createElement("option"); o.value=String(s); o.textContent=String(s); shift.appendChild(o);}
 }
 async function initEditForCurrentPool(){
   if(!(await gateEditIfTeamCompleted())) return;
@@ -3346,7 +3340,7 @@ async function initEditForCurrentPool(){
   applyTeamCoachesToUI();
   loadState();
   renderEditOutput();
-  setActiveTeamButtons(document.getElementById("teamSelect").value||"1");
+  setActiveTeamButtons(getSelectedTeamSafe());
 }
 
 // ---------- PDF ----------
@@ -3466,7 +3460,7 @@ function wireImport(){
 })();
 
 // ---------- public wrappers (onclick-kompatibelt) ----------
-function goHome(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.goHome(); }
+function goHome(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.goHome(); }
 function openNewPool(){
   // AUTH_GUARD_openNewPool
   if(window.Auth && !(Auth.canFull && Auth.canFull())){
@@ -3501,9 +3495,9 @@ function openPoolEdit(id){
     return;
   }
  Actions.openPoolEdit(id); }
-async function showEdit(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
+async function showEdit(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
     await Actions.showEdit(); }
-function showRun(){ try{ document.body.classList.remove("arena-mode"); }catch(e){} Actions.showRun(); }
+function showRun(){ try{ document.body.classList.remove("arena-mode"); document.body.classList.remove("coach-screen-active"); }catch(e){} Actions.showRun(); }
 
 
 
@@ -3560,16 +3554,29 @@ function init(){
   initSettingsDropdowns();
   wireImport();
 
+  // Admin search filter
   try{
     const s=document.getElementById('adminSearch');
     if(s) s.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} });
   }catch(e){}
+  try{ const as=document.getElementById('adminSearch'); if(as){ as.addEventListener('input', ()=>{ try{ Admin.filter(); }catch(e){} }); } }catch(e){}
 
+  // Admin search live filter
+  try{
+    var s=document.getElementById('adminSearch');
+    if(s){
+      s.addEventListener('input', function(){ try{ Admin.filter(); }catch(e){} });
+    }
+  }catch(e){}
+
+  // Close modals on backdrop click
   ["newPoolModal","registerModal","goalieStatsModal","teamSelectModal"].forEach(id=>{
     const m=document.getElementById(id);
-    if(m) m.addEventListener("click",(e)=>{ if(e.target.id===id) m.style.display="none"; });
+    if(!m) return;
+    m.addEventListener("click",(e)=>{ if(e.target && e.target.id===id) m.style.display="none"; });
   });
 
+  // edit listeners
   ["matchDate","matchTime","opponent","arena","onCourt","periodsCount","periodMin","shiftSec"].forEach(id=>{
     const el=document.getElementById(id);
     if(!el) return;
@@ -3577,30 +3584,32 @@ function init(){
     el.addEventListener("input", ()=>{saveState();});
   });
 
-  const g=document.getElementById("goalie");
-  if(g) g.addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
+  const goalieEl=document.getElementById("goalie");
+  if(goalieEl) goalieEl.addEventListener("change", ()=>{setManualOverrideForCurrentMatch(); saveState(); renderEditOutput(); renderRunAll();});
 
-  const ts=document.getElementById("teamSize");
-  if(ts) ts.addEventListener("change", ()=>{
-    const newN=parseInt(getValueSafe("teamSize","10"),10);
+  const teamSizeEl=document.getElementById("teamSize");
+  if(teamSizeEl) teamSizeEl.addEventListener("change", ()=>{
+    const newN=parseInt(document.getElementById("teamSize").value||"10",10);
     const st=getFormState(); st.teamSize=String(newN);
     renderPlayerSelectors(newN, st.players||[]);
     setManualOverrideForCurrentMatch();
     saveState(); renderEditOutput(); renderRunAll();
   });
 
-  const coach=document.getElementById("coach");
-  if(coach) coach.addEventListener("change", ()=>{saveTeamCoaches(selectedValues(coach)); saveState(); renderEditOutput(); renderRunAll();});
+  const coachEl=document.getElementById("coach");
+  if(coachEl) coachEl.addEventListener("change", ()=>{saveTeamCoaches(selectedValues(document.getElementById("coach"))); saveState(); renderEditOutput(); renderRunAll();});
 
-  const mc=document.getElementById("matchCount");
-  if(mc) mc.addEventListener("change", ()=>{
-    const n=parseInt(getValueSafe("matchCount","4"),10);
+  const matchCountEl=document.getElementById("matchCount");
+  if(matchCountEl) matchCountEl.addEventListener("change", ()=>{
+    const n=parseInt(document.getElementById("matchCount").value||"4",10);
     saveMatchCount(n); applyMatchCount(); loadState(); renderEditOutput(); renderRunAll();
   });
 
-  const mn=document.getElementById("matchNo");
-  if(mn) mn.addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
+  const matchNoEl=document.getElementById("matchNo");
+  if(matchNoEl) matchNoEl.addEventListener("change", ()=>{loadState(); renderEditOutput(); renderRunAll();});
 
+  // Start
+// Start
   if(!restoreLastRouteOnLoad()) Actions.goHome();
 }
 
@@ -3771,7 +3780,7 @@ window.addEventListener("beforeunload", function(){
 function markTeamActiveIfNeeded(){
   try{
     var id=Storage.currentPoolId();
-    var team=document.getElementById("teamSelect").value || "1";
+    var team=getSelectedTeamSafe();
     if(!id || !team) return;
     if(!isTeamCompleted(id, team)) return;
     if(!allShiftsDoneForCurrentTeam()){
@@ -3918,8 +3927,7 @@ function bockCurrentShiftFromBanner(){
     chk.click();
 
     // Refresh banner quickly (renderRunAll is called by onchange on run rows, but be safe)
-    try{ updateRunProUI(); }catch(e){}
-  }catch(e){}
+    }catch(e){}
 }
 
 
@@ -3929,8 +3937,7 @@ function toggleCoachShowTable(){
     if(!document.body.classList.contains('coach-mode')) return;
     document.body.classList.toggle('coach-show-table');
     // Refresh banner text quickly
-    try{ updateRunProUI(); }catch(e){}
-  }catch(e){}
+    }catch(e){}
 }
 
 function isElementInViewport(el){
@@ -4111,7 +4118,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.54");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.55");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4144,7 +4151,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.54</div>
+<div class="app-version">V 1.9.55</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
