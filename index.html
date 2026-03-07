@@ -2633,8 +2633,11 @@ function loadTeamCoaches(){const raw=localStorage.getItem(teamCoachKey()); const
 function saveTeamCoaches(vals){localStorage.setItem(teamCoachKey(), JSON.stringify(uniq(vals)));}
 function applyTeamCoachesToUI(){
   const coachSel=document.getElementById("coach");
+  if(!coachSel) return;
   const chosen=new Set(loadTeamCoaches().map(x=>String(x).toLowerCase()));
-  for(const opt of coachSel.options){opt.selected=chosen.has(String(opt.value).toLowerCase());}
+  for(const opt of (coachSel.options||[])){
+    opt.selected=chosen.has(String(opt.value).toLowerCase());
+  }
 }
 
 // ---------- match count per team ----------
@@ -4191,7 +4194,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.56");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.57");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4224,7 +4227,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.56</div>
+<div class="app-version">V 1.9.57</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
