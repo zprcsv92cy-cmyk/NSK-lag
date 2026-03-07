@@ -800,249 +800,13 @@ button:active{ filter:brightness(.98); transform: translateY(1px); }
 #adminView code{ opacity:.85; }
 
 
-/* ===== COACH-LÄGE (V22) ===== */
-body.coach-mode{
-  overflow:hidden;
-}
 
-/* Dölj topp-bannern i coach-läge (endast coach-banner ska synas) */
-body.coach-mode .nsk-top{
-  display:none !important;
-}
-
-/* Dölj all vanlig UI i runView, men låt DOM finnas kvar (för att kunna räkna nästa/pågående) */
-body.coach-mode #runView .card{
-  display:none !important;
-}
-
-/* Fullskärm coach-banner */
-body.coach-mode #runNowBar.runNowBar{
-  display:block !important;
-  position:fixed !important;
-  inset:0 !important;
-  margin:0 !important;
-  border-radius:0 !important;
-  min-height:100vh !important;
-  padding:20px 16px 16px !important;
-  background: rgba(6,7,9,.98) !important;
-  overflow:auto !important;
-}
-
-/* Valfritt: visa schemat (om man vill) */
-body.coach-mode.coach-show-table #runView .card#runOutput{
-  display:block !important;
-  position:fixed;
-  left:0; right:0;
-  top:66vh;
-  bottom:0;
-  overflow:auto;
-  margin:0;
-  border-radius:18px 18px 0 0;
-  background: rgba(10,12,16,.96);
-}
-body.coach-mode.coach-show-table #runView .card#runOutput .print-card{
-  margin:12px 12px 16px;
-}
-
-
-/* Nästa-byte blink/puls */
-@keyframes nskPulse{
-  0%{ transform:scale(1); filter:brightness(1); }
-  50%{ transform:scale(1.02); filter:brightness(1.12); }
-  100%{ transform:scale(1); filter:brightness(1); }
-}
-.runNowBar .pill.nextPulse{ animation: nskPulse 1.1s ease-in-out infinite; }
-
-
-/* ===== COACH MODE V38 ===== */
-body.coach-mode .nsk-top{ display:none !important; }
+/* ===== CLEAN COACH + ARENA ===== */
+body.coach-mode .nsk-top,
 body.coach-mode #homeView,
 body.coach-mode #editView,
 body.coach-mode #adminView,
-body.coach-mode #loginView{ display:none !important; }
-
-body.coach-mode #runView{
-  padding-top:0 !important;
-  padding-bottom:0 !important;
-  min-height:100vh !important;
-  overflow:hidden !important;
-}
-
-body.coach-mode #runView > .card:first-child{
-  margin:0 !important;
-  border:none !important;
-  border-radius:0 !important;
-  padding:0 !important;
-  background:transparent !important;
-  box-shadow:none !important;
-}
-
-body.coach-mode #runView > .card:first-child > div:not(#runNowBar),
-body.coach-mode #runView > .card:first-child > .small{
-  display:none !important;
-}
-
-body.coach-mode #runOutput{
-  position:fixed !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  top:68vh !important;
-  overflow:auto !important;
-  margin:0 !important;
-  border-radius:22px 22px 0 0 !important;
-  border:1px solid rgba(255,255,255,.08) !important;
-  background:rgba(18,20,24,.96) !important;
-  backdrop-filter: blur(10px) !important;
-  -webkit-backdrop-filter: blur(10px) !important;
-  z-index:25 !important;
-}
-
-body.coach-mode #runOutput .print-card{
-  margin:12px !important;
-}
-
-body.coach-mode #runNowBar{
-  position:fixed !important;
-  inset:0 0 32vh 0 !important;
-  z-index:40 !important;
-  margin:0 !important;
-  min-height:auto !important;
-  padding:18px 16px 14px !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:center !important;
-  background:
-    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.24), transparent 55%),
-    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.16), transparent 55%),
-    rgba(6,7,9,.98) !important;
-}
-
-body.coach-mode #runNowBar .runNowGrid{
-  gap:14px !important;
-}
-
-body.coach-mode #runNowBar .runNowCol{
-  background:rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.12) !important;
-  border-radius:22px !important;
-  padding:16px 14px !important;
-}
-
-body.coach-mode #runNowBar .runNowTitle{
-  font-size:18px !important;
-}
-
-body.coach-mode #runNowBar .runNowMain{
-  font-size:42px !important;
-  line-height:1.04 !important;
-}
-
-body.coach-mode #runNowBar .runNowHint,
-body.coach-mode #runNowBar .small{
-  font-size:15px !important;
-}
-
-body.coach-mode #runNowBar .runNowActions{
-  margin-top:14px !important;
-}
-
-body.coach-mode #runNowBar .runNowActions button{
-  min-height:64px !important;
-  font-size:22px !important;
-  border-radius:20px !important;
-}
-
-@media (max-width: 600px){
-  body.coach-mode #runNowBar .runNowMain{
-    font-size:36px !important;
-  }
-}
-
-
-/* ===== COACH PRO V39 ===== */
-body.coach-mode #runNowBar .runNowMain{
-  font-size:56px !important;
-  font-weight:950 !important;
-  letter-spacing:.2px !important;
-}
-body.coach-mode #runNowBar .runNowTitle{
-  font-size:20px !important;
-  letter-spacing:1px !important;
-}
-body.coach-mode #runNowBar .runNowHint,
-body.coach-mode #runNowBar .small{
-  font-size:17px !important;
-}
-body.coach-mode #runNowBar .runNowActions button{
-  min-height:68px !important;
-  font-size:24px !important;
-}
-body.coach-mode #runNowBar .runNowCol{
-  border-radius:24px !important;
-  box-shadow:0 12px 28px rgba(0,0,0,.35) !important;
-}
-body.coach-mode #runNowBar .runNowGrid{
-  align-items:stretch !important;
-}
-body.coach-mode #runNowBar .nextBlink{
-  animation:nskBlink 1s infinite !important;
-}
-body.coach-mode #runOutput{
-  top:70vh !important;
-}
-@media (max-width:600px){
-  body.coach-mode #runNowBar .runNowMain{
-    font-size:46px !important;
-  }
-}
-
-
-/* ===== STABIL PRO V40 ===== */
-body.coach-mode #bootDebug{ display:none !important; }
-body.coach-mode #runNowBar .runNowMain{
-  font-size:60px !important;
-  line-height:1.02 !important;
-}
-body.coach-mode #runNowBar .runNowTitle{
-  font-size:22px !important;
-  font-weight:950 !important;
-}
-body.coach-mode #runNowBar .runNowCol{
-  min-height:220px !important;
-}
-body.coach-mode #runNowBar .runNowHint{
-  font-size:18px !important;
-}
-@media (max-width:600px){
-  body.coach-mode #runNowBar .runNowMain{
-    font-size:44px !important;
-  }
-}
-
-
-/* ===== V41 ULTRA STABLE ===== */
-body.coach-mode #runNowBar{
-  inset:0 0 30vh 0 !important;
-}
-body.coach-mode #runNowBar .runNowMain{
-  font-size:62px !important;
-  font-weight:950 !important;
-}
-body.coach-mode #runOutput{
-  top:72vh !important;
-}
-@media (max-width:600px){
-  body.coach-mode #runNowBar .runNowMain{
-    font-size:46px !important;
-  }
-}
-
-
-/* ===== V43 COACH ARENA MODE ===== */
-body.arena-mode{
-  overflow:hidden !important;
-}
+body.coach-mode #loginView,
 body.arena-mode .nsk-top,
 body.arena-mode #homeView,
 body.arena-mode #editView,
@@ -1050,127 +814,137 @@ body.arena-mode #adminView,
 body.arena-mode #loginView{
   display:none !important;
 }
+
+body.coach-mode,
+body.arena-mode{
+  overflow:hidden !important;
+}
+
+body.coach-mode #runView,
 body.arena-mode #runView{
   display:block !important;
   position:fixed !important;
   inset:0 !important;
-  padding:0 !important;
   margin:0 !important;
+  padding:0 !important;
   min-height:100vh !important;
   background:
-    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.24), transparent 55%),
-    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.16), transparent 55%),
-    rgba(6,7,9,.985) !important;
-  overflow:hidden !important;
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98) !important;
 }
-body.arena-mode #runView > .card:first-child{
-  display:block !important;
-  margin:0 !important;
-  padding:0 !important;
-  background:transparent !important;
-  border:none !important;
-  box-shadow:none !important;
-}
-body.arena-mode #runView > .card:first-child > div:not(#runNowBar),
-body.arena-mode #runView > .card:first-child > .small{
+
+body.coach-mode #runHeaderCard,
+body.arena-mode #runHeaderCard{
   display:none !important;
 }
+
+body.coach-mode #runNowBar,
 body.arena-mode #runNowBar{
-  position:relative !important;
-  inset:auto !important;
+  display:block !important;
+  position:fixed !important;
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
   margin:0 !important;
-  padding:20px 18px 24px !important;
-  display:flex !important;
-  flex-direction:column !important;
-  justify-content:flex-start !important;
-  z-index:5 !important;
-  min-height:100vh !important;
-  background:transparent !important;
-}
-body.arena-mode #runNowBar .runNowGrid{
-  display:flex !important;
-  flex-direction:column !important;
-  gap:18px !important;
-}
-body.arena-mode #runNowBar .runNowCol{
-  border-radius:26px !important;
-  padding:18px 16px !important;
-  background:rgba(255,255,255,.06) !important;
-  border:1px solid rgba(255,255,255,.12) !important;
-  box-shadow:0 14px 34px rgba(0,0,0,.35) !important;
-}
-body.arena-mode #runNowBar .runNowTitle{
-  font-size:22px !important;
-  font-weight:950 !important;
-  letter-spacing:1px !important;
-}
-body.arena-mode #runNowBar .runNowMain{
-  font-size:54px !important;
-  line-height:1.02 !important;
-  font-weight:950 !important;
-}
-body.arena-mode #runNowBar .runNowHint,
-body.arena-mode #runNowBar .small{
-  font-size:18px !important;
-}
-body.arena-mode #runNowBar .runNowActions{
-  display:flex !important;
-  gap:12px !important;
-  margin-top:14px !important;
-}
-body.arena-mode #runNowBar .runNowActions button{
-  flex:1 1 auto !important;
-  min-height:72px !important;
-  font-size:24px !important;
-  border-radius:22px !important;
-}
-body.arena-mode #runOutput{
-  display:none !important;
-}
-@media (max-width: 600px){
-  body.arena-mode #runNowBar .runNowMain{
-    font-size:42px !important;
-  }
+  z-index:40 !important;
+  padding:16px 16px 14px !important;
+  background:
+    radial-gradient(1200px 700px at 20% -10%, rgba(177,18,38,.22), transparent 55%),
+    radial-gradient(900px 600px at 110% 10%, rgba(177,18,38,.14), transparent 55%),
+    rgba(6,7,9,.98) !important;
+  border-bottom:1px solid rgba(255,255,255,.08) !important;
 }
 
-
-/* ===== V44 ARENA FIX ===== */
-#runNowBar{ z-index:5; }
-#runOutput{ z-index:1; }
-
-body.arena-mode #runView > .card:first-child{
-  position:relative !important;
-  z-index:5 !important;
+body.coach-mode #runNowBar{
+  bottom:34vh !important;
+  overflow:auto !important;
 }
 
-body.arena-mode #runOutput{
+body.arena-mode #runNowBar{
+  bottom:0 !important;
+  overflow:auto !important;
+}
+
+body.coach-mode #runOutput{
   display:block !important;
   position:fixed !important;
   left:0 !important;
   right:0 !important;
   bottom:0 !important;
-  top:58vh !important;
+  top:66vh !important;
   overflow:auto !important;
   margin:0 !important;
   border-radius:22px 22px 0 0 !important;
-  border:1px solid rgba(255,255,255,.08) !important;
   background:rgba(18,20,24,.96) !important;
-  z-index:2 !important;
+  border:1px solid rgba(255,255,255,.08) !important;
+  z-index:20 !important;
 }
 
+body.arena-mode #runOutput{
+  display:none !important;
+}
+
+body.coach-mode #runNowBar .runNowGrid,
 body.arena-mode #runNowBar .runNowGrid{
-  position:relative !important;
-  z-index:6 !important;
+  display:flex !important;
+  flex-direction:column !important;
+  gap:14px !important;
 }
 
-body.arena-mode #runView{
-  overflow:auto !important;
-  -webkit-overflow-scrolling:touch !important;
+body.coach-mode #runNowBar .runNowCol,
+body.arena-mode #runNowBar .runNowCol{
+  background:rgba(255,255,255,.06) !important;
+  border:1px solid rgba(255,255,255,.12) !important;
+  border-radius:24px !important;
+  padding:16px 14px !important;
+  box-shadow:0 12px 28px rgba(0,0,0,.35) !important;
 }
 
-body.arena-mode #runOutput .print-card{
-  margin:12px !important;
+body.coach-mode #runNowBar .runNowTitle,
+body.arena-mode #runNowBar .runNowTitle{
+  font-size:18px !important;
+  font-weight:950 !important;
+  letter-spacing:1px !important;
 }
+
+body.coach-mode #runNowBar .runNowMain{
+  font-size:44px !important;
+  line-height:1.04 !important;
+  font-weight:950 !important;
+}
+
+body.arena-mode #runNowBar .runNowMain{
+  font-size:52px !important;
+  line-height:1.02 !important;
+  font-weight:950 !important;
+}
+
+body.coach-mode #runNowBar .runNowHint,
+body.coach-mode #runNowBar .small,
+body.arena-mode #runNowBar .runNowHint,
+body.arena-mode #runNowBar .small{
+  font-size:16px !important;
+}
+
+body.coach-mode #runNowBar .runNowActions button{
+  min-height:64px !important;
+  font-size:22px !important;
+  border-radius:20px !important;
+}
+body.arena-mode #runNowBar .runNowActions button{
+  min-height:72px !important;
+  font-size:24px !important;
+  border-radius:22px !important;
+}
+
+body.coach-mode.coach-show-table #runOutput{ display:block !important; }
+
+@media (max-width:600px){
+  body.coach-mode #runNowBar .runNowMain{ font-size:36px !important; }
+  body.arena-mode #runNowBar .runNowMain{ font-size:40px !important; }
+}
+
 
 </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -1326,7 +1100,7 @@ body.arena-mode #runOutput .print-card{
       <div class="btnrow">
         <button class="ghost" type="button" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
         <button class="ghost" type="button" onclick="toggleCoachMode()">Coach PRO</button>
-        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena FIX</button>
+        <button class="ghost" type="button" onclick="toggleArenaMode()">Arena Mode</button>
         <button class="ghost" type="button" onclick="showEdit()">Redigera</button>
         <button class="ghost" type="button" onclick="goHome()">Till startsidan</button>
       </div>
@@ -3380,6 +3154,7 @@ function renderRunMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
 
 function setCoachMode(on){
   try{
+    if(on) document.body.classList.remove("arena-mode");
     document.body.classList.toggle("coach-mode", !!on);
     if(!on) document.body.classList.remove("coach-show-table");
   }catch(e){}
@@ -3388,44 +3163,40 @@ function setCoachMode(on){
 function toggleCoachMode(){
   try{
     var next = !document.body.classList.contains("coach-mode");
+    document.body.classList.remove("arena-mode");
     if(next){
-      try{ updateRunProUI(); }catch(e){}
-      var bar=document.getElementById("runNowBar");
-      var ok = !!(bar && (bar.textContent||"").replace(/\s+/g," ").trim());
-      if(ok) setCoachMode(true);
+      updateRunProUI();
+      setCoachMode(true);
     }else{
       setCoachMode(false);
     }
   }catch(e){}
 }
 
-
 function setArenaMode(on){
   try{
-    document.body.classList.toggle("arena-mode", !!on);
     if(on){
       document.body.classList.remove("coach-mode");
       document.body.classList.remove("coach-show-table");
-      try{ updateRunProUI(); }catch(e){}
     }
+    document.body.classList.toggle("arena-mode", !!on);
   }catch(e){}
 }
 
 function toggleArenaMode(){
   try{
     var next = !document.body.classList.contains("arena-mode");
+    document.body.classList.remove("coach-mode");
+    document.body.classList.remove("coach-show-table");
     if(next){
-      try{ updateRunProUI(); }catch(e){}
-      var bar=document.getElementById("runNowBar");
-      var ok = !!(bar && (bar.textContent||"").replace(/\s+/g," ").trim());
-      if(ok) setArenaMode(true);
+      updateRunProUI();
+      setArenaMode(true);
     }else{
       setArenaMode(false);
     }
   }catch(e){}
 }
 
-// ---------- navigation helpers ----------
 function setActiveTeamButtons(team){
   const t=String(team||"1");
   ["1","2","3"].forEach(x=>{
@@ -3966,151 +3737,87 @@ function markTeamActiveIfNeeded(){
 function updateRunProUI(){
   try{
     var runView=document.getElementById("runView");
-    if(!runView) return;
-
     var bar=document.getElementById("runNowBar");
-    if(!bar) return;
+    if(!runView || !bar) return;
 
-    // Collect ALL shift rows across all matches (DOM order)
-    var rows=[].slice.call(runView.querySelectorAll("table tbody tr"));
+    var rows=[].slice.call(runView.querySelectorAll("#runOutput table tbody tr"));
     if(!rows.length){
-      bar.innerHTML = `<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach PRO</div><div class="runNowMain">Välj lag</div><div class="runNowHint">Öppna ett poolspel → Påbörja poolspel → välj lag.</div></div></div>`;
+      bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Schema saknas</div><div class="runNowHint">Redigera poolspelet och välj spelare.</div></div></div>';
       bar.style.display="block";
       return;
     }
 
-    // Find first unchecked row (current) and the next unchecked row after it (next)
     var curRow=null, nextRow=null;
     for(var i=0;i<rows.length;i++){
-      var chk=rows[i].querySelector("input.chk, input[type=checkbox].chk");
-      if(!chk) continue;
-      if(!chk.checked){
-        curRow = rows[i];
-        // next unchecked after cur
-        for(var j=i+1;j<rows.length;j++){
-          var chk2=rows[j].querySelector("input.chk, input[type=checkbox].chk");
-          if(chk2 && !chk2.checked){ nextRow = rows[j]; break; }
-        }
-        break;
+      var chk=rows[i].querySelector("input.chk");
+      if(chk && !chk.checked){ curRow=rows[i]; break; }
+    }
+    if(!curRow) curRow=rows[rows.length-1];
+    if(curRow){
+      for(var j=rows.indexOf(curRow)+1; j<rows.length; j++){
+        var chk2=rows[j].querySelector("input.chk");
+        if(chk2 && !chk2.checked){ nextRow=rows[j]; break; }
       }
     }
 
-    // If everything is checked, show last row as "pågående" and hide "nästa"
-    if(!curRow){
-      curRow = rows[rows.length-1];
-      nextRow = null;
-    }
-
     function rowInfo(r){
-      if(!r) return {no:"—", time:"—", players:"—", chk:null, match:""};
+      if(!r) return {no:"—", time:"—", players:"—", match:"", goalie:""};
       var tds=r.querySelectorAll("td");
-      var chk=r.querySelector("input.chk, input[type=checkbox].chk");
-      var no = (tds[1] && (tds[1].textContent||"").trim()) || "—";
-      var time = (tds[2] && (tds[2].textContent||"").trim()) || "—";
-      var players = (tds[3] && (tds[3].textContent||"").trim()) || (tds[tds.length-1] ? (tds[tds.length-1].textContent||"").trim() : "—") || "—";
-
-      // try derive match header from closest match block
-      var matchTxt="";
-      try{
-        var mb=r.closest(".matchBlock");
-        if(mb){
-          var b=mb.querySelector("b");
-          matchTxt = b ? (b.textContent||"").trim() : "";
-        }
-      }catch(e){}
-      var goalieTxt="";
-      try{
-        var mb2=r.closest(".matchBlock");
-        if(mb2){
-          // In run view the goalie line looks like: "Målvakt <namn>"
-          var pills=[].slice.call(mb2.querySelectorAll("span.pill"));
-          for(var pi=0;pi<pills.length;pi++){
-            var lab=(pills[pi].textContent||"").trim().toLowerCase();
-            if(lab.indexOf("målvakt")!==-1){
-              var parent=pills[pi].parentNode;
-              var full=(parent && parent.textContent)?parent.textContent:"";
-              goalieTxt = full.replace(/.*Målvakt\s*/i,"").trim();
-              break;
-            }
-          }
-        }
-      }catch(e){}
-      return {no:no, time:time, players:players, chk:chk, match:matchTxt, goalie:goalieTxt};
+      var no=((tds[1]&&tds[1].textContent)||"").trim()||"—";
+      var time=((tds[2]&&tds[2].textContent)||"").trim()||"—";
+      var players=((tds[3]&&tds[3].textContent)||"").trim()||"—";
+      var mb=r.closest(".matchBlock");
+      var match="", goalie="";
+      if(mb){
+        var b=mb.querySelector("b");
+        if(b) match=(b.textContent||"").trim();
+        var txt=(mb.textContent||"");
+        var m=txt.match(/Målvakt\s+([^\n]+)/i);
+        if(m) goalie=(m[1]||"").trim();
+      }
+      return {no:no,time:time,players:players,match:match,goalie:goalie};
     }
 
     var cur=rowInfo(curRow);
     var nxt=rowInfo(nextRow);
+    if(curRow && !curRow.id) curRow.id="runCurRow_" + Date.now();
+    if(curRow) bar.dataset.curRowId=curRow.id;
 
-    // Store pointer so banner button can tick the current row
-    try{
-      bar.dataset.curRowId = "";
-      if(curRow){
-        if(!curRow.id){
-          curRow.id = "runCurRow_" + Date.now() + "_" + Math.floor(Math.random()*10000);
-        }
-        bar.dataset.curRowId = curRow.id;
-      }
-    }catch(e){}
+    var readOnly=!!(window.App && App.state && App.state.readOnly);
+    var showTable=document.body.classList.contains("coach-show-table");
 
-    var readOnly = !!(window.App && App.state && App.state.readOnly);
-    var showTable = document.body.classList.contains('coach-show-table');
-
-    function metaLines(obj){
-      var out = "";
-      if(obj && obj.match){
-        out += '<div class="small" style="opacity:.85;margin-top:4px;">' + escapeHtml(obj.match) + '</div>';
-      }
-      if(obj && obj.goalie){
-        out += '<div class="small" style="opacity:.85;margin-top:4px;">Målvakt: ' + escapeHtml(obj.goalie) + '</div>';
-      }
-      return out;
-    }
-
-    var curMetaLines = metaLines(cur);
-    var nxtMetaLines = nextRow ? metaLines(nxt) : '';
-    if(!cur.players || cur.players==='—'){
-      bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach PRO</div><div class="runNowMain">Schema saknas</div><div class="runNowHint">Redigera poolspelet och välj spelare för att få Pågående/Nästa byte.</div><div class="runNowActions"><button type="button" onclick="showEdit()">Redigera</button><button type="button" class="ghost" onclick="goHome()">Till startsidan</button></div></div></div>';
-      bar.style.display='block';
-      return;
-    }
     bar.innerHTML =
       '<div class="runNowGrid">' +
         '<div class="runNowCol">' +
           '<div class="runNowTitle">Pågående byte</div>' +
-          curMetaLines +
-          '<div class="runNowMain">'+ escapeHtml(cur.players) +'</div>' +
-          '<div class="runNowMeta">' +
-            '<span class="pill">#'+ escapeHtml(cur.no) +'</span>' +
-            '<span class="pill">Tid kvar: '+ escapeHtml(cur.time) +'</span>' +
-          '</div>' +
-          curGoalieLine +
+          (cur.match ? '<div class="small" style="opacity:.85;margin-top:4px;">'+escapeHtml(cur.match)+'</div>' : '') +
+          (cur.goalie ? '<div class="small" style="opacity:.85;margin-top:4px;">Målvakt: '+escapeHtml(cur.goalie)+'</div>' : '') +
+          '<div class="runNowMain">'+escapeHtml(cur.players || "—")+'</div>' +
+          '<div class="runNowMeta"><span class="pill">#'+escapeHtml(cur.no)+'</span><span class="pill">Tid kvar: '+escapeHtml(cur.time)+'</span></div>' +
           '<div class="runNowActions">' +
-            (readOnly ? '' : '<button type="button" class="runBockBtn" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
+            (readOnly ? '' : '<button type="button" onclick="bockCurrentShiftFromBanner()">Bocka pågående</button>') +
             '<button type="button" class="ghost" onclick="toggleCoachShowTable()">'+(showTable?'Dölj schema':'Visa schema')+'</button>' +
           '</div>' +
         '</div>' +
         (nextRow ? (
           '<div class="runNowCol">' +
             '<div class="runNowTitle">Nästa byte</div>' +
-            nxtMetaLines +
-            '<div class=\"runNowMain blink\">'+ escapeHtml(nxt.players) +'</div>' +
-            '<div class="runNowMeta">' +
-              '<span class="pill">#'+ escapeHtml(nxt.no) +'</span>' +
-              '<span class="pill">Tid kvar: '+ escapeHtml(nxt.time) +'</span>' +
-            '</div>' +
+            (nxt.match ? '<div class="small" style="opacity:.85;margin-top:4px;">'+escapeHtml(nxt.match)+'</div>' : '') +
+            '<div class="runNowMain blink nextBlink">'+escapeHtml(nxt.players || "—")+'</div>' +
+            '<div class="runNowMeta"><span class="pill">#'+escapeHtml(nxt.no)+'</span><span class="pill">Tid kvar: '+escapeHtml(nxt.time)+'</span></div>' +
           '</div>'
         ) : '') +
       '</div>';
-
     bar.style.display="block";
-
-    // Keep current row in view when you tick from banner (nice on phone)
+  }catch(e){
     try{
-      if(curRow && !isElementInViewport(curRow)){
-        curRow.scrollIntoView({behavior:"smooth", block:"center"});
+      var bar=document.getElementById("runNowBar");
+      if(bar){
+        bar.innerHTML = '<div class="runNowGrid"><div class="runNowCol"><div class="runNowTitle">Coach-läge</div><div class="runNowMain">Fel i coach-bannern</div><div class="runNowHint">'+escapeHtml(e && e.message ? e.message : "okänt fel")+'</div></div></div>';
+        bar.style.display='block';
       }
-    }catch(e){}
-  }catch(e){}
+    }catch(_){}
+  }
 }
 
 // Tick current (pågående) shift from the banner
@@ -4334,7 +4041,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.44");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.45");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4367,7 +4074,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.44</div>
+<div class="app-version">V 1.9.45</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
