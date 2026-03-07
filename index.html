@@ -2705,8 +2705,17 @@ function loadStateFor(teamNo,matchNo){
   return Object.assign(defaultsState(), st||{});
 }
 function getFormState(){
-  const teamSize=document.getElementById("teamSize").value||"10";
-  const players=[];
+  const safeValue = (id, fallback="") => {
+    try{
+      const el = document.getElementById(id);
+      return el ? (el.value || fallback) : fallback;
+    }catch(e){
+      return fallback;
+    }
+  };
+
+  const teamSize = safeValue("teamSize", "10");
+  const players = [];
   for(let i=1;i<=parseInt(teamSize,10);i++){
     const sel=document.getElementById("p"+i);
     players.push(sel?(sel.value||""):"");
@@ -2714,33 +2723,46 @@ function getFormState(){
   const raw=localStorage.getItem(stateKey());
   const prev=raw?safeParseJSON(raw,{}):{};
   return {
-    matchDate:document.getElementById("matchDate").value||"",
-    matchTime:document.getElementById("matchTime").value||"",
-    opponent:document.getElementById("opponent").value||"",
-    arena:document.getElementById("arena").value||"1",
+    matchDate:safeValue("matchDate",""),
+    matchTime:safeValue("matchTime",""),
+    opponent:safeValue("opponent",""),
+    arena:safeValue("arena","1"),
     teamSize:teamSize,
-    onCourt:document.getElementById("onCourt").value||"3",
-    periodsCount:document.getElementById("periodsCount").value||"1",
-    periodMin:document.getElementById("periodMin").value||"15",
-    shiftSec:document.getElementById("shiftSec").value||"90",
+    onCourt:safeValue("onCourt","3"),
+    periodsCount:safeValue("periodsCount","1"),
+    periodMin:safeValue("periodMin","15"),
+    shiftSec:safeValue("shiftSec","90"),
     players,
-    goalie:document.getElementById("goalie").value||"",
+    goalie:safeValue("goalie",""),
     inheritedFromMatch1: (typeof prev.inheritedFromMatch1==="boolean")?prev.inheritedFromMatch1:true
   };
 }
 function setFormState(s){
-  const d=Object.assign(defaultsState(), s||{});
-  document.getElementById("matchDate").value=d.matchDate||"";
-  document.getElementById("matchTime").value=d.matchTime||"";
-  document.getElementById("opponent").value=d.opponent||"";
-  document.getElementById("arena").value=d.arena||"1";
-  document.getElementById("teamSize").value=d.teamSize||"10";
-  document.getElementById("onCourt").value=d.onCourt||"3";
-  document.getElementById("periodsCount").value=d.periodsCount||"1";
-  document.getElementById("periodMin").value=d.periodMin||"15";
-  document.getElementById("shiftSec").value=d.shiftSec||"90";
-  renderPlayerSelectors(parseInt(d.teamSize,10)||10, Array.isArray(d.players)?d.players:[]);
-  document.getElementById("goalie").value=d.goalie||"";
+  const d = Object.assign(defaultsState(), s || {});
+
+  const set = (id, val) => {
+    try{
+      const el = document.getElementById(id);
+      if(el) el.value = val;
+    }catch(e){}
+  };
+
+  set("matchDate", d.matchDate || "");
+  set("matchTime", d.matchTime || "");
+  set("opponent", d.opponent || "");
+  set("arena", d.arena || "1");
+  set("teamSize", d.teamSize || "10");
+  set("onCourt", d.onCourt || "3");
+  set("periodsCount", d.periodsCount || "1");
+  set("periodMin", d.periodMin || "15");
+  set("shiftSec", d.shiftSec || "90");
+
+  renderPlayerSelectors(
+    parseInt(d.teamSize,10)||10,
+    Array.isArray(d.players)?d.players:[]
+  );
+
+  set("goalie", d.goalie || "");
 }
 function ensureInheritanceOnLoad(){
   const teamNo=getSelectedTeamSafe();
@@ -4214,7 +4236,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.58");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.60");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4247,7 +4269,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.58</div>
+<div class="app-version">V 1.9.60</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">
