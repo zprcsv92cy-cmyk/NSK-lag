@@ -1376,6 +1376,124 @@ body.coach-screen-active #coachView{
 
 
 
+function ensureCoreLayout(){
+  try{
+    var editView=document.getElementById("editView");
+    if(editView){
+      var preview=editView.querySelector('#runOutput');
+      if(preview && !document.getElementById('editOutput')) preview.id='editOutput';
+
+      if(!document.getElementById('editControls')){
+        var editOutput=document.getElementById('editOutput');
+        var controls=document.createElement('div');
+        controls.id='editControls';
+        controls.className='card no-print';
+        controls.innerHTML = `
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:center;">
+            <b>Matchinställningar</b>
+            <div id="saveState" class="pill">Redo</div>
+          </div>
+          <div id="teamSwitchRow" class="btnrow" style="margin-top:10px;">
+            <button type="button" class="ghost" id="etbtn1" onclick="switchTeam('1')">Lag 1</button>
+            <button type="button" class="ghost" id="etbtn2" onclick="switchTeam('2')">Lag 2</button>
+            <button type="button" class="ghost" id="etbtn3" onclick="switchTeam('3')">Lag 3</button>
+          </div>
+          <div class="row" style="margin-top:10px;">
+            <div><label for="matchCount">Antal matcher</label><select id="matchCount"></select></div>
+            <div><label for="matchNo">Match nr</label><select id="matchNo"></select></div>
+            <div><label for="matchTime">Starttid</label><input id="matchTime" type="time"></div>
+            <div><label for="matchDate">Datum</label><input id="matchDate" type="date"></div>
+          </div>
+          <div class="row">
+            <div style="flex:2 1 260px;"><label for="opponent">Motståndare</label><input id="opponent" placeholder="Motståndare"></div>
+            <div><label for="arena">Plan</label><select id="arena"></select></div>
+            <div><label for="teamSize">Lagstorlek</label><select id="teamSize"></select></div>
+            <div><label for="onCourt">På plan</label><select id="onCourt"></select></div>
+          </div>
+          <div class="row">
+            <div><label for="periodsCount">Perioder</label><select id="periodsCount"></select></div>
+            <div><label for="periodMin">Minuter/period</label><select id="periodMin"></select></div>
+            <div><label for="shiftSec">Sekunder/byte</label><select id="shiftSec"></select></div>
+          </div>
+          <div class="row">
+            <div><label for="goalie">Målvakt</label><select id="goalie"></select></div>
+            <div><label for="coach">Tränare</label><select id="coach" multiple size="4"></select></div>
+          </div>
+          <div class="card" style="margin-top:10px;margin-bottom:0;">
+            <b>Spelare</b>
+            <div id="playersContainer" class="row" style="margin-top:10px;"></div>
+          </div>
+          <div class="btnrow" style="margin-top:10px;">
+            <button type="button" onclick="exportPDF()">Exportera PDF</button>
+            <button type="button" class="ghost" onclick="clearTeamMatch()">Rensa vald match</button>
+          </div>
+          <div id="exportHelp" class="small" style="display:none;margin-top:8px;"></div>
+        `;
+        if(editOutput) editView.insertBefore(controls, editOutput);
+        else editView.appendChild(controls);
+      }
+    }
+
+    if(!document.getElementById('runView')){
+      var coachView=document.getElementById('coachView');
+      var runView=document.createElement('div');
+      runView.id='runView';
+      runView.className='view no-print';
+      runView.style.display='none';
+      runView.innerHTML = `
+        <div class="card no-print">
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;align-items:flex-start;">
+            <div>
+              <b>Poolspel-läge</b>
+              <div id="runSub" class="small"></div>
+            </div>
+            <div class="btnrow">
+              <button type="button" class="ghost" id="tbtn1" onclick="switchTeam('1')">Lag 1</button>
+              <button type="button" class="ghost" id="tbtn2" onclick="switchTeam('2')">Lag 2</button>
+              <button type="button" class="ghost" id="tbtn3" onclick="switchTeam('3')">Lag 3</button>
+              <button type="button" class="ghost" onclick="openTeamSelectForCurrentPool()">Byt lag</button>
+              <button type="button" onclick="openCoachPage()">Coachskärm</button>
+              <button type="button" class="ghost" onclick="showEdit()">Redigera</button>
+              <button type="button" class="ghost" onclick="goHome()">Till startsidan</button>
+            </div>
+          </div>
+        </div>
+        <div id="runNowBar" class="card runNowBar"></div>
+        <div id="runOutput" class="card"><b>Poolspel-läge</b><div class="small">Välj lag.</div></div>
+      `;
+      if(coachView && coachView.parentNode) coachView.parentNode.insertBefore(runView, coachView);
+      else document.body.appendChild(runView);
+    }
+
+    if(!document.getElementById('bootDebug')){
+      var bd=document.createElement('div');
+      bd.id='bootDebug';
+      bd.className='small no-print';
+      bd.style.cssText='display:none;position:fixed;left:10px;bottom:10px;z-index:99999;background:rgba(0,0,0,.75);padding:6px 8px;border-radius:8px;';
+      document.body.appendChild(bd);
+    }
+  }catch(e){}
+}
+
+function openCoachPage(){
+  try{
+    if(!Storage.currentPoolId || !Storage.currentPoolId()){
+      goHome();
+      return;
+    }
+    showRun();
+    setTimeout(function(){
+      try{
+        updateRunProUI();
+        setCoachMode(true);
+      }catch(e){}
+    }, 60);
+  }catch(e){
+    try{ showRun(); }catch(_){}
+  }
+}
+
+
 // ===== AUTH + ROLES (Supabase Magic Link) =====
 const SUPABASE_URL = "https://tonbbmxzotsjwuimobkn.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRvbmJibXh6b3Rzand1aW1vYmtuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI2ODExMTIsImV4cCI6MjA4ODI1NzExMn0.lYByBwAhjbxlSYpOcv8W3JboNkf8ldTiieQ4goMtopc";
@@ -2231,9 +2349,11 @@ function syncTeamUIForPool(poolId){
 
     // Show/hide team switch buttons (Lag 1/2/3...) based on participating teams
     for(var tb=1; tb<=6; tb++){
-      var btn=document.getElementById("tbtn"+tb);
-      if(!btn) continue;
-      btn.style.display = (teams.indexOf(String(tb))!==-1) ? "" : "none";
+      ["tbtn"+tb, "etbtn"+tb].forEach(function(id){
+        var btn=document.getElementById(id);
+        if(!btn) return;
+        btn.style.display = (teams.indexOf(String(tb))!==-1) ? "" : "none";
+      });
     }
 
     // If only one team, hide the whole switch row for a cleaner UI
@@ -3031,9 +3151,26 @@ function renderEditMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
       </div>
     </div>`;
 }
+function ensureEditMsg(){
+  let msg=document.getElementById("msg");
+  if(msg) return msg;
+  const editView=document.getElementById("editView");
+  const runOutput=document.getElementById("runOutput");
+  if(!editView || !runOutput) return null;
+  const card=document.createElement("div");
+  card.className="card";
+  card.style.marginBottom="12px";
+  msg=document.createElement("div");
+  msg.id="msg";
+  msg.className="small";
+  card.appendChild(msg);
+  editView.insertBefore(card, runOutput);
+  return msg;
+}
+
 function renderEditOutput(){
   const err=validateCurrentMatch();
-  const msg=document.getElementById("msg");
+  const msg=ensureEditMsg();
   if(msg){
     msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
   }
@@ -3070,7 +3207,10 @@ function renderEditOutput(){
     </div>`;
   }
 
-  document.getElementById("editOutput").innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
+  const editOutputEl = document.getElementById("editOutput");
+  if(editOutputEl){
+    editOutputEl.innerHTML = html || "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
+  }
   updateFinishButtons();
   syncTeamUIForPool(Storage.currentPoolId && Storage.currentPoolId());
 }
@@ -3350,10 +3490,12 @@ function toggleArenaMode(){
 function setActiveTeamButtons(team){
   const t=String(team||"1");
   ["1","2","3"].forEach(x=>{
-    const b=document.getElementById("tbtn"+x);
-    if(!b) return;
-    const active = (x===t);
-    b.classList.toggle("ghost", !active);
+    ["tbtn"+x, "etbtn"+x].forEach(function(id){
+      const b=document.getElementById(id);
+      if(!b) return;
+      const active = (x===t);
+      b.classList.toggle("ghost", !active);
+    });
   });
 }
 async function switchTeam(team){
@@ -3776,6 +3918,7 @@ function safeShowHome(){
 
 function safeInit(){
   bootLog("load — start");
+  try{ ensureCoreLayout(); }catch(e){}
   try{
     init();
     bootLog("init — ok");
@@ -4243,7 +4386,7 @@ async saveRole(userId){
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.61");
+      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.64");
       // Ask SW to activate immediately on update (prevents "stuck" old cache)
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
@@ -4276,7 +4419,7 @@ if ("serviceWorker" in navigator) {
   </div>
 </div>
 
-<div class="app-version">V 1.9.61</div>
+<div class="app-version">V 1.9.64</div>
 
 
 <div id="jsErrorBanner" style="display:none;position:fixed;left:10px;right:10px;bottom:10px;z-index:99999;background:#2b0b0f;border:2px solid #d41f34;color:#fff;border-radius:14px;padding:10px 12px;font-size:13px;">

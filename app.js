@@ -1,5 +1,6 @@
 function exportPDF(){
-  const content = document.getElementById("editOutput").innerHTML;
+  const editOutput = document.getElementById("editOutput");
+  const content = editOutput ? editOutput.innerHTML : "<b>Matchblad</b><div class='small'>Inga matcher.</div>";
 
   const w = window.open("", "_blank");
   if(!w){
