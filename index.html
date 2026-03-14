@@ -2758,11 +2758,60 @@ function addCoach(){const inp=document.getElementById("newCoach"); const name=(i
 }
 function removePlayer(i){const {players,coaches}=loadRegister(); players.splice(i,1); saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); renderEditOutput(); renderRunAll();}
 function removeCoach(i){const {players,coaches}=loadRegister(); coaches.splice(i,1); saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); applyTeamCoachesToUI(); renderEditOutput(); renderRunAll();}
-function editPlayer(i){const {players,coaches}=loadRegister(); const cur=players[i]; const next=prompt("Redigera spelare:", cur||""); if(next==null) return;
-  const name=String(next).trim(); if(!name) return; players[i]=name; saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); renderEditOutput(); renderRunAll();
-}
-function editCoach(i){const {players,coaches}=loadRegister(); const cur=coaches[i]; const next=prompt("Redigera tränare:", cur||""); if(next==null) return;
-  const name=String(next).trim(); if(!name) return; coaches[i]=name; saveRegister(players,coaches); renderRegisterLists(); refreshAllDropdownsAndPlayers(); applyTeamCoachesToUI(); renderEditOutput(); renderRunAll();
+function nskPrompt(message, defaultValue, title){
+  return new Promise(function(resolve){
+    try{
+      var modal=document.getElementById("nskPromptModal");
+      var msg=document.getElementById("nskPromptMsg");
+      var ttl=document.getElementById("nskPromptTitle");
+      var inp=document.getElementById("nskPromptInput");
+      var ok=document.getElementById("nskPromptOk");
+      var cancel=document.getElementById("nskPromptCancel");
+      var backdrop=modal ? modal.querySelector(".nskPromptBackdrop") : null;
+
+      if(!modal || !msg || !ttl || !inp || !ok || !cancel){
+        var res=window.prompt(message || "", defaultValue || "");
+        resolve(res);
+        return;
+      }
+
+      ttl.textContent = title || "Redigera";
+      msg.textContent = message || "";
+      inp.value = defaultValue || "";
+      modal.style.display = "block";
+
+      var done=false;
+
+      function cleanup(){
+        ok.removeEventListener("click", onOk);
+        cancel.removeEventListener("click", onCancel);
+        document.removeEventListener("keydown", onKey);
+        if(backdrop) backdrop.removeEventListener("click", onCancel);
+      }
+      function close(val){
+        if(done) return;
+        done=true;
+        modal.style.display="none";
+        cleanup();
+        resolve(val);
+      }
+      function onOk(){ close(inp.value); }
+      function onCancel(){ close(null); }
+      function onKey(e){
+        if(e.key==="Escape") close(null);
+        if(e.key==="Enter") close(inp.value);
+      }
+
+      ok.addEventListener("click", onOk);
+      cancel.addEventListener("click", onCancel);
+      document.addEventListener("keydown", onKey);
+      if(backdrop) backdrop.addEventListener("click", onCancel);
+
+      setTimeout(function(){ try{ inp.focus(); inp.select(); }catch(e){} }, 30);
+    }catch(e){
+      resolve(window.prompt(message || "", defaultValue || ""));
+    }
+  });
 }
 
 // ---------- per pool + team coaches ----------
