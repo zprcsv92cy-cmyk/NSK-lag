@@ -1,13 +1,21 @@
 {
-  "name": "NSK Team 18",
-  "short_name": "NSK T18",
-  "start_url": "./",
-  "scope": "./",
+  "name": "NSK-lag",
+  "short_name": "NSK-lag",
+  "start_url": "./?v=1",
   "display": "standalone",
-  "background_color": "#0f0f10",
-  "theme_color": "#b11226",
+  "background_color": "#0b0b0f",
+  "theme_color": "#a30f23",
+  "version": "701",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
   ]
 }
