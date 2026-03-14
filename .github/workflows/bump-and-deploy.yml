@@ -1,0 +1,162 @@
+name: Bump and Deploy NSK-lag
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Ny version, t.ex. 701"
+        required: true
+        type: string
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout current branch
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Validate version input
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        shell: bash
+        run: |
+          set -e
+          echo "Validerar version: $VERSION"
+          [[ "$VERSION" =~ ^[0-9A-Za-z._-]+$ ]] || {
+            echo "Ogiltig version: $VERSION"
+            exit 1
+          }
+
+      - name: Update version files
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        shell: bash
+        run: |
+          set -e
+
+          echo "Sätter version till $VERSION"
+
+          printf 'window.NSK_VERSION = "%s";\n' "$VERSION" > version.js
+          printf '{\n  "version": "%s"\n}\n' "$VERSION" > deploy.json
+
+          if [ -f manifest.webmanifest ]; then
+            sed -i -E 's/"version":[[:space:]]*"[^"]*"/"version": "'"$VERSION"'"/g' manifest.webmanifest || true
+            sed -i -E 's#"start_url":[[:space:]]*"[^"]*"#"start_url": "./?v='"$VERSION"'"#g' manifest.webmanifest || true
+          fi
+
+          if [ -f sw.js ]; then
+            sed -i -E 's/(const VERSION = ")[^"]+(")/\1'"$VERSION"'\2/g' sw.js || true
+            sed -i -E 's/(const CACHE_NAME = "nsk-team18-v)[^"]+(")/\1'"$VERSION"'\2/g' sw.js || true
+            sed -i -E 's/(nsk-team18-v)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+
+            sed -i -E 's/(index\.html\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(version\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(deploy\.json\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(app\.css\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(config\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(auth\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(login-patch\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(db\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(app\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+            sed -i -E 's/(manifest\.webmanifest\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' sw.js || true
+          fi
+
+          find . -name "*.html" -type f | while read -r file; do
+            echo "Uppdaterar $file"
+
+            sed -i -E 's/(app\.css\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(config\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(auth\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(login-patch\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(db\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(app\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(version\.js\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+            sed -i -E 's/(manifest\.webmanifest\?v=)[0-9A-Za-z._-]+/\1'"$VERSION"'/g' "$file"
+          done
+
+          test -f deploy.json
+          git diff --stat || true
+
+      - name: Commit and push
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        shell: bash
+        run: |
+          set -e
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add version.js deploy.json
+          [ -f manifest.webmanifest ] && git add manifest.webmanifest || true
+          [ -f sw.js ] && git add sw.js || true
+          git add '*.html' || true
+
+          git diff --cached --quiet && {
+            echo "Inga ändringar att committa"
+            exit 0
+          }
+
+          git commit -m "Bump version to $VERSION"
+          git push origin HEAD:${{ github.ref_name }}
+
+  deploy:
+    needs: bump
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout bumped branch head
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Pull latest pushed commit
+        shell: bash
+        run: |
+          set -e
+          git fetch origin ${{ github.ref_name }}
+          git checkout ${{ github.ref_name }}
+          git reset --hard origin/${{ github.ref_name }}
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: .
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+
+      - name: Summary
+        env:
+          VERSION: ${{ github.event.inputs.version }}
+        run: |
+          {
+            echo "## NSK-lag deploy klar"
+            echo ""
+            echo "- Version: $VERSION"
+            echo "- Branch: ${{ github.ref_name }}"
+            echo "- URL: ${{ steps.deployment.outputs.page_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"
