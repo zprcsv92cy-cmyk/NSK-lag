@@ -1690,13 +1690,7 @@ document.addEventListener("click", function(e){
 
 
 
-function requireCode2018(message){
-  var code = prompt(message || "Ange kod:");
-  if(code===null) return false;
-  if(String(code).trim()!=="2018"){
-    alert("Fel kod.");
-    return false;
-  }
+function requireCode2018(){
   return true;
 }
 
