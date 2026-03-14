@@ -1,9 +1,18 @@
-// NSK Team 18 Service Worker (v1.9.64)
-const CACHE_NAME = "nsk-team18-v1.9.64";
-const ASSETS = [
+const VERSION = "1";
+const CACHE_NAME = `nsk-team18-v${VERSION}`;
+
+const APP_ASSETS = [
   "./",
-  "./index.html",
-  "./manifest.webmanifest",
+  "./index.html?v=1",
+  "./version.js?v=1",
+  "./deploy.json?v=1",
+  "./app.css?v=1",
+  "./config.js?v=1",
+  "./auth.js?v=1",
+  "./login-patch.js?v=1",
+  "./db.js?v=1",
+  "./app.js?v=1",
+  "./manifest.webmanifest?v=1",
   "./icon-192.png",
   "./icon-512.png",
   "./nsk-wallpaper-portrait.png"
@@ -11,61 +20,77 @@ const ASSETS = [
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
+
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).catch(() => {})
+    caches.open(CACHE_NAME).then(async (cache) => {
+      for (const asset of APP_ASSETS) {
+        try {
+          await cache.add(asset);
+        } catch (err) {
+          console.warn("[SW] Kunde inte cacha:", asset, err);
+        }
+      }
+    })
   );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
-    Promise.all([
-      caches.keys().then((keys) =>
-        Promise.all(keys.filter((k) => k !== CACHE_NAME).map((k) => caches.delete(k)))
-      ),
-      self.clients.claim()
-    ])
+    caches.keys().then((keys) =>
+      Promise.all(
+        keys
+          .filter((key) => key !== CACHE_NAME)
+          .map((key) => caches.delete(key))
+      )
+    ).then(() => self.clients.claim())
   );
 });
 
-// Network-first for HTML, cache-first for everything else
-
-
-self.addEventListener("message", (event) => {
-  if (event.data === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
-});
-
-
-self.addEventListener('fetch', event => {
+self.addEventListener("fetch", (event) => {
   const req = event.request;
-  if (req.method !== 'GET') return;
-
   const url = new URL(req.url);
 
-  // Network-first for HTML to avoid stale blank-screen shells
-  const isHTML = req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html');
-  if (isHTML) {
-    event.respondWith((async () => {
-      try {
-        const fresh = await fetch(req, {cache: 'no-store'});
-        const cache = await caches.open(CACHE_NAME);
-        cache.put(req, fresh.clone());
-        return fresh;
-      } catch (e) {
-        const cached = await caches.match(req);
-        return cached || Response.redirect(url.origin + url.pathname);
-      }
-    })());
+  if (req.method !== "GET") return;
+
+  if (url.origin !== self.location.origin) return;
+
+  if (
+    req.mode === "navigate" ||
+    req.destination === "document"
+  ) {
+    event.respondWith(
+      fetch(req)
+        .then((networkRes) => {
+          const copy = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("./index.html", copy).catch(() => {});
+          });
+          return networkRes;
+        })
+        .catch(() => caches.match(req))
+        .then((res) => res || caches.match("./index.html"))
+    );
     return;
   }
 
-  event.respondWith((async () => {
-    const cached = await caches.match(req);
-    if (cached) return cached;
-    const fresh = await fetch(req);
-    const cache = await caches.open(CACHE_NAME);
-    cache.put(req, fresh.clone());
-    return fresh;
-  })());
+  event.respondWith(
+    caches.match(req).then((cached) => {
+      if (cached) return cached;
+
+      return fetch(req)
+        .then((networkRes) => {
+          if (!networkRes || networkRes.status !== 200) {
+            return networkRes;
+          }
+
+          const copy = networkRes.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put(req, copy).catch(() => {});
+          });
+
+          return networkRes;
+        })
+        .catch(() => caches.match("./index.html"));
+    })
+  );
 });
