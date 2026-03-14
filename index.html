@@ -1125,6 +1125,10 @@ body.coach-screen-active #coachView{
     </div>
   </div>
 
+  <div class="card" style="margin-bottom:12px;">
+    <div id="msg" class="small">Välj lag.</div>
+  </div>
+
   <div class="card" id="runOutput">
     <b>Poolspel-läge</b><div class="small">Välj lag.</div>
   </div>
@@ -3030,7 +3034,9 @@ function renderEditMatchBlock(teamNo, matchNo, st, shiftTimes, lineups){
 function renderEditOutput(){
   const err=validateCurrentMatch();
   const msg=document.getElementById("msg");
-  msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
+  if(msg){
+    msg.innerHTML = err ? `<span class="error">✖ ${escapeHtml(err)}</span>` : `<span class="ok">✔ OK</span> <span class="small">Inga dubbletter.</span>`;
+  }
 
   const teamNo=getSelectedTeamSafe();
   const matchCount=loadMatchCount();
