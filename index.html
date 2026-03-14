@@ -4386,27 +4386,25 @@ async saveRole(userId){
 
 </script>
 <script>
+<script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try{
-      const reg = await navigator.serviceWorker.register("./sw.js?v=1.9.64");
-      // Ask SW to activate immediately on update (prevents "stuck" old cache)
+      const reg = await navigator.serviceWorker.register("./sw.js?v=" + encodeURIComponent(window.NSK_VERSION || "1"));
       if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
       reg.addEventListener("updatefound", () => {
         const nw = reg.installing;
         if(!nw) return;
         nw.addEventListener("statechange", () => {
           if (nw.state === "installed" && navigator.serviceWorker.controller) {
-            // New version installed; refresh on next load.
           }
         });
       });
-      // Also check for updates in the background
       if (reg.update) reg.update().catch(()=>{});
     }catch(e){}
   });
 }
-</script>
+</script
 
 <!-- NSK prompt modal -->
 <div id="nskPromptModal" style="display:none;">
