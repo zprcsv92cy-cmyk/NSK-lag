@@ -4549,5 +4549,18 @@ setTimeout(function(){
 },300);
 </script>
 
+<div class="app-version" id="appVersion"></div>
+
+<script>
+(function(){
+  try{
+    var el=document.getElementById("appVersion");
+    if(el && window.NSK_VERSION){
+      el.textContent="v"+window.NSK_VERSION;
+    }
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
