@@ -2806,6 +2806,40 @@ function nskPrompt(message, defaultValue, title){
     }
   });
 }
+async function editPlayer(i){
+  const {players,coaches}=loadRegister();
+  const cur=players[i];
+  const next=await nskPrompt("Redigera spelare:", cur||"", "Redigera spelare");
+  if(next==null) return;
+
+  const name=String(next).trim();
+  if(!name) return;
+
+  players[i]=name;
+  saveRegister(players,coaches);
+  renderRegisterLists();
+  refreshAllDropdownsAndPlayers();
+  renderEditOutput();
+  renderRunAll();
+}
+
+async function editCoach(i){
+  const {players,coaches}=loadRegister();
+  const cur=coaches[i];
+  const next=await nskPrompt("Redigera tränare:", cur||"", "Redigera tränare");
+  if(next==null) return;
+
+  const name=String(next).trim();
+  if(!name) return;
+
+  coaches[i]=name;
+  saveRegister(players,coaches);
+  renderRegisterLists();
+  refreshAllDropdownsAndPlayers();
+  applyTeamCoachesToUI();
+  renderEditOutput();
+  renderRunAll();
+}
 
 // ---------- per pool + team coaches ----------
 function teamCoachKey(teamOverride=null){
