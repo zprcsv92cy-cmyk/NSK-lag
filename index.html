@@ -1935,15 +1935,9 @@ function persistCurrentView(){
 // ---- globals used by multiple handlers (must exist on window) ----
 window.isPoolCompleted = function(poolId){ return isPoolFullyCompleted(poolId); };
 
-window.requireCode2018ForCompletedPool = function(poolId){
-  var p = getPoolById(poolId);
-  if(!p) return true;
-  ensureTeamStatus(p);
-  var keys=getTeamKeys();
-  var anyCompleted=false;
-  for(var i=0;i<keys.length;i++){
-    if(p.teamStatus[keys[i]] && p.teamStatus[keys[i]].completed){ anyCompleted=true; break; }
-  }
+window.requireCode2018ForCompletedPool = function(){
+  return true;
+};
   if(!anyCompleted) return true;
   var code = prompt("Poolspelet har avslutade lag. Ange kod:");
   if(code===null) return false;
