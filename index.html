@@ -4473,7 +4473,23 @@ if ("serviceWorker" in navigator) {
       if (reg.update) reg.update().catch(()=>{});
     }catch(e){}
   });
+}<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try{
+      const reg = await navigator.serviceWorker.register(
+        "./sw.js?v=" + encodeURIComponent(window.NSK_VERSION || "1")
+      );
+
+      if (reg.waiting) reg.waiting.postMessage("SKIP_WAITING");
+
+      if (reg.update) reg.update().catch(()=>{});
+
+    }catch(e){}
+  });
 }
+</script>
+
 </script
 
 <!-- NSK prompt modal -->
